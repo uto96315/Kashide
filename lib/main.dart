@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/first/first_page.dart';
 import 'package:str_gram_beta/home/home_page.dart';
 import 'package:str_gram_beta/login/login_page.dart';
@@ -46,8 +45,7 @@ class MyApp extends StatelessWidget {
         "/search": (context) => const SearchPage(),
         "/notification": (context) => const NotificationPage(),
         "/myPage": (context) => const MyPage(),
-        "/registerUserDetails": (context) => const RegisterUserDetailsPage(),
-        "/editUserDetails": (context) => const EditUserDetailsPage(),
+        "/editUserDetails": (context) => EditUserDetailsPage()
       },
     );
   }

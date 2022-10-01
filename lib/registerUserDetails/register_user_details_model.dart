@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 
 
 
-class RegisterUserDetailsModel extends ChangeNotifier {
+class EditUserDetailsModel extends ChangeNotifier {
 
   var user = FirebaseAuth.instance.currentUser;
 
@@ -68,9 +68,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     print("${userName},${userAge},${userIntroduction},${userGender},${userFavorite}");
   }
 
-
-  // 新規登録用の処理
-  Future registerUserData() async{
+  Future updateUserData() async{
     var uid = user?.uid;
     userName = userNameController.text;
     userIntroduction = userIntroductionController.text;

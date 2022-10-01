@@ -3,21 +3,21 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/top/top_page.dart';
 import 'register_user_details_model.dart';
 
-class RegisterUserDetailsPage extends StatelessWidget {
-  const RegisterUserDetailsPage({super.key});
+class EditUserDetailsPage extends StatelessWidget {
+  const EditUserDetailsPage({super.key});
 
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<RegisterUserDetailsModel>(
-      create: (_) => RegisterUserDetailsModel(),
+    return ChangeNotifierProvider<EditUserDetailsModel>(
+      create: (_) => EditUserDetailsModel(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text("アカウント情報"),
         ),
         body: Center(
           child:
-              Consumer<RegisterUserDetailsModel>(builder: (context, model, child) {
+              Consumer<EditUserDetailsModel>(builder: (context, model, child) {
             return SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Column(
@@ -111,7 +111,7 @@ class RegisterUserDetailsPage extends StatelessWidget {
                         model.startLoading();
 
                         try {
-                          await model.registerUserData();
+                          await model.updateUserData();
                           Navigator.pushNamed(context, "/home");
                         } catch (e) {
                           final snackBar = SnackBar(
