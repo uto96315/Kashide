@@ -19,14 +19,19 @@ class MyPage extends StatelessWidget {
                 const SizedBox(height: 100),
                 Container(
                   alignment: Alignment.topLeft,
-                  width: MediaQuery.of(context).size.width*0.8,
+                  width: MediaQuery.of(context).size.width*0.9,
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(model.userName ?? "読み込み中...", style: const TextStyle( fontSize: 19 )),
+                          Text(model.userName ?? "読み込み中...", style: const TextStyle( fontSize: 18 )),
                           const SizedBox( width: 10 ),
+                          OutlinedButton(
+                              onPressed: (){
+                                Navigator.pushNamed(context, "/editUserDetails");
+                              },
+                              child: const Text("編集"))
                         ],
                       ),
                       const SizedBox( height: 10 ),

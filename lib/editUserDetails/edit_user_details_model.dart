@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 
 
 
-class RegisterUserDetailsModel extends ChangeNotifier {
+class EditUserDetailsModel extends ChangeNotifier {
 
   var user = FirebaseAuth.instance.currentUser;
 
@@ -17,6 +17,23 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   var userFavorite = []; // ユーザーの好みを入れる
   String? userGender; // ユーザーの性別
   List<String> genderList = ["男性", "女性", "ノンバイナリー"];
+
+  List<String> favoriteList = [
+    "邦楽",
+    "洋楽",
+    "ジャニーズ",
+    "ロック",
+    "KPOP",
+    "R&B",
+    "ラップ",
+    "ヒップホップ・レゲエ",
+    "ジャズ",
+    "アイドル",
+    "エレクトロニカル",
+    "クラシック",
+    "演歌",
+    "昭和歌謡",
+  ];
 
 
   bool isLoading = false;
@@ -50,10 +67,15 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ユーザーの好みのセット
-  void setUserFavorite([favorite]) {
-    favorite ??= "未選択";
-    userFavorite = favorite;
+  // 選択されたジャンルをリストに追加する処理
+  void setFavorite(String favorite) {
+    userFavorite.add(favorite);
+    notifyListeners();
+  }
+
+  // 選択を外す処理
+  void removeFavorite(String favorite) {
+    userFavorite.remove(favorite);
     notifyListeners();
   }
 
@@ -64,13 +86,14 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // テスト用の処理
   void test() {
     print("${userName},${userAge},${userIntroduction},${userGender},${userFavorite}");
   }
 
 
-  // 新規登録用の処理
-  Future registerUserData() async{
+  // ユーザー情報のアップデート用の関数
+  Future updateUserData() async{
     var uid = user?.uid;
     userName = userNameController.text;
     userIntroduction = userIntroductionController.text;
@@ -90,9 +113,12 @@ class RegisterUserDetailsModel extends ChangeNotifier {
         "age": userAge,
         "gender": userGender,
         "introduction": userIntroduction,
+        "userFavorite": userFavorite,
         "createdAt": DateTime.now()
       });
     }
     print("ユーザーデータを保存しました。uid:${uid}");
   }
+
+
 }
