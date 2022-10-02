@@ -5,16 +5,26 @@ import 'package:flutter/cupertino.dart';
 
 
 class EditUserDetailsModel extends ChangeNotifier {
+  EditUserDetailsModel(this.userName, this.userIntroduction, this.userGender, this.userAge, this.userFavorite) {
+    userNameController.text = userName ?? "名無しさん";
+    userAgeController.text = userAge ?? "未設定";
+    userIntroductionController.text = userIntroduction ?? "未設定";
+    userGenderController.text = userGender ?? "未設定";
+    userFavorite = userFavorite;
+  }
 
   var user = FirebaseAuth.instance.currentUser;
 
   final userNameController = TextEditingController();
   final userIntroductionController = TextEditingController();
+  final userAgeController = TextEditingController();
+  final userGenderController = TextEditingController();
+
 
   String? userName;
   String? userIntroduction;
   String? userAge; // ユーザーの年代
-  var userFavorite = []; // ユーザーの好みを入れる
+  List<dynamic> userFavorite = []; // ユーザーの好みを入れる
   String? userGender; // ユーザーの性別
   List<String> genderList = ["男性", "女性", "ノンバイナリー"];
 
@@ -26,13 +36,15 @@ class EditUserDetailsModel extends ChangeNotifier {
     "KPOP",
     "R&B",
     "ラップ",
-    "ヒップホップ・レゲエ",
+    "ヒップホップ",
+    "レゲエ",
     "ジャズ",
     "アイドル",
     "エレクトロニカル",
     "クラシック",
     "演歌",
     "昭和歌謡",
+    "その他",
   ];
 
 
@@ -108,12 +120,18 @@ class EditUserDetailsModel extends ChangeNotifier {
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
     if(user != null) {
+
+      userName = userNameController.text;
+      userIntroduction = userIntroductionController.text;
+      userGender = userGenderController.text;
+      userAge = userAgeController.text;
+
       await collection.set({
         "userName": userName,
         "age": userAge,
         "gender": userGender,
         "introduction": userIntroduction,
-        "userFavorite": userFavorite,
+        "favorite": userFavorite,
         "createdAt": DateTime.now()
       });
     }

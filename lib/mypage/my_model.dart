@@ -9,8 +9,12 @@ class MyModel extends ChangeNotifier {
   var user = FirebaseAuth.instance.currentUser;
   String? userName;
   String? userIntroduction;
+  String? userAge;
+  String? userGender;
+  List<dynamic>? userFavorite;
 
   // ユーザー情報の取得
+  // todo: なぜか取得がうまくいっていない...
   Future getUserData() async{
     var uid = user?.uid;
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
@@ -19,6 +23,17 @@ class MyModel extends ChangeNotifier {
 
     userName = data?["userName"];
     userIntroduction = data?["introduction"];
+    userAge = data?["age"];
+    userGender = data?["gender"];
+    userFavorite = data?["favorite"];
+
+    notifyListeners();
+  }
+
+
+  //　ログアウトさせる処理
+  Future logOut() async{
+    await FirebaseAuth.instance.signOut();
     notifyListeners();
   }
 

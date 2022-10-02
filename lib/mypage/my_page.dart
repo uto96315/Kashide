@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
+import 'package:str_gram_beta/top/top_page.dart';
 import 'my_model.dart';
 
 
@@ -29,13 +31,32 @@ class MyPage extends StatelessWidget {
                           const SizedBox( width: 10 ),
                           OutlinedButton(
                               onPressed: (){
-                                Navigator.pushNamed(context, "/editUserDetails");
+                                Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                                    EditUserDetailsPage(
+                                        model.userName ?? "",
+                                        model.userAge ?? "",
+                                        model.userIntroduction ?? "",
+                                        model.userGender ?? "",
+                                        model.userFavorite!,
+                                    )));
                               },
                               child: const Text("編集"))
                         ],
                       ),
                       const SizedBox( height: 10 ),
                       Text(model.userIntroduction ?? "", style: const TextStyle( fontSize: 16 )),
+
+                      const SizedBox( height: 400 ),
+                      SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        height: 40,
+                        child: ElevatedButton(
+                            onPressed: () async {
+                              await model.logOut();
+                              Navigator.popUntil(context, ModalRoute.withName("/"));
+                            },
+                            child: const Text("ログアウト", style: TextStyle( fontSize: 20 ))),
+                      ),
                     ],
                   ),
                 ),
