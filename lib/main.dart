@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
@@ -36,9 +37,23 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
 
+      home: StreamBuilder<User?> (
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if(snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox();
+          }
+          if( snapshot.hasData) {
+            return HomePage();
+          }
+
+          return TopPage();
+        },
+      ),
+
       // 以下にルーティングを記載
       routes: {
-        "/": (context) => const TopPage(),
+        // "/": (context) => const TopPage(), // homeを指定した場合には不要になる
         "/login": (context) => const LoginPage(),
         "/register": (context) => const RegisterPage(),
         "/home": (context) => HomePage(),
