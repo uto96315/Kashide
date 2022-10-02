@@ -72,6 +72,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   // 新規登録用の処理
   Future registerUserData() async{
     var uid = user?.uid;
+    var email = user?.email;
     userName = userNameController.text;
     userIntroduction = userIntroductionController.text;
 
@@ -80,13 +81,13 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     userGender ??= "未設定";
     userIntroduction ??= "未設定";
 
-    print(uid);
-
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
     if(user != null) {
       await collection.set({
         "userName": userName,
+        "email": email ?? "",
+        "favorite": [""],
         "age": userAge,
         "gender": userGender,
         "introduction": userIntroduction,

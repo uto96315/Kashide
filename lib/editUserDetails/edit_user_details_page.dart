@@ -3,13 +3,17 @@ import 'package:provider/provider.dart';
 import 'edit_user_details_model.dart';
 
 class EditUserDetailsPage extends StatelessWidget {
-  const EditUserDetailsPage({super.key});
-
+   EditUserDetailsPage(this.userName, this.userAge,this.userIntroduction, this.userGender,this.userFavorite, {super.key});
+   String userName;
+   String userAge;
+   String userIntroduction;
+   String userGender;
+   List<dynamic> userFavorite;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditUserDetailsModel>(
-      create: (_) => EditUserDetailsModel(),
+      create: (_) => EditUserDetailsModel(userName, userIntroduction, userGender, userAge, userFavorite)..test(),
       child: Scaffold(
         appBar: AppBar(
           title: const Text("アカウント編集"),
@@ -105,7 +109,7 @@ class EditUserDetailsPage extends StatelessWidget {
                     const SizedBox(height: 30),
 
 
-                    // 興味選択欄　todo:現在実装できていない
+                    // 興味選択欄　
                     Row(
                       children: const [
                         Text("興味があるジャンル(複数選択可能)",
@@ -127,8 +131,10 @@ class EditUserDetailsPage extends StatelessWidget {
                           onTap: (){
                             if(isSelected) {
                               model.removeFavorite(tag);
+                              debugPrint("remove $tag");
                             } else {
                               model.setFavorite(tag);
+                              debugPrint("set $tag");
                             }
                           },
                           child: AnimatedContainer(
@@ -153,7 +159,7 @@ class EditUserDetailsPage extends StatelessWidget {
                         );
                       }).toList()
                     ),
-                    const SizedBox( height: 100 ),
+                    const SizedBox( height: 50 ),
 
 
                     // 登録ボタン
