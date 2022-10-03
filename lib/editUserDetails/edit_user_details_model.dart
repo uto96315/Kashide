@@ -142,11 +142,11 @@ class EditUserDetailsModel extends ChangeNotifier {
 
     await setDeletedUser(uid!); // 記録
 
-    // authから削除
+    // Authから削除
     await user?.delete();
     await FirebaseAuth.instance.signOut();
 
-    // firestoreから削除
+    // FireStoreから削除
     final doc = FirebaseFirestore.instance.collection("users") .doc(uid);
     await doc.delete();
   }
@@ -159,7 +159,7 @@ class EditUserDetailsModel extends ChangeNotifier {
     await doc.set({
       "uid": uid,
       "email": user?.email,
-      "deletedAt": DateTime.now()
+      "deletedAt": DateTime.now(),
     });
   }
 }
