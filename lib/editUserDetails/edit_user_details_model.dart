@@ -115,8 +115,6 @@ class EditUserDetailsModel extends ChangeNotifier {
     userGender ??= "未設定";
     userIntroduction ??= "未設定";
 
-    print(uid);
-
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
     if(user != null) {
@@ -135,8 +133,33 @@ class EditUserDetailsModel extends ChangeNotifier {
         "createdAt": DateTime.now()
       });
     }
-    print("ユーザーデータを保存しました。uid:${uid}");
   }
 
 
+  // ユーザーの削除処理
+  Future deleteUser() async{
+    var uid = user?.uid;
+
+    await setDeletedUser(uid!); // 記録
+
+    // authから削除
+    await user?.delete();
+    await FirebaseAuth.instance.signOut();
+
+    // firestoreから削除
+    final doc = FirebaseFirestore.instance.collection("users") .doc(uid);
+    await doc.delete();
+  }
+
+
+
+  // 削除したユーザーを記録する処理
+  Future setDeletedUser(String uid) async{
+    final doc = FirebaseFirestore.instance.collection("deletedUsers").doc(uid);
+    await doc.set({
+      "uid": uid,
+      "email": user?.email,
+      "deletedAt": DateTime.now()
+    });
+  }
 }
