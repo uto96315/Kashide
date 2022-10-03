@@ -40,7 +40,15 @@ class RegisterPage extends StatelessWidget {
                   TextField(
                     controller: model.registerPasswordController,
                     obscureText: model.passObscure,
-                    decoration: const InputDecoration(labelText: 'パスワード'),
+                    decoration: InputDecoration(
+                        labelText: 'パスワード',
+                        suffixIcon: IconButton(
+                          icon: Icon((model.passObscure) ? Icons.visibility_off : Icons.visibility ),
+                          onPressed: (){
+                            model.changeObscure();
+                          },
+                        )
+                    ),
                     onChanged: (text) {
                       model.setPassword(text);
                     },
