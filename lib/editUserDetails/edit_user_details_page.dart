@@ -188,6 +188,34 @@ class EditUserDetailsPage extends StatelessWidget {
                           ),
                         )),
                     const SizedBox( height: 100 ),
+
+                    SizedBox(
+                      width: 200,
+                      height: 40,
+                      child: ElevatedButton(
+                          onPressed: () async{
+                            model.startLoading();
+                            
+                            try {
+                              await model.deleteUser();
+                              Navigator.popUntil(context, (route) => route.isFirst);
+                            } catch(e) {
+                              final snackBar = SnackBar(
+                                backgroundColor: Colors.red,
+                                content: Text(e.toString()),
+                              );
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(snackBar);
+                            } finally {
+                              model.endLoading();
+                            }
+                          },
+                          child: const Text("アカウントを削除する"),
+                        style: ElevatedButton.styleFrom( primary: Colors.red ),
+                      ),
+                    ),
+
+                    const SizedBox( height: 100 ),
                   ],
                 ),
               ),
