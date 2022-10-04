@@ -28,6 +28,12 @@ class FirstPage extends StatelessWidget {
             );
           }),
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: (){
+            Navigator.pushNamed(context, "/post");
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

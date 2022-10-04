@@ -7,6 +7,7 @@ import 'package:str_gram_beta/home/home_page.dart';
 import 'package:str_gram_beta/login/login_page.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
+import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/register/register_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
 import 'package:str_gram_beta/top/top_page.dart';
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
         "/notification": (context) => const NotificationPage(),
         "/myPage": (context) => const MyPage(),
         "/registerUserDetails": (context) => const RegisterUserDetailsPage(),
+        "/post": (context) => const PostPage(),
         // "/editUserDetails": (context) => EditUserDetailsPage("", ""),
       },
     );
