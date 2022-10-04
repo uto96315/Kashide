@@ -28,6 +28,7 @@ class LoginPage extends StatelessWidget {
                     // メールアドレスの入力欄
                     TextField(
                       controller: model.loginEmailController,
+                      autofocus: true,
                       decoration: const InputDecoration(
                           labelText: 'メールアドレス'
                       ),

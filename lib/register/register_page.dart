@@ -29,6 +29,7 @@ class RegisterPage extends StatelessWidget {
                   // メールアドレスの入力欄
                   TextField(
                     controller: model.registerEmailController,
+                    autofocus: true,
                     decoration: const InputDecoration(labelText: 'メールアドレス'),
                     onChanged: (text) {
                       model.setEmail(text);
