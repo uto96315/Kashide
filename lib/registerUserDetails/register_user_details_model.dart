@@ -1,12 +1,17 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 
 class RegisterUserDetailsModel extends ChangeNotifier {
 
   var user = FirebaseAuth.instance.currentUser;
+  final picker = ImagePicker();
 
   final userNameController = TextEditingController();
   final userIntroductionController = TextEditingController();
@@ -17,15 +22,19 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   var userFavorite = []; // ユーザーの好みを入れる
   String? userGender; // ユーザーの性別
   List<String> genderList = ["男性", "女性", "ノンバイナリー"];
+  File? imageFile;
+  String? storageURL;
 
 
   bool isLoading = false;
 
+  // ローディング開始
   void startLoading() {
     isLoading = true;
     notifyListeners();
   }
 
+  // ローディング終了
   void endLoading() {
     isLoading = false;
     notifyListeners();
@@ -64,11 +73,6 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void test() {
-    print("${userName},${userAge},${userIntroduction},${userGender},${userFavorite}");
-  }
-
-
   // 新規登録用の処理
   Future registerUserData() async{
     var uid = user?.uid;
@@ -80,6 +84,14 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     userAge ??= "未設定";
     userGender ??= "未設定";
     userIntroduction ??= "未設定";
+    storageURL ??= "";
+
+    // ファイルが選択されていればStorageに保存する
+    if(imageFile != null) {
+      await uploadImg();
+    }
+
+    print(storageURL ?? "URLが取得できませんでした");
 
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
@@ -91,9 +103,32 @@ class RegisterUserDetailsModel extends ChangeNotifier {
         "age": userAge,
         "gender": userGender,
         "introduction": userIntroduction,
-        "createdAt": DateTime.now()
+        "createdAt": DateTime.now(),
+        "iconUrl": storageURL
       });
     }
-    print("ユーザーデータを保存しました。uid:${uid}");
+  }
+
+  // image_picker
+  Future pickImage() async{
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if(pickedFile != null) {
+      imageFile = File(pickedFile.path);
+    }
+    notifyListeners();
+  }
+
+
+  // storageにアップする処理
+  Future uploadImg() async{
+    var uid = user?.uid;
+    try {
+      final storageRef = FirebaseStorage.instance.ref("users/$uid");
+      final task = await storageRef.putFile(imageFile!);
+      storageURL = await task.ref.getDownloadURL();
+    } catch(e) {
+      print(e);
+      print(imageFile!);
+    }
   }
 }
