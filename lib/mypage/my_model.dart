@@ -11,6 +11,7 @@ class MyModel extends ChangeNotifier {
   String? userIntroduction;
   String? userAge;
   String? userGender;
+  String? userImageURL;
   List<dynamic>? userFavorite;
 
   // ユーザー情報の取得
@@ -26,6 +27,7 @@ class MyModel extends ChangeNotifier {
     userAge = data?["age"];
     userGender = data?["gender"];
     userFavorite = data?["favorite"];
+    userImageURL = data?["imgURL"];
 
     notifyListeners();
   }

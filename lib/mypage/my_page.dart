@@ -24,6 +24,17 @@ class MyPage extends StatelessWidget {
                   width: MediaQuery.of(context).size.width*0.9,
                   child: Column(
                     children: [
+
+                      // ユーザーアイコン
+                      SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: (model.userImageURL != null)
+                          ? Image.network(model.userImageURL!)
+                          : null
+                      ),
+
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
