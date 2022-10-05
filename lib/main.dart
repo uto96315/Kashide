@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:str_gram_beta/first/first_page.dart';
+import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:str_gram_beta/home/home_page.dart';
 import 'package:str_gram_beta/login/login_page.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         "/login": (context) => const LoginPage(),
         "/register": (context) => const RegisterPage(),
         "/home": (context) => HomePage(),
-        "/first": (context) => const FirstPage(),
+        "/first": (context) => const TimelinePage(),
         "/search": (context) => const SearchPage(),
         "/notification": (context) => const NotificationPage(),
         "/myPage": (context) => const MyPage(),

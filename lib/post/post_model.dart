@@ -14,6 +14,7 @@ class PostModel extends ChangeNotifier {
   String? lyrics;
   String? singerName;
   String? singName;
+  String? userName;
 
   // 歌詞をセットする処理
   void setLyrics(String lyrics) {
@@ -36,13 +37,13 @@ class PostModel extends ChangeNotifier {
   // 投稿する処理
   Future post() async{
     var uid = user?.uid;
-    final doc = FirebaseFirestore.instance.collection("posts").doc(uid);
+    final doc = FirebaseFirestore.instance.collection("posts");
 
-    await doc.set({
+    await doc.add({
       "artist": singerName ?? "不明",
       "likeCount": 0,
       "posterId": uid,
-      "tags": "null",
+      "tags": ["失恋", "恋愛"],  // todo: ここは後から変更する
       "text": lyrics,
       "singName": singName ?? "不明"
     });
