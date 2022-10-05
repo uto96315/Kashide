@@ -18,110 +18,120 @@ class RegisterPage extends StatelessWidget {
         appBar: AppBar(
           title: const Text("新規登録"),
         ),
-        body: Center(
-          child: Consumer<RegisterModel>(builder: (context, model, child) {
-            return SizedBox(
-              width: MediaQuery.of(context).size.width * 0.8,
-              child: Column(
-                children: [
-                  const SizedBox(height: 100),
+        body: SingleChildScrollView(
+          child: Center(
+            child: Consumer<RegisterModel>(builder: (context, model, child) {
+              return SizedBox(
+                width: MediaQuery.of(context).size.width * 0.8,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 50),
 
-                  // メールアドレスの入力欄
-                  TextField(
-                    controller: model.registerEmailController,
-                    autofocus: true,
-                    decoration: const InputDecoration(labelText: 'メールアドレス'),
-                    onChanged: (text) {
-                      model.setEmail(text);
-                    },
-                  ),
-                  const SizedBox(height: 30),
-
-                  // パスワード入力欄
-                  TextField(
-                    controller: model.registerPasswordController,
-                    obscureText: model.passObscure,
-                    decoration: InputDecoration(
-                        labelText: 'パスワード',
-                        suffixIcon: IconButton(
-                          icon: Icon((model.passObscure) ? Icons.visibility_off : Icons.visibility ),
-                          onPressed: (){
-                            model.changeObscure();
-                          },
-                        )
+                    // メールアドレスの入力欄
+                    TextField(
+                      controller: model.registerEmailController,
+                      autofocus: true,
+                      decoration: const InputDecoration(labelText: 'メールアドレス'),
+                      onChanged: (text) {
+                        model.setEmail(text);
+                      },
                     ),
-                    onChanged: (text) {
-                      model.setPassword(text);
-                    },
-                  ),
-                  const SizedBox(height: 150),
+                    const SizedBox(height: 30),
 
-                  // 利用規約同意ステップ
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Checkbox(
-                          value: model.consent,
-                          onChanged: (value) {
-                            model.setConsent(value!);
-                          }),
+                    // パスワード入力欄
+                    TextField(
+                      controller: model.registerPasswordController,
+                      obscureText: model.passObscure,
+                      decoration: InputDecoration(
+                          labelText: 'パスワード',
+                          suffixIcon: IconButton(
+                            icon: Icon((model.passObscure) ? Icons.visibility_off : Icons.visibility ),
+                            onPressed: (){
+                              model.changeObscure();
+                            },
+                          )
+                      ),
+                      onChanged: (text) {
+                        model.setPassword(text);
+                      },
+                    ),
+                    const SizedBox(height: 70),
 
-                      // 利用規約同意ステップ
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "利用規約",
-                              style: const TextStyle(color: Colors.blue),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  launch(
-                                      'https://uto96315.github.io/VtIL_privacy_policy/');
+                    // 利用規約同意ステップ
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Checkbox(
+                            value: model.consent,
+                            onChanged: (value) {
+                              model.setConsent(value!);
+                            }),
+
+                        // 利用規約同意ステップ
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: "利用規約",
+                                style: const TextStyle(color: Colors.blue),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    launch(
+                                        'https://uto96315.github.io/VtIL_privacy_policy/');
+                                  },
+                              ),
+                              const TextSpan(
+                                text: "に同意する",
+                                style: TextStyle(color: Colors.black),
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 50),
+
+                    // 新規登録ボタン
+                    SizedBox(
+                      width: 200,
+                      height: 50,
+                      child: ElevatedButton(
+                          onPressed: (model.consent == false)
+                              ? null
+                              : () async {
+                                  model.startLoading();
+
+                                  // 成功ならFirstAccessとしてEditUserPageに遷移させる
+                                  try {
+                                    await model.signIn();
+                                    await Navigator.pushNamed(context, "/registerUserDetails");
+                                  } catch (e) {
+                                    final snackBar = SnackBar(
+                                      backgroundColor: Colors.red,
+                                      content: Text(e.toString()),
+                                    );
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(snackBar);
+                                  } finally {
+                                    model.endLoading();
+                                  }
                                 },
-                            ),
-                            const TextSpan(
-                              text: "に同意する",
-                              style: TextStyle(color: Colors.black),
-                            )
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 50),
+                          child: const Text("登録する")),
+                    ),
+                    const SizedBox(height: 30),
 
-                  // 新規登録ボタン
-                  SizedBox(
-                    width: 200,
-                    height: 50,
-                    child: ElevatedButton(
-                        onPressed: (model.consent == false)
-                            ? null
-                            : () async {
-                                model.startLoading();
-
-                                // 成功ならFirstAccessとしてEditUserPageに遷移させる
-                                try {
-                                  await model.signIn();
-                                  await Navigator.pushNamed(context, "/registerUserDetails");
-                                } catch (e) {
-                                  final snackBar = SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text(e.toString()),
-                                  );
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(snackBar);
-                                } finally {
-                                  model.endLoading();
-                                }
-                              },
-                        child: const Text("登録する")),
-                  ),
-                  const SizedBox(height: 30),
-                ],
-              ),
-            );
-          }),
+                    // ログインに遷移
+                    TextButton(
+                        onPressed: (){
+                          Navigator.pushNamed(context, "/login");
+                        },
+                        child: const Text("またはログイン")
+                    )
+                  ],
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );

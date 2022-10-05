@@ -26,7 +26,7 @@ class PostPage extends StatelessWidget {
                     maxLength: 300,
                     autofocus: true,
                     decoration: const InputDecoration(
-                      labelText: "心に響いた歌詞を入力しましょう",
+                      labelText: "心に響いた歌詞を入力しましょう(必須)",
                     ),
                     onChanged: (text) {
                       model.setLyrics(text);
@@ -40,7 +40,7 @@ class PostPage extends StatelessWidget {
                     maxLength: 50,
                     autofocus: true,
                     decoration: const InputDecoration(
-                      labelText: "歌手名",
+                      labelText: "歌手名(任意)",
                     ),
                     onChanged: (text) {
                       model.setSinger(text);
@@ -54,7 +54,7 @@ class PostPage extends StatelessWidget {
                     maxLength: 50,
                     autofocus: true,
                     decoration: const InputDecoration(
-                      labelText: "曲名",
+                      labelText: "曲名(任意)",
                     ),
                     onChanged: (text) {
                       model.setSing(text);
@@ -64,7 +64,9 @@ class PostPage extends StatelessWidget {
 
                   // 投稿ボタン
                   ElevatedButton(
-                      onPressed: () async {},
+                      onPressed: () async {
+                        await model.post();
+                      },
                       child: const Padding(
                         padding: EdgeInsets.only(
                             top: 10, bottom: 10, left: 50, right: 50),

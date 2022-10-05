@@ -7,20 +7,21 @@ class TopPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox( height: 100 ),
-            TextButton(
-                onPressed: (){
+            const SizedBox(height: 100),
+            OutlinedButton(
+                onPressed: () {
                   Navigator.pushNamed(context, "/login");
                 },
-                child: const Text("はじめる")
-            ),
-            const SizedBox( height: 100 ),
+                child: const Padding(
+                  padding: EdgeInsets.only(top: 20, bottom: 20, right: 50, left: 50),
+                  child: Text("はじめる", style: TextStyle( fontSize: 16, fontWeight: FontWeight.bold )),
+                )),
+            const SizedBox(height: 100),
           ],
         ),
       ),
