@@ -23,13 +23,31 @@ class RegisterUserDetailsPage extends StatelessWidget {
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: Column(
                   children: [
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 50),
+
+                    GestureDetector(
+                      onTap: (){
+                        print("画像登録ボタンがタップされました");
+                      },
+                      child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all( color: Colors.grey ),
+                            borderRadius: BorderRadius.circular(100),
+                            color: Colors.grey.shade200
+                          ),
+                          child: Icon(Icons.person)
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text("タップで画像を登録"),
+                    const SizedBox(height: 50),
 
                     // ユーザーネーム入力欄
                     TextField(
                       maxLength: 50,
                       controller: model.userNameController,
-                      autofocus: true,
                       decoration:
                           const InputDecoration(labelText: "ユーザーネーム(必須)"),
                       onChanged: (text) {
