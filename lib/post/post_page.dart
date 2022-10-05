@@ -8,7 +8,7 @@ class PostPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<PostModel>(
-      create: (_) => PostModel(),
+      create: (_) => PostModel()..getUserData(),
       child: Scaffold(
         appBar: AppBar(title: const Icon(Icons.edit)),
         body: Center(
