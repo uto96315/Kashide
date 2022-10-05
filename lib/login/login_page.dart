@@ -23,7 +23,7 @@ class LoginPage extends StatelessWidget {
                 width: MediaQuery.of(context).size.width*0.8,
                 child: Column(
                   children: [
-                    const SizedBox( height: 100 ),
+                    const SizedBox( height: 50 ),
 
                     // メールアドレスの入力欄
                     TextField(
@@ -55,7 +55,7 @@ class LoginPage extends StatelessWidget {
                         model.setPassword(text);
                       },
                     ),
-                    const SizedBox( height: 200 ),
+                    const SizedBox( height: 100 ),
 
                     // ログインボタン
                     SizedBox(
