@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:str_gram_beta/first/first_page.dart';
+import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
@@ -33,7 +33,7 @@ class HomePage extends StatelessWidget {
         body: const Center(
           child: TabBarView(
             children: [
-              FirstPage(),
+              TimelinePage(),
               TopPage(),
               SearchPage(),
               NotificationPage(),
