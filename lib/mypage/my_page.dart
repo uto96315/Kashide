@@ -26,36 +26,56 @@ class MyPage extends StatelessWidget {
                     children: [
 
                       // ユーザーアイコン
-                      SizedBox(
-                          width: 100,
-                          height: 100,
-                          child: (model.userImageURL != null)
-                          ? Image.network(model.userImageURL!)
-                          : null
-                      ),
-
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(model.userName ?? "読み込み中...", style: const TextStyle( fontSize: 18 )),
-                          const SizedBox( width: 10 ),
+                          Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                  border: Border.all( color: Colors.grey ),
+                                  borderRadius: BorderRadius.circular(100),
+                                  color: Colors.grey.shade200,
+                                  image: (model.userImageURL != null)
+                                    ? DecorationImage(image: NetworkImage(model.userImageURL!), fit: BoxFit.cover)
+                                    : null
+                              ),
+                              child: (model.userImageURL == null)
+                                  ? Icon(Icons.person)
+                                  : null
+                          ),
                           OutlinedButton(
                               onPressed: (){
                                 Navigator.push(context, MaterialPageRoute(builder: (context) =>
                                     EditUserDetailsPage(
-                                        model.userName ?? "",
-                                        model.userAge ?? "",
-                                        model.userIntroduction ?? "",
-                                        model.userGender ?? "",
-                                        model.userFavorite!,
+                                      model.userName ?? "",
+                                      model.userAge ?? "",
+                                      model.userIntroduction ?? "",
+                                      model.userGender ?? "",
+                                      model.userFavorite!,
                                     )));
                               },
                               child: const Text("編集"))
                         ],
                       ),
-                      const SizedBox( height: 10 ),
-                      Text(model.userIntroduction ?? "", style: const TextStyle( fontSize: 16 )),
+                      const SizedBox( height: 20 ),
+
+
+                      // ユーザーネーム
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(model.userName ?? "読み込み中...", style: const TextStyle( fontSize: 18 )),
+                          const SizedBox( width: 10 ),
+                        ],
+                      ),
+                      const SizedBox( height: 15 ),
+
+                      // 自己紹介文
+                      Text(
+                          model.userIntroduction ?? "",
+                          style: const TextStyle( fontSize: 16 )
+                      ),
 
                       const SizedBox( height: 400 ),
                       SizedBox(

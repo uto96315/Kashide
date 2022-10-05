@@ -123,7 +123,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   Future uploadImg() async{
     var uid = user?.uid;
     try {
-      final storageRef = FirebaseStorage.instance.ref("users/$uid");
+      final storageRef = FirebaseStorage.instance.ref("userIcons").child("$uid").child("userIcon");
       final task = await storageRef.putFile(imageFile!);
       storageURL = await task.ref.getDownloadURL();
     } catch(e) {

@@ -15,7 +15,6 @@ class MyModel extends ChangeNotifier {
   List<dynamic>? userFavorite;
 
   // ユーザー情報の取得
-  // todo: なぜか取得がうまくいっていない...
   Future getUserData() async{
     var uid = user?.uid;
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
@@ -27,7 +26,7 @@ class MyModel extends ChangeNotifier {
     userAge = data?["age"];
     userGender = data?["gender"];
     userFavorite = data?["favorite"];
-    userImageURL = data?["imgURL"];
+    userImageURL = data?["iconUrl"];
 
     notifyListeners();
   }

@@ -29,6 +29,8 @@ class RegisterUserDetailsPage extends StatelessWidget {
                       onTap: ()async{
                         await model.pickImage();
                       },
+
+                      // 画像
                       child: Container(
                           width: 100,
                           height: 100,
