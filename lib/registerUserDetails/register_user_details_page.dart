@@ -26,8 +26,8 @@ class RegisterUserDetailsPage extends StatelessWidget {
                     const SizedBox(height: 50),
 
                     GestureDetector(
-                      onTap: (){
-                        print("画像登録ボタンがタップされました");
+                      onTap: ()async{
+                        await model.pickImage();
                       },
                       child: Container(
                           width: 100,
@@ -35,13 +35,18 @@ class RegisterUserDetailsPage extends StatelessWidget {
                           decoration: BoxDecoration(
                             border: Border.all( color: Colors.grey ),
                             borderRadius: BorderRadius.circular(100),
-                            color: Colors.grey.shade200
+                            color: Colors.grey.shade200,
+                            image: (model.imageFile != null)
+                                ? DecorationImage(image: FileImage(model.imageFile!), fit: BoxFit.cover)
+                                : null,
                           ),
-                          child: Icon(Icons.person)
+                          child: (model.imageFile != null)
+                              ? null
+                              : const Icon(Icons.person)
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text("タップで画像を登録"),
+                    const Text("タップで画像を変更"),
                     const SizedBox(height: 50),
 
                     // ユーザーネーム入力欄
