@@ -214,6 +214,7 @@ class EditUserDetailsPage extends StatelessWidget {
                         )),
                     const SizedBox( height: 100 ),
 
+                    // アカウント削除ボタン
                     SizedBox(
                       width: 200,
                       height: 40,
@@ -225,6 +226,7 @@ class EditUserDetailsPage extends StatelessWidget {
                               await model.deleteUser();
                               Navigator.popUntil(context, (route) => route.isFirst);
                             } catch(e) {
+                              print(e.toString());
                               final snackBar = SnackBar(
                                 backgroundColor: Colors.red,
                                 content: Text(e.toString()),
@@ -235,8 +237,9 @@ class EditUserDetailsPage extends StatelessWidget {
                               model.endLoading();
                             }
                           },
-                          child: const Text("アカウントを削除する"),
                         style: ElevatedButton.styleFrom( primary: Colors.red ),
+
+                        child: const Text("アカウントを削除する"),
                       ),
                     ),
 
