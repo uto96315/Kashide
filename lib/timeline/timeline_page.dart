@@ -40,7 +40,7 @@ class TimelinePage extends StatelessWidget {
                                         padding: const EdgeInsets.only(left: 20),
                                         child: Text(post.text,
                                             textAlign: TextAlign.left,
-                                            style: const TextStyle(fontSize: 16)),
+                                            style: const TextStyle(fontSize: 16, height: 1.5)),
                                       ),
                                     ),
                                   ),
