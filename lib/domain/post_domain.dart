@@ -1,7 +1,7 @@
 
 
 class Posts {
-  Posts(this.artist, this.singName, this.text, this.posterId, this.likeCount, this.tags);
+  Posts(this.artist, this.singName, this.text, this.posterId, this.likeCount, this.tags, this.userName);
 
   String artist;
   String singName;
@@ -9,4 +9,5 @@ class Posts {
   String posterId;
   int likeCount;
   List<dynamic> tags;
+  String userName;
 }

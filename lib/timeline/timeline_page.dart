@@ -31,6 +31,8 @@ class TimelinePage extends StatelessWidget {
                                   const EdgeInsets.only(top: 20, bottom: 10),
                               child: Column(
                                 children: [
+                                  // ユーザーネーム
+                                  Text(post.userName),
                                   // 歌詞
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width*0.9,
