@@ -45,7 +45,8 @@ class PostModel extends ChangeNotifier {
       "posterId": uid,
       "tags": ["失恋", "恋愛"],  // todo: ここは後から変更する
       "text": lyrics,
-      "singName": singName ?? "不明"
+      "singName": singName ?? "不明",
+      "createdAt": DateTime.now()
     });
   }
 }

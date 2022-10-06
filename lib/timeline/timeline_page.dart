@@ -18,7 +18,7 @@ class TimelinePage extends StatelessWidget {
           child: Center(
             child: Consumer<TimelineModel>(builder: (context, model, child) {
               return Column(children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 10),
                 Column(
                   children: model.postsList
                       .map((post) => Container(
@@ -28,7 +28,7 @@ class TimelinePage extends StatelessWidget {
                                     bottom: BorderSide(color: Colors.grey))),
                             child: Padding(
                               padding:
-                                  const EdgeInsets.only(top: 20, bottom: 20),
+                                  const EdgeInsets.only(top: 20, bottom: 10),
                               child: Column(
                                 children: [
                                   // 歌詞
@@ -40,7 +40,7 @@ class TimelinePage extends StatelessWidget {
                                         padding: const EdgeInsets.only(left: 20),
                                         child: Text(post.text,
                                             textAlign: TextAlign.left,
-                                            style: const TextStyle(fontSize: 16)),
+                                            style: const TextStyle(fontSize: 16, height: 1.5)),
                                       ),
                                     ),
                                   ),
@@ -53,10 +53,10 @@ class TimelinePage extends StatelessWidget {
                                     children: [
                                       const Text("歌手："),
                                       Text(post.artist),
-                                      const SizedBox(width: 40),
+                                      const SizedBox(width: 20),
                                       const Text("曲名："),
                                       Text(post.singName),
-                                      const SizedBox(width: 30),
+                                      const SizedBox(width: 15),
                                     ],
                                   ),
                                 ],
