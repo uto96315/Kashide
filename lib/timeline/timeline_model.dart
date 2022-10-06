@@ -19,8 +19,7 @@ class TimelineModel extends ChangeNotifier {
 
   // 投稿を取得する処理
   Future getPosts() async {
-    final doc = FirebaseFirestore.instance.collection("posts");
-    // .orderBy("createdAt", descending: true)
+    final doc = FirebaseFirestore.instance.collection("posts").orderBy("createdAt", descending: true);
     final snapshot = await doc.get();
     final posts = snapshot.docs
         .map((doc) => Posts(doc["artist"], doc["singName"], doc["text"],
