@@ -29,36 +29,86 @@ class TimelinePage extends StatelessWidget {
                             child: Padding(
                               padding:
                                   const EdgeInsets.only(top: 20, bottom: 10),
-                              child: Column(
+                              child: Row(
                                 children: [
-                                  // ユーザーネーム
-                                  Text(post.userName),
-                                  // 歌詞
-                                  SizedBox(
-                                    width: MediaQuery.of(context).size.width*0.9,
-                                    child: Container(
-                                      alignment: Alignment.centerLeft,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(left: 20),
-                                        child: Text(post.text,
-                                            textAlign: TextAlign.left,
-                                            style: const TextStyle(fontSize: 16, height: 1.5)),
-                                      ),
+                                  const SizedBox(width: 10),
+                                  // ユーザー画像
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(50),
+                                      color: Colors.grey.shade200,
+                                      image: (post.userImageUrl != "")
+                                          ? DecorationImage(
+                                              image: NetworkImage(
+                                                  post.userImageUrl),
+                                              fit: BoxFit.cover)
+                                          : null,
                                     ),
+                                    child: (post.userImageUrl != "")
+                                      ? null
+                                      : const Icon(Icons.person)
                                   ),
-                                  const SizedBox(height: 20),
 
-                                  // 曲名などのデータ
-                                  // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
+                                  Column(
                                     children: [
-                                      const Text("歌手："),
-                                      Text(post.artist),
-                                      const SizedBox(width: 20),
-                                      const Text("曲名："),
-                                      Text(post.singName),
-                                      const SizedBox(width: 15),
+                                      // ユーザーネーム
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.8,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(width: 15),
+                                            Text(post.userName),
+                                            const SizedBox(width: 10)
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+
+                                      // 歌詞
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.8,
+                                        child: Container(
+                                          alignment: Alignment.centerLeft,
+                                          child: Padding(
+                                            padding:
+                                                const EdgeInsets.only(left: 20),
+                                            child: Text(post.text,
+                                                textAlign: TextAlign.left,
+                                                style: const TextStyle(
+                                                    fontSize: 16, height: 1.5)),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+
+                                      // 曲名などのデータ
+                                      // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
+                                      SizedBox(
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.8,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            const Text("歌手："),
+                                            Text(post.artist),
+                                            const SizedBox(width: 20),
+                                            const Text("曲名："),
+                                            Text(post.singName),
+                                            const SizedBox(width: 15),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -66,7 +116,7 @@ class TimelinePage extends StatelessWidget {
                             ),
                           ))
                       .toList(),
-                )
+                ),
               ]);
             }),
           ),

@@ -1,19 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-
+import 'package:str_gram_beta/domain/user_domain.dart';
 import '../domain/post_domain.dart';
 
 class TimelineModel extends ChangeNotifier {
   var user = FirebaseAuth.instance.currentUser;
-  List<Posts> postsList = []; // 投稿全体を格納する
+  List<Post> postsList = []; // 投稿全体を格納する
+  List<UserFile> userList = []; // ユーザー全体を格納する
 
   // ユーザー情報を取得する関数
   Future getUserData(String uid) async {
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
     final snapshot = await doc.get();
-    var userName = snapshot["userName"];
-    return userName;
+    final data = snapshot.data();
+    final userName = data?["userName"];
+    final userImageUrl = data?["iconUrl"];
+    notifyListeners();
+    return [userName, userImageUrl];
   }
 
   // 投稿を取得する処理
@@ -22,24 +26,26 @@ class TimelineModel extends ChangeNotifier {
         .collection("posts")
         .orderBy("createdAt", descending: true);
     final snapshot = await doc.get();
-    final posts = snapshot.docs
-        .map((doc) =>
-              Posts(
-                  doc["artist"],
-                  doc["singName"],
-                  doc["text"],
-                  doc["posterId"],
-                  doc["likeCount"],
-                  doc["tags"],
-                  "${ getUserData(doc["posterId"]) }"
-              ),
-        )
-        .toList();
 
-    // List<Model> models = await Future.wait(docs.map((doc) => _fromDoc(doc)).toList());
+    final userInfo = await Future.wait(
+        snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
 
-    postsList = posts;
-    print("投稿を読み込みました");
+
+    postsList = snapshot.docs.asMap().entries.map((entry) {
+      int index = entry.key;
+      final doc = entry.value;
+      return Post(
+          doc["artist"],
+          doc["singName"],
+          doc["text"],
+          doc["posterId"],
+          doc["likeCount"],
+          doc["tags"],
+          "${userInfo[index][0]}",
+          "${userInfo[index][1]}"
+          );
+    }).toList();
+    debugPrint("投稿を読み込みました");
     notifyListeners();
   }
 }
