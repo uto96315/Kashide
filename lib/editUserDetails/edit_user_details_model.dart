@@ -169,6 +169,25 @@ class EditUserDetailsModel extends ChangeNotifier {
     // Authから削除
     await user?.delete();
     await FirebaseAuth.instance.signOut();
+
+    // 紐づく投稿を削除する
+    await deletePosts();
+
+    // Storageの画像を削除する
+  }
+
+
+  // 削除するユーザーの投稿を削除する
+  Future deletePosts() async{
+    var uid = user?.uid;
+    final doc = FirebaseFirestore.instance.collection("posts")
+                  .where("posterId", isEqualTo: uid);
+    final data = await doc.get();
+    // 削除はForEachで回す
+    data.docs.forEach((doc) async{
+      await doc.reference.delete();
+      print(doc.id);
+    });
   }
 
 

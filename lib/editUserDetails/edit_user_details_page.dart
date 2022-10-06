@@ -242,7 +242,6 @@ class EditUserDetailsPage extends StatelessWidget {
                         child: const Text("アカウントを削除する"),
                       ),
                     ),
-
                     const SizedBox( height: 100 ),
                   ],
                 ),
