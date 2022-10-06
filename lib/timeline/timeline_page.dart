@@ -32,13 +32,16 @@ class TimelinePage extends StatelessWidget {
                               child: Column(
                                 children: [
                                   // 歌詞
-                                  Container(
-                                    alignment: Alignment.centerLeft,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(left: 20),
-                                      child: Text(post.text,
-                                          textAlign: TextAlign.left,
-                                          style: const TextStyle(fontSize: 16)),
+                                  SizedBox(
+                                    width: MediaQuery.of(context).size.width*0.9,
+                                    child: Container(
+                                      alignment: Alignment.centerLeft,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(left: 20),
+                                        child: Text(post.text,
+                                            textAlign: TextAlign.left,
+                                            style: const TextStyle(fontSize: 16)),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 20),
