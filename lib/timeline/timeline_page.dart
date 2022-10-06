@@ -30,12 +30,13 @@ class TimelinePage extends StatelessWidget {
                               padding:
                                   const EdgeInsets.only(top: 20, bottom: 10),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(width: 10),
                                   // ユーザー画像
                                   Container(
-                                    width: 50,
-                                    height: 50,
+                                    width: MediaQuery.of(context).size.width*0.1,
+                                    height: MediaQuery.of(context).size.width*0.1,
                                     decoration: BoxDecoration(
                                       border: Border.all(color: Colors.grey),
                                       borderRadius: BorderRadius.circular(50),
@@ -100,11 +101,11 @@ class TimelinePage extends StatelessWidget {
                                           mainAxisAlignment:
                                               MainAxisAlignment.end,
                                           children: [
-                                            const Text("歌手："),
-                                            Text(post.artist),
+                                            const Text("歌手：", style: TextStyle( fontSize: 11)),
+                                            Text(post.artist, style: const TextStyle( fontSize: 11)),
                                             const SizedBox(width: 20),
-                                            const Text("曲名："),
-                                            Text(post.singName),
+                                            const Text("曲名：", style: TextStyle( fontSize: 11)),
+                                            Text(post.singName, style: const TextStyle( fontSize: 11)),
                                             const SizedBox(width: 15),
                                           ],
                                         ),
