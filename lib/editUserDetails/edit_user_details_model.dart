@@ -1,19 +1,25 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 
 class EditUserDetailsModel extends ChangeNotifier {
-  EditUserDetailsModel(this.userName, this.userIntroduction, this.userGender, this.userAge, this.userFavorite) {
+  EditUserDetailsModel(this.userName, this.userIntroduction, this.userGender, this.userAge, this.userFavorite, this.userImageUrl) {
     userNameController.text = userName ?? "名無しさん";
     userAgeController.text = userAge ?? "未設定";
     userIntroductionController.text = userIntroduction ?? "未設定";
     userGenderController.text = userGender ?? "未設定";
     userFavorite = userFavorite;
+    userImageUrl = userImageUrl;
   }
 
   var user = FirebaseAuth.instance.currentUser;
+  final picker = ImagePicker();
 
   final userNameController = TextEditingController();
   final userIntroductionController = TextEditingController();
@@ -27,6 +33,11 @@ class EditUserDetailsModel extends ChangeNotifier {
   List<dynamic> userFavorite = []; // ユーザーの好みを入れる
   String? userGender; // ユーザーの性別
   List<String> genderList = ["男性", "女性", "ノンバイナリー"];
+  String? userImageUrl; // 引数で受け取ってくるURL
+
+  bool isSetted = false;
+  File? imageFile; // セットされたファイル本体
+  String? storageURL; // 新たにStorageにセットしたURL
 
   List<String> favoriteList = [
     "邦楽",
@@ -115,6 +126,13 @@ class EditUserDetailsModel extends ChangeNotifier {
     userGender ??= "未設定";
     userIntroduction ??= "未設定";
 
+
+    // 変更されていた場合には変更後を採用する
+    if(isSetted == true) {
+      await uploadImg();
+      notifyListeners();
+    }
+
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
     if(user != null) {
@@ -130,13 +148,15 @@ class EditUserDetailsModel extends ChangeNotifier {
         "gender": userGender,
         "introduction": userIntroduction,
         "favorite": userFavorite,
-        "createdAt": DateTime.now()
+        "createdAt": DateTime.now(),
+        "iconUrl": userImageUrl
       });
     }
   }
 
 
   // ユーザーの削除処理
+  // todo: 修正必要（消せていない）
   Future deleteUser() async{
     var uid = user?.uid;
 
@@ -161,5 +181,43 @@ class EditUserDetailsModel extends ChangeNotifier {
       "email": user?.email,
       "deletedAt": DateTime.now(),
     });
+  }
+
+
+  //　以下ストレージ関係の処理------
+
+  // 画像が変更されたかどうかのフラグ
+  void setIsSetted() {
+    if(isSetted == false) {
+      isSetted = true;
+    }
+    print("isSetted: ${isSetted}");
+    notifyListeners();
+  }
+
+
+  // image_picker
+  Future pickImage() async{
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if(pickedFile != null) {
+      imageFile = File(pickedFile.path);
+    }
+    setIsSetted(); // ここで変更されたかどうかのフラグを変更
+    notifyListeners();
+  }
+
+
+  // storageにアップする処理
+  Future uploadImg() async{
+    var uid = user?.uid;
+    try {
+      final storageRef = FirebaseStorage.instance.ref("userIcons").child("$uid").child("userIcon");
+      final task = await storageRef.putFile(imageFile!);
+      storageURL = await task.ref.getDownloadURL();
+      userImageUrl = storageURL; // ここで書き換え
+      print("画像を変更しました");
+    } catch(e) {
+      print(e);
+    }
   }
 }
