@@ -47,9 +47,9 @@ class RegisterUserDetailsPage extends StatelessWidget {
                               : const Icon(Icons.person)
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox( height: 10 ),
                     const Text("タップで画像を変更"),
-                    const SizedBox(height: 50),
+                    const SizedBox( height: 50 ),
 
                     // ユーザーネーム入力欄
                     TextField(
@@ -134,7 +134,8 @@ class RegisterUserDetailsPage extends StatelessWidget {
 
                     // 登録ボタン
                     ElevatedButton(
-                        onPressed: () async {
+                        onPressed: (model.canPush)
+                        ? () async {
                           model.startLoading();
 
                           try {
@@ -150,7 +151,11 @@ class RegisterUserDetailsPage extends StatelessWidget {
                           } finally {
                             model.endLoading();
                           }
-                        },
+                        }
+
+                        // canPushがfalseの場合には押下できないようにする
+                        : null,
+
                         child: const Padding(
                           padding: EdgeInsets.only(
                               top: 10, bottom: 10, left: 50, right: 50),

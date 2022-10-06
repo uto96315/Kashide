@@ -24,6 +24,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   List<String> genderList = ["男性", "女性", "ノンバイナリー"];
   File? imageFile;
   String? storageURL;
+  bool canPush = false;
 
 
   bool isLoading = false;
@@ -43,6 +44,12 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   // ユーザーネームのセット
   void setUserName(String name) {
     userName = name;
+    if(name.isNotEmpty) {
+      canPush = true;
+    }
+    if(name.isEmpty) {
+      canPush = false;
+    }
     notifyListeners();
   }
 
