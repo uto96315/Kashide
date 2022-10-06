@@ -162,13 +162,13 @@ class EditUserDetailsModel extends ChangeNotifier {
 
     await setDeletedUser(uid!); // 記録
 
+    // FireStoreから削除
+    final doc = FirebaseFirestore.instance.collection("users").doc(uid);
+    await doc.delete();
+
     // Authから削除
     await user?.delete();
     await FirebaseAuth.instance.signOut();
-
-    // FireStoreから削除
-    final doc = FirebaseFirestore.instance.collection("users") .doc(uid);
-    await doc.delete();
   }
 
 
