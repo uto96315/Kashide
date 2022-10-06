@@ -3,17 +3,18 @@ import 'package:provider/provider.dart';
 import 'edit_user_details_model.dart';
 
 class EditUserDetailsPage extends StatelessWidget {
-   EditUserDetailsPage(this.userName, this.userAge,this.userIntroduction, this.userGender,this.userFavorite, {super.key});
+   EditUserDetailsPage(this.userName, this.userAge,this.userIntroduction, this.userGender,this.userFavorite, this.userImageUrl, {super.key});
    String userName;
    String userAge;
    String userIntroduction;
    String userGender;
    List<dynamic> userFavorite;
+   String userImageUrl;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditUserDetailsModel>(
-      create: (_) => EditUserDetailsModel(userName, userIntroduction, userGender, userAge, userFavorite)..test(),
+      create: (_) => EditUserDetailsModel(userName, userIntroduction, userGender, userAge, userFavorite, userImageUrl),
       child: Scaffold(
         appBar: AppBar(
           title: const Text("アカウント編集"),
@@ -27,6 +28,30 @@ class EditUserDetailsPage extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 30),
+
+                    GestureDetector(
+                      onTap: ()async{
+                        await model.pickImage();
+                      },
+
+                      // アイコン画像
+                      child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all( color: Colors.grey ),
+                            borderRadius: BorderRadius.circular(100),
+                            color: Colors.grey.shade200,
+                            image: (model.imageFile == null)
+                                ? DecorationImage(image: NetworkImage(model.userImageUrl!), fit: BoxFit.cover)
+                                : DecorationImage(image: FileImage(model.imageFile!), fit: BoxFit.cover),
+                          ),
+                          child: (model.imageFile != null)
+                              ? null
+                              : const Icon(Icons.person)
+                      ),
+                    ),
+
 
                     // ユーザーネーム入力欄
                     TextField(

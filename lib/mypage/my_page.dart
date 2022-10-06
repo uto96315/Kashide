@@ -53,6 +53,7 @@ class MyPage extends StatelessWidget {
                                       model.userIntroduction ?? "",
                                       model.userGender ?? "",
                                       model.userFavorite!,
+                                      model.userImageURL ?? ""  // todo: nullにするとエラーになるので他も修正必要
                                     )));
                               },
                               child: const Text("編集"))
