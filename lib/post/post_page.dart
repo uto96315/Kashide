@@ -66,9 +66,11 @@ class PostPage extends StatelessWidget {
                     // ジャンル追加欄
                     TextFormField(
                       controller: model.genreController,
+                      enabled: model.genreMaxLength,
+                      maxLength: 15,
                       decoration: const InputDecoration(
                         labelText: "ジャンル（最大三つ）",
-                        hintText: "エンターを押すことで追加できます"
+                        hintText: "エンターを押すことで追加できます",
                       ),
                       onFieldSubmitted: (text) {
                         model.setGenre(text);

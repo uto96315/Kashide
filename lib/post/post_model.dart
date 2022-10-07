@@ -18,6 +18,7 @@ class PostModel extends ChangeNotifier {
   String? userName;
   List<String> genres = [];
   bool canPush = false;
+  bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
 
   // 歌詞をセットする処理
   void setLyrics(String lyrics) {
@@ -49,6 +50,9 @@ class PostModel extends ChangeNotifier {
       return;
     } else {
       genres.add(genre);
+      if(genres.length == 3) {
+        genreMaxLength = false;
+      }
     }
 
     // 一度テキストフィールド内をクリアする
@@ -63,6 +67,9 @@ class PostModel extends ChangeNotifier {
   void deleteGenre(String genre) {
     if(genres.contains(genre)) {
       genres.remove(genre);
+    }
+    if(genreMaxLength == false) {
+      genreMaxLength = true;
     }
     notifyListeners();
   }
