@@ -7,6 +7,7 @@ import 'package:timeago/timeago.dart' as timeAgo;
 
 class TimelineModel extends ChangeNotifier {
   var user = FirebaseAuth.instance.currentUser;
+  var uid = FirebaseAuth.instance.currentUser?.uid;
   List<Post> postsList = []; // 投稿全体を格納する
 
   // ユーザー情報を取得する関数
@@ -43,7 +44,8 @@ class TimelineModel extends ChangeNotifier {
           doc["genres"],
           "${userInfo[index][0]}",
           "${userInfo[index][1]}",
-          createTimeMessage(doc["createdAt"].toDate())
+          createTimeMessage(doc["createdAt"].toDate()),
+          doc.id
           );
     }).toList();
     debugPrint("投稿を読み込みました");
@@ -55,5 +57,31 @@ class TimelineModel extends ChangeNotifier {
     final now = DateTime.now();
     final difference = now.difference(postDateTime);
     return timeAgo.format(now.subtract(difference), locale: "ja");
+  }
+
+
+
+  // 投稿を削除する処理
+  // todo: 処理後にダイアログを表示する
+  Future deletePosts(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts").doc(id);
+
+    await doc.delete();
+    notifyListeners();
+  }
+
+  // 投稿を報告する処理
+  // todo: 処理後にダイアログを表示する
+  Future reportPosts(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("reportedPosts");
+
+    await doc.add({
+      "id": id,
+      "reportedAt": DateTime.now(),
+      "posterId": uid
+    });
+    notifyListeners();
   }
 }
