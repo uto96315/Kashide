@@ -62,11 +62,15 @@ class TimelinePage extends StatelessWidget {
                                                 0.8,
                                         child: Row(
                                           mainAxisAlignment:
-                                              MainAxisAlignment.start,
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
-                                            const SizedBox(width: 15),
-                                            Text(post.userName),
-                                            const SizedBox(width: 10)
+                                            Row(
+                                              children: [
+                                                SizedBox(width: 15),
+                                                Text(post.userName),
+                                              ],
+                                            ),
+                                            Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
                                           ],
                                         ),
                                       ),

@@ -13,6 +13,7 @@ import 'package:str_gram_beta/search/search_page.dart';
 import 'package:str_gram_beta/top/top_page.dart';
 import 'registerUserDetails/register_user_details_page.dart';
 import 'firebase_options.dart';
+import 'package:timeago/timeago.dart' as timeAgo;
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,7 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  timeAgo.setLocaleMessages("ja", timeAgo.JaMessages()); // 〜分前で表示するため
   runApp(const MyApp());
 }
 
