@@ -168,6 +168,28 @@ class MyPage extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 20),
 
+                                      // ジャンル
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width*0.8,
+                                        child: Wrap(
+                                          runSpacing: 15,
+                                          spacing: 10,
+                                          children: post.genres.map((genre) =>
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                  border: Border.all( color: Colors.blue ),
+                                                  borderRadius: BorderRadius.circular(100),
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(10.0),
+                                                  child: Text(genre, style: const TextStyle( color: Colors.blue ),),
+                                                ),
+                                              )
+                                          ).toList(),
+                                        ),
+                                      ),
+                                      const SizedBox( height: 15 ),
+
                                       // 曲名などのデータ
                                       // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
                                       SizedBox(
