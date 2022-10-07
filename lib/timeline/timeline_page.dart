@@ -33,6 +33,7 @@ class TimelinePage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(width: 10),
+                                  
                                   // ユーザー画像
                                   Container(
                                     width: MediaQuery.of(context).size.width*0.1,
@@ -58,19 +59,41 @@ class TimelinePage extends StatelessWidget {
                                       // ユーザーネーム
                                       SizedBox(
                                         width:
-                                            MediaQuery.of(context).size.width *
-                                                0.8,
+                                            MediaQuery.of(context).size.width * 0.8,
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Row(
                                               children: [
-                                                SizedBox(width: 15),
+                                                const SizedBox(width: 15),
                                                 Text(post.userName),
                                               ],
                                             ),
+                                            const SizedBox( width: 10 ),
                                             Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
+                                            
+                                            // 報告及び削除ボタン
+                                            PopupMenuButton(
+                                                onSelected: (value)async{
+                                                  if(value == "delete") {
+                                                    await model.deletePosts(post.id);
+                                                  } else if (value == "report") {
+                                                    await model.reportPosts(post.id);
+                                                  }
+                                                },
+                                                itemBuilder: (BuildContext context) =>  [
+                                                  (post.posterId == model.uid)
+                                                  ? const PopupMenuItem(
+                                                    value: "delete",
+                                                    child: Text("削除する"),
+                                                    )
+                                                  : const PopupMenuItem(
+                                                    value: "report",
+                                                    child: Text("報告する"),
+                                                  )
+                                                ]
+                                            )
                                           ],
                                         ),
                                       ),
