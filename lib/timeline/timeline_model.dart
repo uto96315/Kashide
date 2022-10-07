@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:str_gram_beta/domain/user_domain.dart';
 import '../domain/post_domain.dart';
+import 'package:timeago/timeago.dart' as timeAgo;
 
 class TimelineModel extends ChangeNotifier {
   var user = FirebaseAuth.instance.currentUser;
@@ -42,10 +43,18 @@ class TimelineModel extends ChangeNotifier {
           doc["likeCount"],
           doc["tags"],
           "${userInfo[index][0]}",
-          "${userInfo[index][1]}"
+          "${userInfo[index][1]}",
+          "${createTimeMessage(doc["createdAt"].toDate())}"
           );
     }).toList();
     debugPrint("投稿を読み込みました");
     notifyListeners();
+  }
+
+  // 投稿時間から〜分前に変換する
+  String createTimeMessage(DateTime postDateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(postDateTime);
+    return timeAgo.format(now.subtract(difference), locale: "ja");
   }
 }
