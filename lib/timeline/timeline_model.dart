@@ -8,7 +8,6 @@ import 'package:timeago/timeago.dart' as timeAgo;
 class TimelineModel extends ChangeNotifier {
   var user = FirebaseAuth.instance.currentUser;
   List<Post> postsList = []; // 投稿全体を格納する
-  List<UserFile> userList = []; // ユーザー全体を格納する
 
   // ユーザー情報を取得する関数
   Future getUserData(String uid) async {
@@ -44,7 +43,7 @@ class TimelineModel extends ChangeNotifier {
           doc["tags"],
           "${userInfo[index][0]}",
           "${userInfo[index][1]}",
-          "${createTimeMessage(doc["createdAt"].toDate())}"
+          createTimeMessage(doc["createdAt"].toDate())
           );
     }).toList();
     debugPrint("投稿を読み込みました");
