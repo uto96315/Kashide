@@ -47,8 +47,8 @@ class MyModel extends ChangeNotifier {
     final doc = FirebaseFirestore
         .instance
         .collection("posts")
-        .where("posterId", isEqualTo: uid);
-        // .orderBy("createdAt", descending: true);
+        .where("posterId", isEqualTo: uid)
+        .orderBy("createdAt", descending: true);
     final snapshot = await doc.get();
     userPostsList = snapshot.docs.map((doc) =>
         Post(
