@@ -57,7 +57,7 @@ class MyModel extends ChangeNotifier {
             doc["text"],
             doc["posterId"],
             doc["likeCount"],
-            [""],
+            doc["genres"],
             userName ?? "",
             userImageURL ?? "",
             createTimeMessage(doc["createdAt"].toDate())

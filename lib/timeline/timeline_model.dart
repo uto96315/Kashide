@@ -40,7 +40,7 @@ class TimelineModel extends ChangeNotifier {
           doc["text"],
           doc["posterId"],
           doc["likeCount"],
-          [""],
+          doc["genres"],
           "${userInfo[index][0]}",
           "${userInfo[index][1]}",
           createTimeMessage(doc["createdAt"].toDate())
