@@ -115,10 +115,11 @@ class PostPage extends StatelessWidget {
 
                     // 投稿ボタン
                     ElevatedButton(
-                        onPressed: () async {
-                          await model.post();
-                          Navigator.pushNamed(context, "/home");
-                        },
+                        onPressed: (model.canPush)
+                            ? () async {
+                              await model.post();
+                              Navigator.pushNamed(context, "/home");}
+                            : null,
                         child: const Padding(
                           padding: EdgeInsets.only(
                               top: 10, bottom: 10, left: 50, right: 50),

@@ -17,10 +17,16 @@ class PostModel extends ChangeNotifier {
   String? singName;
   String? userName;
   List<String> genres = [];
+  bool canPush = false;
 
   // 歌詞をセットする処理
   void setLyrics(String lyrics) {
     this.lyrics = lyrics;
+    if(lyrics.isNotEmpty) {
+      canPush = true;
+    } else {
+      canPush = false;
+    }
     notifyListeners();
   }
 
