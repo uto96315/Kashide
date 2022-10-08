@@ -75,6 +75,7 @@ class TimelinePage extends StatelessWidget {
                                             
                                             // 報告及び削除ボタン
                                             PopupMenuButton(
+                                                icon: const Icon(Icons.more_horiz),
                                                 onSelected: (value)async{
                                                   if(value == "delete") {
                                                     await model.deletePosts(post.id);
