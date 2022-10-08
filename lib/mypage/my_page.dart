@@ -142,9 +142,33 @@ class MyPage extends StatelessWidget {
                                                 Text(model.userName ?? ""),
                                               ],
                                             ),
+                                            const SizedBox(width: 10,),
 
                                             // 何分前
                                             Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
+
+                                            // 報告及び削除ボタン
+                                            PopupMenuButton(
+                                                icon: const Icon(Icons.more_horiz),
+                                                onSelected: (value)async{
+                                                  if(value == "delete") {
+                                                    await model.deletePosts(post.id);
+                                                  } else if (value == "report") {
+                                                    await model.reportPosts(post.id);
+                                                  }
+                                                },
+                                                itemBuilder: (BuildContext context) =>  [
+                                                  (post.posterId == model.uid)
+                                                      ? const PopupMenuItem(
+                                                    value: "delete",
+                                                    child: Text("削除する"),
+                                                  )
+                                                      : const PopupMenuItem(
+                                                    value: "report",
+                                                    child: Text("報告する"),
+                                                  )
+                                                ]
+                                            )
                                           ],
                                         ),
                                       ),

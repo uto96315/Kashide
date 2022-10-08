@@ -9,6 +9,8 @@ import '../domain/post_domain.dart';
 class MyModel extends ChangeNotifier {
 
   var user = FirebaseAuth.instance.currentUser;
+  var uid = FirebaseAuth.instance.currentUser?.uid;
+
   String? userName;
   String? userIntroduction;
   String? userAge;
@@ -71,5 +73,29 @@ class MyModel extends ChangeNotifier {
     final now = DateTime.now();
     final difference = now.difference(postDateTime);
     return timeAgo.format(now.subtract(difference), locale: "ja");
+  }
+
+  // 投稿を削除する処理
+  // todo: 処理後にダイアログを表示する
+  Future deletePosts(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts").doc(id);
+
+    await doc.delete();
+    notifyListeners();
+  }
+
+  // 投稿を報告する処理
+  // todo: 処理後にダイアログを表示する
+  Future reportPosts(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("reportedPosts");
+
+    await doc.add({
+      "id": id,
+      "reportedAt": DateTime.now(),
+      "posterId": uid
+    });
+    notifyListeners();
   }
 }
