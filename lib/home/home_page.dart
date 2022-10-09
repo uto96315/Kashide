@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
@@ -17,8 +18,8 @@ class HomePage extends StatelessWidget {
           child: const Padding(
             padding: EdgeInsets.only(right: 20, left: 20),
             child: TabBar(
-              labelColor: Colors.blue,
-              indicatorColor: Colors.blue,
+              labelColor: mainColor,
+              indicatorColor: mainColor,
               unselectedLabelColor: Colors.blueGrey,
               tabs: [
                 Tab(icon: Icon(Icons.home), text: "ホーム"),

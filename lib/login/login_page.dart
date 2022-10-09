@@ -2,6 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/home/home_page.dart';
 import 'package:str_gram_beta/login/login_model.dart';
 
@@ -17,6 +18,7 @@ class LoginPage extends StatelessWidget {
           child: Scaffold(
             appBar: AppBar(
               title: const Text("ログイン"),
+              backgroundColor: mainColor,
             ),
             body: SingleChildScrollView(
               child: Center(
@@ -81,7 +83,10 @@ class LoginPage extends StatelessWidget {
                                 model.endLoading();
                               }
                             },
-                            child: const Text("ログイン")
+                            child: const Text("ログイン"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: mainColor
+                          ),
                         ),
                       ),
                       const SizedBox( height: 30 ),

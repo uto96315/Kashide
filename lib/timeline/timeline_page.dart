@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../common/ThemeColor.dart';
 import 'timeline_model.dart';
 
 class TimelinePage extends StatelessWidget {
@@ -11,8 +12,9 @@ class TimelinePage extends StatelessWidget {
       create: (_) => TimelineModel()..getPosts(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Icon(Icons.tag),
+          title: const Text("Kashide"),
           automaticallyImplyLeading: false,
+          backgroundColor: mainColor,
         ),
         body: SingleChildScrollView(
           child: Center(
@@ -176,6 +178,7 @@ class TimelinePage extends StatelessWidget {
           onPressed: () {
             Navigator.pushNamed(context, "/post");
           },
+          backgroundColor: mainColor,
           child: const Icon(Icons.add),
         ),
       ),
