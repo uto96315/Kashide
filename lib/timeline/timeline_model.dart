@@ -46,7 +46,7 @@ class TimelineModel extends ChangeNotifier {
           "${userInfo[index][0]}",
           "${userInfo[index][1]}",
           createTimeMessage(doc["createdAt"].toDate()),
-          doc.id
+          doc.id,
           );
     }).toList();
     debugPrint("投稿を読み込みました");
@@ -67,6 +67,8 @@ class TimelineModel extends ChangeNotifier {
   Future deletePosts(String id) async{
     final doc = FirebaseFirestore.instance
         .collection("posts").doc(id);
+
+    postsList.removeWhere((post) => post.id == id);
 
     await doc.delete();
     notifyListeners();

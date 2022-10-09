@@ -58,7 +58,7 @@ class PostPage extends StatelessWidget {
                       // お気に入りの歌詞入力欄
                       TextField(
                         controller: model.lyricsController,
-                        maxLines: 3,
+                        maxLines: null,
                         maxLength: 300,
                         autofocus: true,
                         decoration: const InputDecoration(
