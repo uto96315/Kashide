@@ -81,7 +81,7 @@ class PostModel extends ChangeNotifier {
 
     await doc.add({
       "artist": singerName ?? "不明",
-      "likeCount": 0,
+      "likedCount": 0,
       "posterId": uid,
       "genres": genres,  // todo: ここは後から変更する
       "text": lyrics,
