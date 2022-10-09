@@ -3,7 +3,7 @@
 class Post {
   Post(this.artist, this.singName,
       this.text, this.posterId,
-      this.likeCount, this.genres,
+      this.likedCount, this.genres,
       this.userName, this.userImageUrl,
       this.createdAt, this.id
       );
@@ -12,7 +12,7 @@ class Post {
   String singName;
   String text;
   String posterId;
-  int likeCount;
+  int likedCount;
   List<dynamic> genres;
   String userName;
   String userImageUrl;
