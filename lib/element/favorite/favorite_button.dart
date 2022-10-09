@@ -33,11 +33,11 @@ class FavoriteButton extends StatelessWidget {
                         await model.doLike(postId, likedCount!);
                         await model.checkLiked();
                       },
-                        child: Icon(Icons.favorite, color: (model.isLiked) ? mainColor : Colors.grey),
+                        child: Icon(Icons.favorite, color: model.isLiked ? mainColor : Colors.grey),
                     ),
 
                     const SizedBox( width: 5 ),
-                    Text(likedCount.toString(), style: const TextStyle(fontSize: 17)),
+                    Text(model.likedCount.toString(), style: const TextStyle(fontSize: 17)),
                   ],
                 ),
               ],
