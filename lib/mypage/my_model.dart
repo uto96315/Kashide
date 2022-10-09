@@ -58,7 +58,7 @@ class MyModel extends ChangeNotifier {
             doc["singName"],
             doc["text"],
             doc["posterId"],
-            doc["likeCount"],
+            doc["likedCount"],
             doc["genres"],
             userName ?? "",
             userImageURL ?? "",
