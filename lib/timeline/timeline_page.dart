@@ -161,6 +161,22 @@ class TimelinePage extends StatelessWidget {
                                           ],
                                         ),
                                       ),
+                                      const SizedBox( height: 15 ),
+
+                                      //　いいねやコメントボタンエリア
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width*0.5,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const SizedBox( width: 10 ),
+                                            IconButton(
+                                              icon: const Icon(Icons.favorite, color: mainColor ), // 既に押されていればmainColor
+                                              onPressed: (){},
+                                            ),
+                                          ],
+                                        ),
+                                      )
 
                                     ],
                                   ),
