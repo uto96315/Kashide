@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/top/top_page.dart';
 import 'my_model.dart';
@@ -253,7 +254,11 @@ class MyPage extends StatelessWidget {
                                 await model.logOut();
                                 Navigator.popUntil(context, ModalRoute.withName("/"));
                               },
-                              child: const Text("ログアウト", style: TextStyle( fontSize: 20 ))),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: mainColor
+                            ),
+                              child: const Text("ログアウト", style: TextStyle( fontSize: 20 )),
+                          ),
                         ),
                         const SizedBox( height: 200 ),
                       ],

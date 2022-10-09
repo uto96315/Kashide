@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/registerUserDetails/register_user_details_page.dart';
 import 'package:str_gram_beta/register/register_model.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,6 +20,7 @@ class RegisterPage extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             title: const Text("新規登録"),
+            backgroundColor: mainColor,
           ),
           body: SingleChildScrollView(
             child: Center(
@@ -118,7 +120,11 @@ class RegisterPage extends StatelessWidget {
                                       model.endLoading();
                                     }
                                   },
-                            child: const Text("登録する")),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: mainColor,
+                          ),
+                            child: const Text("登録する"),
+                        ),
                       ),
                       const SizedBox(height: 30),
 

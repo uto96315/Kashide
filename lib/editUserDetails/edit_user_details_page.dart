@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'edit_user_details_model.dart';
 
 class EditUserDetailsPage extends StatelessWidget {
@@ -20,6 +21,7 @@ class EditUserDetailsPage extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             title: const Text("アカウント編集"),
+            backgroundColor: mainColor,
           ),
           body: Center(
             child:
@@ -171,9 +173,9 @@ class EditUserDetailsPage extends StatelessWidget {
                                 borderRadius: const BorderRadius.all(Radius.circular(32)),
                                 border: Border.all(
                                   width: 2,
-                                  color: (isSelected) ? Colors.blue : Colors.grey,
+                                  color: (isSelected) ? mainColor : Colors.grey,
                                 ),
-                                color: isSelected ? Colors.blue : null,
+                                color: isSelected ? mainColor : null,
                               ),
                               child: Text(
                                 tag,
@@ -208,12 +210,16 @@ class EditUserDetailsPage extends StatelessWidget {
                               model.endLoading();
                             }
                           },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: mainColor,
+                        ),
                           child: const Padding(
                             padding: EdgeInsets.only(
                                 top: 10, bottom: 10, left: 50, right: 50),
                             child: Text("登録する", style: TextStyle( fontSize: 17, fontWeight: FontWeight.bold),
                             ),
-                          )),
+                          ),
+                      ),
                       const SizedBox( height: 100 ),
 
                       // アカウント削除ボタン

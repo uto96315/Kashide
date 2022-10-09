@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/top/top_page.dart';
 import 'register_user_details_model.dart';
 
@@ -16,6 +17,7 @@ class RegisterUserDetailsPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text("アカウント情報"),
             automaticallyImplyLeading: false,
+            backgroundColor: mainColor,
           ),
           body: SingleChildScrollView(
             child: Center(
@@ -157,6 +159,9 @@ class RegisterUserDetailsPage extends StatelessWidget {
 
                           // canPushがfalseの場合には押下できないようにする
                           : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: mainColor,
+                        ),
 
                           child: const Padding(
                             padding: EdgeInsets.only(
@@ -166,7 +171,8 @@ class RegisterUserDetailsPage extends StatelessWidget {
                               style: TextStyle(
                                   fontSize: 17, fontWeight: FontWeight.bold),
                             ),
-                          )),
+                          ),
+                      ),
                     ],
                   ),
                 );
