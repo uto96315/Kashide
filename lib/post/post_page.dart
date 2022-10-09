@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/post/post_model.dart';
 
 class PostPage extends StatelessWidget {
@@ -10,9 +11,41 @@ class PostPage extends StatelessWidget {
     return ChangeNotifierProvider<PostModel>(
       create: (_) => PostModel(),
       child: GestureDetector(
-        onTap: (){FocusScope.of(context).unfocus();} ,
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
         child: Scaffold(
-          appBar: AppBar(title: const Icon(Icons.edit)),
+          appBar: AppBar(
+            backgroundColor: mainColor,
+            toolbarHeight: MediaQuery.of(context).size.height * 0.07,
+            actions: [
+              Consumer<PostModel>(builder: (context, model, child) {
+                return // 投稿ボタン
+                    Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: MaterialButton(
+                    color: (model.canPush) ? Colors.white : null,
+                    onPressed: (model.canPush)
+                        ? () async {
+                            await model.post();
+                            Navigator.pushNamed(context, "/home");
+                          }
+                        : null,
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 15, left: 15),
+                      child: Text(
+                        "投稿する",
+                        style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: mainColor),
+                      ),
+                    ),
+                  ),
+                );
+              })
+            ],
+          ),
           body: SingleChildScrollView(
             child: Center(
               child: Consumer<PostModel>(builder: (context, model, child) {
@@ -86,54 +119,59 @@ class PostPage extends StatelessWidget {
                         spacing: 10,
                         children: model.genres.map((genre) {
                           return InkWell(
-                            borderRadius: const BorderRadius.all(Radius.circular(32)),
-                            onTap: (){
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(32)),
+                            onTap: () {
                               model.deleteGenre(genre); // タップされたら削除する
                             },
                             child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.all(Radius.circular(32)),
-                                border: Border.all(
-                                  width: 2,
-                                  color: Colors.blue
-                                ),
-                                color: Colors.white
-                              ),
-                              child: RichText(
-                                text: TextSpan(
-                                  children: [
-                                    TextSpan(text: genre, style: const TextStyle( color: Colors.blue) ),
-                                    const WidgetSpan(child: SizedBox(width: 10 )),
-                                    const WidgetSpan(child: Icon(Icons.clear, size: 17,)),
-                                  ]
-                                ),
-                              )
-                            ),
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15, vertical: 8),
+                                decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(32)),
+                                    border: Border.all(
+                                        width: 2, color: Colors.blue),
+                                    color: Colors.white),
+                                child: RichText(
+                                  text: TextSpan(children: [
+                                    TextSpan(
+                                        text: genre,
+                                        style: const TextStyle(
+                                            color: Colors.blue)),
+                                    const WidgetSpan(
+                                        child: SizedBox(width: 10)),
+                                    const WidgetSpan(
+                                        child: Icon(
+                                      Icons.clear,
+                                      size: 17,
+                                    )),
+                                  ]),
+                                )),
                           );
                         }).toList(),
                       ),
 
-                      const SizedBox( height: 30 ),
+                      const SizedBox(height: 30),
 
                       // 投稿ボタン
-                      ElevatedButton(
-                          onPressed: (model.canPush)
-                              ? () async {
-                                await model.post();
-                                Navigator.pushNamed(context, "/home");}
-                              : null,
-                          child: const Padding(
-                            padding: EdgeInsets.only(
-                                top: 10, bottom: 10, left: 50, right: 50),
-                            child: Text(
-                              "投稿",
-                              style: TextStyle(
-                                  fontSize: 17, fontWeight: FontWeight.bold),
-                            ),
-                          )
-                      ),
+                      // ElevatedButton(
+                      //     onPressed: (model.canPush)
+                      //         ? () async {
+                      //           await model.post();
+                      //           Navigator.pushNamed(context, "/home");}
+                      //         : null,
+                      //     child: const Padding(
+                      //       padding: EdgeInsets.only(
+                      //           top: 10, bottom: 10, left: 50, right: 50),
+                      //       child: Text(
+                      //         "投稿",
+                      //         style: TextStyle(
+                      //             fontSize: 17, fontWeight: FontWeight.bold),
+                      //       ),
+                      //     )
+                      // ),
                     ],
                   ),
                 );
