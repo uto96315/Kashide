@@ -9,133 +9,136 @@ class PostPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<PostModel>(
       create: (_) => PostModel(),
-      child: Scaffold(
-        appBar: AppBar(title: const Icon(Icons.edit)),
-        body: SingleChildScrollView(
-          child: Center(
-            child: Consumer<PostModel>(builder: (context, model, child) {
-              return SizedBox(
-                width: MediaQuery.of(context).size.width * 0.8,
-                child: Column(
-                  children: [
-                    const SizedBox(height: 50),
+      child: GestureDetector(
+        onTap: (){FocusScope.of(context).unfocus();} ,
+        child: Scaffold(
+          appBar: AppBar(title: const Icon(Icons.edit)),
+          body: SingleChildScrollView(
+            child: Center(
+              child: Consumer<PostModel>(builder: (context, model, child) {
+                return SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 50),
 
-                    // お気に入りの歌詞入力欄
-                    TextField(
-                      controller: model.lyricsController,
-                      maxLines: 3,
-                      maxLength: 300,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: "心に響いた歌詞を入力しましょう(必須)",
+                      // お気に入りの歌詞入力欄
+                      TextField(
+                        controller: model.lyricsController,
+                        maxLines: 3,
+                        maxLength: 300,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: "心に響いた歌詞を入力しましょう(必須)",
+                        ),
+                        onChanged: (text) {
+                          model.setLyrics(text);
+                        },
                       ),
-                      onChanged: (text) {
-                        model.setLyrics(text);
-                      },
-                    ),
-                    const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                    // 歌手名入力欄
-                    TextField(
-                      controller: model.singerNameController,
-                      maxLength: 50,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: "歌手名(任意)",
+                      // 歌手名入力欄
+                      TextField(
+                        controller: model.singerNameController,
+                        maxLength: 50,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: "歌手名(任意)",
+                        ),
+                        onChanged: (text) {
+                          model.setSinger(text);
+                        },
                       ),
-                      onChanged: (text) {
-                        model.setSinger(text);
-                      },
-                    ),
-                    const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                    // 曲名入力欄
-                    TextField(
-                      controller: model.singNameController,
-                      maxLength: 50,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: "曲名(任意)",
+                      // 曲名入力欄
+                      TextField(
+                        controller: model.singNameController,
+                        maxLength: 50,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: "曲名(任意)",
+                        ),
+                        onChanged: (text) {
+                          model.setSing(text);
+                        },
                       ),
-                      onChanged: (text) {
-                        model.setSing(text);
-                      },
-                    ),
-                    const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                    // ジャンル追加欄
-                    TextFormField(
-                      controller: model.genreController,
-                      enabled: model.genreMaxLength,
-                      maxLength: 15,
-                      decoration: const InputDecoration(
-                        labelText: "ジャンル（最大三つ）",
-                        hintText: "エンターを押すことで追加できます",
+                      // ジャンル追加欄
+                      TextFormField(
+                        controller: model.genreController,
+                        enabled: model.genreMaxLength,
+                        maxLength: 15,
+                        decoration: const InputDecoration(
+                          labelText: "ジャンル（最大三つ）",
+                          hintText: "エンターを押すことで追加できます",
+                        ),
+                        onFieldSubmitted: (text) {
+                          model.setGenre(text);
+                        },
                       ),
-                      onFieldSubmitted: (text) {
-                        model.setGenre(text);
-                      },
-                    ),
-                    const SizedBox(height: 15),
+                      const SizedBox(height: 15),
 
-                    // 選択されたジャンルを表示
-                    Wrap(
-                      runSpacing: 15,
-                      spacing: 10,
-                      children: model.genres.map((genre) {
-                        return InkWell(
-                          borderRadius: const BorderRadius.all(Radius.circular(32)),
-                          onTap: (){
-                            model.deleteGenre(genre); // タップされたら削除する
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(32)),
-                              border: Border.all(
-                                width: 2,
-                                color: Colors.blue
+                      // 選択されたジャンルを表示
+                      Wrap(
+                        runSpacing: 15,
+                        spacing: 10,
+                        children: model.genres.map((genre) {
+                          return InkWell(
+                            borderRadius: const BorderRadius.all(Radius.circular(32)),
+                            onTap: (){
+                              model.deleteGenre(genre); // タップされたら削除する
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.all(Radius.circular(32)),
+                                border: Border.all(
+                                  width: 2,
+                                  color: Colors.blue
+                                ),
+                                color: Colors.white
                               ),
-                              color: Colors.white
+                              child: RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(text: genre, style: const TextStyle( color: Colors.blue) ),
+                                    const WidgetSpan(child: SizedBox(width: 10 )),
+                                    const WidgetSpan(child: Icon(Icons.clear, size: 17,)),
+                                  ]
+                                ),
+                              )
                             ),
-                            child: RichText(
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(text: genre, style: const TextStyle( color: Colors.blue) ),
-                                  const WidgetSpan(child: SizedBox(width: 10 )),
-                                  const WidgetSpan(child: Icon(Icons.clear, size: 17,)),
-                                ]
-                              ),
-                            )
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                          );
+                        }).toList(),
+                      ),
 
-                    const SizedBox( height: 30 ),
+                      const SizedBox( height: 30 ),
 
-                    // 投稿ボタン
-                    ElevatedButton(
-                        onPressed: (model.canPush)
-                            ? () async {
-                              await model.post();
-                              Navigator.pushNamed(context, "/home");}
-                            : null,
-                        child: const Padding(
-                          padding: EdgeInsets.only(
-                              top: 10, bottom: 10, left: 50, right: 50),
-                          child: Text(
-                            "投稿",
-                            style: TextStyle(
-                                fontSize: 17, fontWeight: FontWeight.bold),
-                          ),
-                        )
-                    ),
-                  ],
-                ),
-              );
-            }),
+                      // 投稿ボタン
+                      ElevatedButton(
+                          onPressed: (model.canPush)
+                              ? () async {
+                                await model.post();
+                                Navigator.pushNamed(context, "/home");}
+                              : null,
+                          child: const Padding(
+                            padding: EdgeInsets.only(
+                                top: 10, bottom: 10, left: 50, right: 50),
+                            child: Text(
+                              "投稿",
+                              style: TextStyle(
+                                  fontSize: 17, fontWeight: FontWeight.bold),
+                            ),
+                          )
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
           ),
         ),
       ),
