@@ -7,8 +7,9 @@ import 'package:timeago/timeago.dart' as timeAgo;
 
 
 class GenreModel extends ChangeNotifier {
-  GenreModel(this.genre);
+  GenreModel(this.genre, this.condition);
   String? genre;
+  String? condition;
   int? postCount;
   List<Post> genrePostsList = [];
 
@@ -16,8 +17,20 @@ class GenreModel extends ChangeNotifier {
 
   // 投稿を取得する処理
   Future getGenrePosts(String genre) async{
-    final doc = FirebaseFirestore.instance.collection("posts")
-                  .where("genres", arrayContains: genre);
+
+    Query<Map<String, dynamic>> doc;
+
+    if(condition == "genre") {
+      doc = FirebaseFirestore.instance.collection("posts")
+          .where("genres", arrayContains: genre);
+    } else if( condition == "artist") {
+      doc = FirebaseFirestore.instance.collection("posts")
+          .where("artist", isEqualTo: genre);
+    } else if( condition == "singName") {
+      doc = FirebaseFirestore.instance.collection("posts")
+          .where("artist", isEqualTo: genre);
+    } else { return; }
+
     final snapshot = await doc.get();
 
     final userInfo = await Future.wait(
