@@ -7,16 +7,17 @@ import '../element/favorite/favorite_button.dart';
 import 'genre_model.dart';
 
 class GenrePage extends StatelessWidget {
-  GenrePage(this.genre, {super.key});
+  GenrePage(this.genre,this.condition, {super.key});
   String genre;
+  String condition;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<GenreModel>(
-      create: (_) => GenreModel(genre)..getGenrePosts(genre),
+      create: (_) => GenreModel(genre, condition)..getGenrePosts(genre),
       child: Scaffold(
         appBar: AppBar(
-          title: Text("「$genre」の一覧"),
+          title: Text(condition == "genre" ?"「$genre」の一覧" : "$genre"),
           centerTitle: true,
           backgroundColor: mainColor,
         ),
@@ -168,7 +169,7 @@ class GenrePage extends StatelessWidget {
                                     MainAxisAlignment.end,
                                     children: [
                                       const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                      Text(post.artist, style: const TextStyle( fontSize: 11)),
+                                      Text(post.artist, style: const TextStyle( fontSize: 11 )),
                                       const SizedBox(width: 20),
                                       const Text("曲名：", style: TextStyle( fontSize: 11)),
                                       Text(post.singName, style: const TextStyle( fontSize: 11)),

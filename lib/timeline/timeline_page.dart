@@ -134,7 +134,7 @@ class TimelinePage extends StatelessWidget {
                                         children: post.genres.map((genre) =>
                                             GestureDetector(
                                               onTap: (){
-                                                Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(genre)));
+                                                Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(genre, "genre")));
                                               },
                                               child: Container(
                                                 decoration: BoxDecoration(
@@ -162,11 +162,33 @@ class TimelinePage extends StatelessWidget {
                                         mainAxisAlignment:
                                         MainAxisAlignment.end,
                                         children: [
-                                          const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                          Text(post.artist, style: const TextStyle( fontSize: 11)),
-                                          const SizedBox(width: 20),
-                                          const Text("曲名：", style: TextStyle( fontSize: 11)),
-                                          Text(post.singName, style: const TextStyle( fontSize: 11)),
+
+                                          // 歌手名
+                                          GestureDetector(
+                                            onTap: (){
+                                              Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.artist, "artist")));
+                                            },
+                                            child: Row(
+                                              children: [
+                                                const Text("歌手：", style: TextStyle( fontSize: 11)),
+                                                Text(post.artist, style: const TextStyle( fontSize: 11 )),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox( width: 10 ),
+
+                                          // 曲名
+                                          GestureDetector(
+                                            onTap: (){
+                                              Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.singName, "singName")));
+                                            },
+                                            child: Row(
+                                              children: [
+                                                const Text("曲名：", style: TextStyle( fontSize: 11)),
+                                                Text(post.singName, style: const TextStyle( fontSize: 11 )),
+                                              ],
+                                            ),
+                                          ),
                                           const SizedBox(width: 15),
                                         ],
                                       ),
