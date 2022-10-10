@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/top/top_page.dart';
+import '../element/favorite/favorite_button.dart';
 import 'my_model.dart';
 
 
@@ -232,6 +233,14 @@ class MyPage extends StatelessWidget {
                                             const SizedBox(width: 15),
                                           ],
                                         ),
+                                      ),
+                                      const SizedBox( height: 15 ),
+
+                                      // いいねボタン
+                                      SizedBox(
+                                          width: MediaQuery.of(context).size.width*0.5,
+                                          height: 30,
+                                          child: FavoriteButton(post.id, post.likedCount)
                                       ),
                                     ],
                                   ),
