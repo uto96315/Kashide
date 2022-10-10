@@ -23,22 +23,21 @@ class FavoriteButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const SizedBox(width: 10),
-                Row(
-                  children: [
-                    CupertinoButton(
-                      minSize: double.minPositive,
-                      padding: EdgeInsets.zero,
+                CupertinoButton(
+                  minSize: double.minPositive,
+                  padding: EdgeInsets.zero,
 
-                      onPressed: ()async{
-                        await model.doLike(postId, likedCount!);
-                        await model.checkLiked();
-                      },
-                        child: Icon(Icons.favorite, color: model.isLiked ? mainColor : Colors.grey),
+                  onPressed: ()async{
+                    await model.doLike(postId, likedCount!);
+                    await model.checkLiked();
+                  },
+                    child: Row(
+                      children: [
+                        Icon(Icons.favorite, color: model.isLiked ? mainColor : Colors.grey),
+                        const SizedBox( width: 5 ),
+                        Text(model.likedCount.toString(), style: const TextStyle(fontSize: 17, color: Colors.black)),
+                      ],
                     ),
-
-                    const SizedBox( width: 5 ),
-                    Text(model.likedCount.toString(), style: const TextStyle(fontSize: 17)),
-                  ],
                 ),
               ],
             );
