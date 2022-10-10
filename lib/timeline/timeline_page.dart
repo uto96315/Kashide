@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/genre/genre_page.dart';
 import '../common/ThemeColor.dart';
 import '../element/favorite/favorite_button.dart';
 import 'timeline_model.dart';
@@ -123,20 +124,27 @@ class TimelinePage extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 20),
 
+
+                                    // ジャンル一覧
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width*0.8,
                                       child: Wrap(
                                         runSpacing: 15,
                                         spacing: 10,
                                         children: post.genres.map((genre) =>
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                border: Border.all( color: Colors.blue ),
-                                                borderRadius: BorderRadius.circular(100),
-                                              ),
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(10.0),
-                                                child: Text(genre, style: const TextStyle( color: Colors.blue ),),
+                                            GestureDetector(
+                                              onTap: (){
+                                                Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(genre)));
+                                              },
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  border: Border.all( color: Colors.blue ),
+                                                  borderRadius: BorderRadius.circular(100),
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(10.0),
+                                                  child: Text(genre, style: const TextStyle( color: Colors.blue ),),
+                                                ),
                                               ),
                                             )
                                         ).toList(),

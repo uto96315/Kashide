@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
+import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/top/top_page.dart';
 import '../element/favorite/favorite_button.dart';
 import 'my_model.dart';
@@ -201,14 +202,19 @@ class MyPage extends StatelessWidget {
                                           runSpacing: 15,
                                           spacing: 10,
                                           children: post.genres.map((genre) =>
-                                              Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border.all( color: Colors.blue ),
-                                                  borderRadius: BorderRadius.circular(100),
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(10.0),
-                                                  child: Text(genre, style: const TextStyle( color: Colors.blue ),),
+                                              GestureDetector(
+                                                onTap: (){
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => GenrePage(genre)));
+                                                },
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all( color: Colors.blue ),
+                                                    borderRadius: BorderRadius.circular(100),
+                                                  ),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(10.0),
+                                                    child: Text(genre, style: const TextStyle( color: Colors.blue ),),
+                                                  ),
                                                 ),
                                               )
                                           ).toList(),
