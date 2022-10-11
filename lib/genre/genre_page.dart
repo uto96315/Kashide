@@ -169,10 +169,10 @@ class GenrePage extends StatelessWidget {
                                     MainAxisAlignment.end,
                                     children: [
                                       const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                      Text(post.artist, style: const TextStyle( fontSize: 11 )),
+                                      Text(post.artist, style: TextStyle( fontSize: 11, color: condition == "artist" ? Colors.red : Colors.black )),
                                       const SizedBox(width: 20),
                                       const Text("曲名：", style: TextStyle( fontSize: 11)),
-                                      Text(post.singName, style: const TextStyle( fontSize: 11)),
+                                      Text(post.singName, style: TextStyle( fontSize: 11, color: condition == "singName" ? Colors.red : Colors.black)),
                                       const SizedBox(width: 15),
                                     ],
                                   ),

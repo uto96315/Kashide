@@ -28,7 +28,7 @@ class GenreModel extends ChangeNotifier {
           .where("artist", isEqualTo: genre);
     } else if( condition == "singName") {
       doc = FirebaseFirestore.instance.collection("posts")
-          .where("artist", isEqualTo: genre);
+          .where("singName", isEqualTo: genre);
     } else { return; }
 
     final snapshot = await doc.get();
