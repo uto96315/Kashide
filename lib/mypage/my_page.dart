@@ -42,12 +42,12 @@ class MyPage extends StatelessWidget {
                                       border: Border.all( color: Colors.grey ),
                                       borderRadius: BorderRadius.circular(100),
                                       color: Colors.grey.shade200,
-                                      image: (model.userImageURL != null)
+                                      image: (model.userImageURL != null || model.userImageURL != "")
                                         ? DecorationImage(image: NetworkImage(model.userImageURL!), fit: BoxFit.cover)
                                         : null
                                   ),
-                                  child: (model.userImageURL == null)
-                                      ? Icon(Icons.person)
+                                  child: (model.userImageURL == null || model.userImageURL == "")
+                                      ? const Icon(Icons.person)
                                       : null
                               ),
                               Padding(

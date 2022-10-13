@@ -50,7 +50,7 @@ class EditUserDetailsPage extends StatelessWidget {
                                   ? DecorationImage(image: NetworkImage(model.userImageUrl!), fit: BoxFit.cover)
                                   : DecorationImage(image: FileImage(model.imageFile!), fit: BoxFit.cover),
                             ),
-                            child: (model.imageFile != null)
+                            child: (model.imageFile != null || model.userImageUrl != "")
                                 ? null
                                 : const Icon(Icons.person)
                         ),
