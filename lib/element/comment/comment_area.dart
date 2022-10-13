@@ -22,7 +22,7 @@ class CommentArea extends StatelessWidget {
                   children: [
 
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.only(right: 20, left: 20, top: 10, bottom: 10),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -48,10 +48,12 @@ class CommentArea extends StatelessWidget {
                                       : const Icon(Icons.person)
                               ),
                               const SizedBox( width: 10 ),
-                              Text(comment.commenterName, style: const TextStyle( fontSize: 15 )),
+
+                              // ユーザーネーム
+                              Text(comment.commenterName, style: const TextStyle( fontSize: 15, fontWeight: FontWeight.bold )),
                             ],
                           ),
-                          Text(comment.commentedAt), // 時間
+                          Text(comment.commentedAt, style: const TextStyle( color: Colors.grey )), // 時間
                         ],
                       ),
                     ),

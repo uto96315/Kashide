@@ -44,6 +44,7 @@ class MyModel extends ChangeNotifier {
   }
 
   // ユーザーの投稿を取得する処理
+  // todo: ここをasMapに変換する
   Future getUserPosts() async{
     var uid = user?.uid;
     final doc = FirebaseFirestore
@@ -51,6 +52,7 @@ class MyModel extends ChangeNotifier {
         .collection("posts")
         .where("posterId", isEqualTo: uid)
         .orderBy("createdAt", descending: true);
+
     final snapshot = await doc.get();
     userPostsList = snapshot.docs.map((doc) =>
         Post(
@@ -64,6 +66,7 @@ class MyModel extends ChangeNotifier {
             userImageURL ?? "",
             createTimeMessage(doc["createdAt"].toDate()),
             doc.id,
+            0
         )
     ).toList();
   }
@@ -74,6 +77,18 @@ class MyModel extends ChangeNotifier {
     final difference = now.difference(postDateTime);
     return timeAgo.format(now.subtract(difference), locale: "ja");
   }
+
+
+  // コメント数の取得
+  Future getCommentCount(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts").doc(id).collection("comments");
+    final snapshot = await doc.get();
+    final count = snapshot.docs.length;
+
+    return count;
+  }
+
 
   // 投稿を削除する処理
   // todo: 処理後にダイアログを表示する
