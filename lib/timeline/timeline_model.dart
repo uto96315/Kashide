@@ -32,6 +32,10 @@ class TimelineModel extends ChangeNotifier {
     final userInfo = await Future.wait(
         snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
 
+    final commentCount = await Future.wait(
+      snapshot.docs.map((doc) => getCommentCount(doc.id)).toList()
+    );
+
 
     postsList = snapshot.docs.asMap().entries.map((entry) {
       int index = entry.key;
@@ -47,6 +51,7 @@ class TimelineModel extends ChangeNotifier {
           "${userInfo[index][1]}",
           createTimeMessage(doc["createdAt"].toDate()),
           doc.id,
+          commentCount[index]
           );
     }).toList();
     debugPrint("投稿を読み込みました");
@@ -60,6 +65,16 @@ class TimelineModel extends ChangeNotifier {
     return timeAgo.format(now.subtract(difference), locale: "ja");
   }
 
+
+  // コメント数の取得
+  Future getCommentCount(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts").doc(id).collection("comments");
+     final snapshot = await doc.get();
+     final count = snapshot.docs.length;
+
+     return count;
+  }
 
 
   // 投稿を削除する処理

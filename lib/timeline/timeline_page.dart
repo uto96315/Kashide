@@ -201,11 +201,33 @@ class TimelinePage extends StatelessWidget {
                                     ),
                                     const SizedBox( height: 15 ),
 
-                                    // いいねボタン
+                                    // いいね、コメントボタン
                                     SizedBox(
                                         width: MediaQuery.of(context).size.width*0.5,
                                         height: 30,
-                                        child: FavoriteButton(post.id, post.likedCount)
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.end,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: (){
+                                                Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id)));
+                                              },
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.comment, color: Colors.grey ),
+                                                    const SizedBox( width: 5 ),
+                                                    Text(post.commentCount.toString() ?? "", style: const TextStyle( fontSize: 17 )),
+                                                  ],
+                                                )
+                                            ),
+                                            const SizedBox( width: 20 ),
+                                            SizedBox(
+                                                width: 50,
+                                                height: 30,
+                                                child: FavoriteButton(post.id, post.likedCount)
+                                            ),
+                                          ],
+                                        )
                                     ),
                                   ],
                                 ),
