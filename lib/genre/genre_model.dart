@@ -36,6 +36,10 @@ class GenreModel extends ChangeNotifier {
     final userInfo = await Future.wait(
         snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
 
+    final commentCount = await Future.wait(
+        snapshot.docs.map((doc) => getCommentCount(doc.id)).toList()
+    );
+
     genrePostsList = snapshot.docs.asMap().entries.map((entry) {
       int index = entry.key;
       final doc = entry.value;
@@ -50,6 +54,7 @@ class GenreModel extends ChangeNotifier {
         "${userInfo[index][1]}",
         createTimeMessage(doc["createdAt"].toDate()),
         doc.id,
+        commentCount[index]
       );
     }).toList();
 
@@ -69,6 +74,16 @@ class GenreModel extends ChangeNotifier {
     final userImageUrl = data?["iconUrl"];
     notifyListeners();
     return [userName, userImageUrl];
+  }
+
+  // コメント数の取得
+  Future getCommentCount(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts").doc(id).collection("comments");
+    final snapshot = await doc.get();
+    final count = snapshot.docs.length;
+
+    return count;
   }
 
 

@@ -5,7 +5,7 @@ class Post {
       this.text, this.posterId,
       this.likedCount, this.genres,
       this.userName, this.userImageUrl,
-      this.createdAt, this.id
+      this.createdAt, this.id, this.commentCount
       );
 
   String artist;
@@ -18,4 +18,5 @@ class Post {
   String userImageUrl;
   String createdAt;
   String id;
+  int commentCount;
 }

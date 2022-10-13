@@ -49,7 +49,7 @@ class PostDetailPage extends StatelessWidget {
                         const SizedBox( width: 10 ),
 
                         // 名前
-                        Text(model.posterName ?? "読み込み中..."),
+                        Text(model.posterName ?? "読み込み中...", style: const TextStyle( fontSize: 17, fontWeight: FontWeight.bold )),
                       ],
                     ),
                   ),
