@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
 import '../element/favorite/favorite_button.dart';
 import 'timeline_model.dart';
@@ -106,19 +107,24 @@ class TimelinePage extends StatelessWidget {
                                     const SizedBox(height: 10),
 
                                     // 歌詞
-                                    SizedBox(
-                                      width:
-                                      MediaQuery.of(context).size.width *
-                                          0.8,
-                                      child: Container(
-                                        alignment: Alignment.centerLeft,
-                                        child: Padding(
-                                          padding:
-                                          const EdgeInsets.only(left: 20),
-                                          child: Text(post.text,
-                                              textAlign: TextAlign.left,
-                                              style: const TextStyle(
-                                                  fontSize: 16, height: 1.5)),
+                                    GestureDetector(
+                                      onTap: (){
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id)));
+                                      },
+                                      child: SizedBox(
+                                        width:
+                                        MediaQuery.of(context).size.width *
+                                            0.8,
+                                        child: Container(
+                                          alignment: Alignment.centerLeft,
+                                          child: Padding(
+                                            padding:
+                                            const EdgeInsets.only(left: 20),
+                                            child: Text(post.text,
+                                                textAlign: TextAlign.left,
+                                                style: const TextStyle(
+                                                    fontSize: 16, height: 1.5)),
+                                          ),
                                         ),
                                       ),
                                     ),
