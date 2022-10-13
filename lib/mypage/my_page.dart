@@ -43,7 +43,7 @@ class MyPage extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(100),
                                       color: Colors.grey.shade200,
                                       image: (model.userImageURL != null || model.userImageURL != "")
-                                        ? DecorationImage(image: NetworkImage(model.userImageURL!), fit: BoxFit.cover)
+                                        ? DecorationImage(image: NetworkImage(model.userImageURL ?? ""), fit: BoxFit.cover)
                                         : null
                                   ),
                                   child: (model.userImageURL == null || model.userImageURL == "")
