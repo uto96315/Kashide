@@ -109,7 +109,7 @@ class TimelinePage extends StatelessWidget {
                                     // 歌詞
                                     GestureDetector(
                                       onTap: (){
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id)));
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, false)));
                                       },
                                       child: SizedBox(
                                         width:
@@ -210,7 +210,7 @@ class TimelinePage extends StatelessWidget {
                                           children: [
                                             GestureDetector(
                                               onTap: (){
-                                                Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id)));
+                                                Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));
                                               },
                                                 child: Row(
                                                   children: [
