@@ -29,6 +29,7 @@ class PostDetailModel extends ChangeNotifier {
 
   // コメント関係
   String? comment;
+  bool canComment = false;
 
   // UI関係
   bool counterTextVisible = false;  // コメント入力欄のカウント表示
@@ -84,6 +85,15 @@ class PostDetailModel extends ChangeNotifier {
       counterTextVisible = false;
     }
     notifyListeners();
+  }
+
+
+  // コメントの可否判定
+  void checkComment(String text) {
+    if(text.isEmpty) {
+      return;
+    }
+    canComment = true;
   }
 
 
