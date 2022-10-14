@@ -140,9 +140,11 @@ class PostDetailPage extends StatelessWidget {
                                 color: Colors.black54,
                               ),
 
+
+                              // コメント一覧
                               SizedBox(
                                   width: MediaQuery.of(context).size.width,
-                                  height: 1000, // todo: 無限にしたい
+                                  height: MediaQuery.of(context).size.height*20, // todo: 無限にしたい
                                   child: CommentArea(id)),
                             ],
                           );

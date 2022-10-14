@@ -20,7 +20,6 @@ class CommentArea extends StatelessWidget {
               children: model.commentsList.map((comment){
                 return Column(
                   children: [
-
                     Padding(
                       padding: const EdgeInsets.only(right: 20, left: 20, top: 10, bottom: 10),
                       child: Row(
