@@ -51,17 +51,13 @@ class PostDetailPage extends StatelessWidget {
                                             MediaQuery.of(context).size.width *
                                                 0.1,
                                         decoration: BoxDecoration(
-                                          border:
-                                              Border.all(color: Colors.grey),
-                                          borderRadius:
-                                              BorderRadius.circular(50),
+                                          border: Border.all(color: Colors.grey),
+                                          borderRadius: BorderRadius.circular(50),
                                           color: Colors.grey.shade200,
                                           image: (model.userIconUrl != null ||
                                                   model.userIconUrl != "")
                                               ? DecorationImage(
-                                                  image: NetworkImage(
-                                                      model.userIconUrl!),
-                                                  fit: BoxFit.cover)
+                                                  image: NetworkImage(model.userIconUrl ?? ""), fit: BoxFit.cover)
                                               : null,
                                         ),
                                         child: (model.userIconUrl != "")
@@ -168,17 +164,14 @@ class PostDetailPage extends StatelessWidget {
                                   border: Border.all(color: Colors.grey),
                                   borderRadius: BorderRadius.circular(100),
                                   color: Colors.grey.shade200,
-                                  image: (model.userImageUrl != null ||
-                                          model.userImageUrl != "")
-                                      ? DecorationImage(
-                                          image: NetworkImage(
-                                              model.userImageUrl ?? ""),
-                                          fit: BoxFit.cover)
-                                      : null),
-                              child: (model.userImageUrl == null ||
-                                      model.userImageUrl == "")
+                                  image: (model.userImageUrl != null || model.userImageUrl != "")
+                                      ? DecorationImage(image: NetworkImage(model.userImageUrl ?? ""), fit: BoxFit.cover)
+                                      : null,
+                              ),
+                              child: (model.userImageUrl == null || model.userImageUrl == "")
                                   ? const Icon(Icons.person)
-                                  : null),
+                                  : null
+                          ),
 
                           SizedBox(
                               width: MediaQuery.of(context).size.width * 0.05),
