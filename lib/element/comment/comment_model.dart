@@ -27,7 +27,8 @@ class CommentModel extends ChangeNotifier {
     final collection = FirebaseFirestore.instance
         .collection("posts")
         .doc(postId)
-        .collection("comments");
+        .collection("comments")
+        .orderBy("createdAt");
 
     final snapshot = await collection.get();
 
