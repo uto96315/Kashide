@@ -4,6 +4,7 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import '../element/favorite/favorite_button.dart';
+import '../test/sideBar.dart';
 import 'my_model.dart';
 
 
@@ -337,6 +338,12 @@ class MyPage extends StatelessWidget {
                     Navigator.popUntil(context, ModalRoute.withName("/"));
                   },
                 ),
+                // ListTile(
+                //   title: const Text("テスト"),
+                //   onTap: (){
+                //     Navigator.push(context, MaterialPageRoute(builder: (context)=>SidebarExample()));
+                //   },
+                // )
               ],
             ),
           ),
