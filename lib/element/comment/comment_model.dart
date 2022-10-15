@@ -10,7 +10,6 @@ class CommentModel extends ChangeNotifier {
   var uid = FirebaseAuth.instance.currentUser?.uid;
   List<CommentDomain> commentsList = [];
 
-
   // ユーザー情報を取得する関数
   Future getUserData(String uid) async {
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
@@ -22,7 +21,7 @@ class CommentModel extends ChangeNotifier {
     return [userName, userImageUrl];
   }
 
-
+  // コメントの取得
   Future getComments(String postId) async {
     final collection = FirebaseFirestore.instance
         .collection("posts")
@@ -40,17 +39,17 @@ class CommentModel extends ChangeNotifier {
       final doc = entry.value;
 
       return CommentDomain(
-          doc.id,
-          doc["comment"],
-          createTimeMessage(doc["createdAt"].toDate()),
-          "${userInfo[index][0]}",
-          "${userInfo[index][1]}"
+        doc.id,
+        doc["comment"],
+        createTimeMessage(doc["createdAt"].toDate()),
+        doc["posterId"],
+        "${userInfo[index][0]}",
+        "${userInfo[index][1]}",
       );
     }).toList();
 
     notifyListeners();
   }
-
 
   // 投稿時間から〜分前に変換する
   String createTimeMessage(DateTime postDateTime) {
@@ -58,4 +57,35 @@ class CommentModel extends ChangeNotifier {
     final difference = now.difference(postDateTime);
     return timeAgo.format(now.subtract(difference), locale: "ja");
   }
+
+  // コメントの削除機能
+  Future deleteComment(String postId, String commentId) async {
+    final doc = FirebaseFirestore.instance
+        .collection("posts")
+        .doc(postId)
+        .collection("comments")
+        .doc(commentId);
+
+    await doc.delete();
+    debugPrint("削除しました");
+
+    await getComments(postId);
+    notifyListeners();
+  }
+
+  // コメントの報告機能
+  Future reportComment(String postId, String commentId, String commentText) async{
+    final doc = FirebaseFirestore.instance
+        .collection("reportedComments");
+
+    await doc.add({
+      "postId": postId,
+      "commentId": commentId,
+      "commentText": commentText,
+      "reportedAt": DateTime.now(),
+    });
+    debugPrint("報告しました");
+    notifyListeners();
+  }
 }
+
