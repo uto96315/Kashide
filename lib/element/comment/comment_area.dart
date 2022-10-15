@@ -25,34 +25,80 @@ class CommentArea extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              // ユーザー画像
-                              Container(
-                                  width: MediaQuery.of(context).size.width*0.1,
-                                  height: MediaQuery.of(context).size.width*0.1,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey),
-                                    borderRadius: BorderRadius.circular(50),
-                                    color: Colors.grey.shade200,
-                                    image: (comment.commenterImageUrl != "")
-                                        ? DecorationImage(
-                                        image: NetworkImage(
-                                            comment.commenterImageUrl),
-                                        fit: BoxFit.cover)
-                                        : null,
-                                  ),
-                                  child: (comment.commenterImageUrl != "")
-                                      ? null
-                                      : const Icon(Icons.person)
-                              ),
-                              const SizedBox( width: 10 ),
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width*0.8,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // ユーザー画像
+                                Row(
+                                  children: [
+                                    Container(
+                                        width: MediaQuery.of(context).size.width*0.1,
+                                        height: MediaQuery.of(context).size.width*0.1,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey),
+                                          borderRadius: BorderRadius.circular(50),
+                                          color: Colors.grey.shade200,
+                                          image: (comment.commenterImageUrl != "" || comment.commenterImageUrl!.isEmpty)
+                                              ? DecorationImage(
+                                              image: NetworkImage(
+                                                  comment.commenterImageUrl),
+                                              fit: BoxFit.cover)
+                                              : null,
+                                        ),
+                                        child: (comment.commenterImageUrl != "")
+                                            ? null
+                                            : const Icon(Icons.person)
+                                    ),
+                                    const SizedBox( width: 10 ),
 
-                              // ユーザーネーム
-                              Text(comment.commenterName, style: const TextStyle( fontSize: 15, fontWeight: FontWeight.bold )),
-                            ],
+                                    // ユーザーネーム
+                                    Text(comment.commenterName, style: const TextStyle( fontSize: 15, fontWeight: FontWeight.bold )),
+                                  ],
+                                ),
+
+                                Text(comment.commentedAt, style: const TextStyle( color: Colors.grey )),
+                              ],
+                            ),
                           ),
-                          Text(comment.commentedAt, style: const TextStyle( color: Colors.grey )), // 時間
+
+                          // 報告及び削除ボタン
+                          SizedBox(
+                            width: 20,
+                            child: PopupMenuButton(
+                                icon: const Icon(Icons.more_horiz),
+                                onSelected: (value)async{
+                                  //　削除処理
+                                  if(value == "delete"){
+                                    try{
+                                      await model.deleteComment(id, comment.id);
+                                    } catch(e) {
+                                      debugPrint(e.toString());
+                                    }
+                                  }
+                                  //　報告処理
+                                  if(value == "report") {
+                                    try{
+                                      await model.reportComment(id, comment.id, comment.comment);
+                                    } catch(e) {
+                                      debugPrint(e.toString());
+                                    }
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  (comment.commenterId == model.uid )
+                                      ? const PopupMenuItem(
+                                    value: "delete",
+                                    child: Text("削除"),
+                                  )
+                                      : const PopupMenuItem(
+                                    value: "report",
+                                    child: Text("報告"),
+                                  ),
+                                ]
+                            ),
+                          )
                         ],
                       ),
                     ),
