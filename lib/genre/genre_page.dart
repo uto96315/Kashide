@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/post/post_page.dart';
 import '../element/favorite/favorite_button.dart';
 import 'genre_model.dart';
 
@@ -199,6 +200,13 @@ class GenrePage extends StatelessWidget {
               );
             }),
           ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(context,MaterialPageRoute(builder: (context)=>PostPage(genre)));
+          },
+          backgroundColor: mainColor,
+          child: const Icon(Icons.add),
         ),
       ),
     );
