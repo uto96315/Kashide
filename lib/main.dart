@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
         "/notification": (context) => const NotificationPage(),
         "/myPage": (context) => const MyPage(),
         "/registerUserDetails": (context) => const RegisterUserDetailsPage(),
-        "/post": (context) => const PostPage(),
+        "/post": (context) => PostPage(null),
         // "/editUserDetails": (context) => EditUserDetailsPage("", ""),
       },
     );

@@ -4,6 +4,9 @@ import 'package:flutter/cupertino.dart';
 
 
 class PostModel extends ChangeNotifier {
+  PostModel(this.defaultGenres){
+    defaultGenres = defaultGenres;
+  }
 
   var user = FirebaseAuth.instance.currentUser;
 
@@ -12,6 +15,7 @@ class PostModel extends ChangeNotifier {
   final singNameController = TextEditingController();
   final genreController = TextEditingController();
 
+  String? defaultGenres;
   String? lyrics;
   String? singerName;
   String? singName;
@@ -43,6 +47,15 @@ class PostModel extends ChangeNotifier {
     notifyListeners();
   }
 
+
+  //　ジャンルから飛んできたのであればセット
+  void setDefaultGenre(String propGenre) {
+    if(propGenre != null || propGenre != null){
+      genres.add(propGenre);
+      debugPrint("ジャンルの初期値をセットしました");
+    }
+  }
+
   // ジャンルを付与する処理
   void setGenre(String genre) {
     if(genres.contains(genre)) {
@@ -71,6 +84,7 @@ class PostModel extends ChangeNotifier {
     if(genreMaxLength == false) {
       genreMaxLength = true;
     }
+
     notifyListeners();
   }
 

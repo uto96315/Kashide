@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
 import '../element/favorite/favorite_button.dart';
@@ -245,7 +246,7 @@ class TimelinePage extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.pushNamed(context, "/post");
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>PostPage(null)));
           },
           backgroundColor: mainColor,
           child: const Icon(Icons.add),
