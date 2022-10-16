@@ -285,22 +285,7 @@ class MyPage extends StatelessWidget {
 
 
 
-                          const SizedBox( height: 400 ),
-                          SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.5,
-                            height: 40,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                await model.logOut();
-                                Navigator.popUntil(context, ModalRoute.withName("/"));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: mainColor
-                              ),
-                              child: const Text("ログアウト", style: TextStyle( fontSize: 20 )),
-                            ),
-                          ),
-                          const SizedBox( height: 200 ),
+
                         ],
                       ),
                     ),

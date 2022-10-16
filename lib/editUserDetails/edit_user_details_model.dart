@@ -174,7 +174,9 @@ class EditUserDetailsModel extends ChangeNotifier {
     await deletePosts();
 
     // Storageの画像を削除する
+    await deleteFromStorage();
   }
+
 
 
   // 削除するユーザーの投稿を削除する
@@ -237,6 +239,20 @@ class EditUserDetailsModel extends ChangeNotifier {
       print("画像を変更しました");
     } catch(e) {
       print(e);
+    }
+  }
+
+
+  // アカウント削除時にstorageからユーザーのデータを削除する
+  Future deleteFromStorage() async{
+    var uid = FirebaseAuth.instance.currentUser?.uid;
+    try{
+      final storageRef = FirebaseStorage.instance
+          .ref("userIcons").child("$uid").child("userIcon");
+
+      await storageRef.delete();
+    } catch (e) {
+      debugPrint("アカウントの画像を削除しました");
     }
   }
 }
