@@ -5,13 +5,13 @@ import 'package:str_gram_beta/post/post_model.dart';
 
 class PostPage extends StatelessWidget {
   PostPage(this.defaultGenre, {super.key});
-  String? defaultGenre;  // ジャンルから遷移した場合以外はnullでOK
 
+  String? defaultGenre; // ジャンルから遷移した場合以外はnullでOK
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<PostModel>(
-      create: (_) => PostModel(defaultGenre)..setDefaultGenre(defaultGenre!),
+      create: (_) => PostModel(defaultGenre)..setDefaultGenre(defaultGenre),
       child: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
@@ -19,7 +19,7 @@ class PostPage extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             backgroundColor: mainColor,
-            toolbarHeight: MediaQuery.of(context).size.height * 0.07,
+            // toolbarHeight: MediaQuery.of(context).size.height * 0.07,
             actions: [
               Consumer<PostModel>(builder: (context, model, child) {
                 return // 投稿ボタン
@@ -157,7 +157,7 @@ class PostPage extends StatelessWidget {
 
                       const SizedBox(height: 30),
 
-                      TextButton(onPressed: (){debugPrint(defaultGenre);}, child: Text("テスト"))
+                      // TextButton(onPressed: (){debugPrint(defaultGenre);}, child: Text("テスト"))
                     ],
                   ),
                 );

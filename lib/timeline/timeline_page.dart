@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
@@ -80,7 +81,7 @@ class TimelinePage extends StatelessWidget {
                                           const SizedBox( width: 10 ),
                                           Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
 
-                                          // 報告及び削除ボタン
+                                          // 報告、編集及び削除ボタン
                                           PopupMenuButton(
                                               icon: const Icon(Icons.more_horiz),
                                               onSelected: (value)async{
@@ -88,18 +89,17 @@ class TimelinePage extends StatelessWidget {
                                                   await model.deletePosts(post.id);
                                                 } else if (value == "report") {
                                                   await model.reportPosts(post.id);
+                                                } else if(value == "edit") {
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres)));
                                                 }
                                               },
                                               itemBuilder: (BuildContext context) =>  [
                                                 (post.posterId == model.uid)
-                                                    ? const PopupMenuItem(
-                                                  value: "delete",
-                                                  child: Text("削除する"),
-                                                )
-                                                    : const PopupMenuItem(
-                                                  value: "report",
-                                                  child: Text("報告する"),
-                                                )
+                                                    ? const PopupMenuItem(value: "edit", child: Text("編集する"))
+                                                    : const PopupMenuItem(value: "report", child: Text("報告する")),
+                                                (post.posterId == model.uid)
+                                                    ? const PopupMenuItem(value: "delete", child: Text("削除する"))
+                                                    : const PopupMenuItem(value: "", child: Text("")), // todo: 何も表示しないようにしたい(null的な)
                                               ]
                                           )
                                         ],

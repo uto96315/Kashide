@@ -49,8 +49,8 @@ class PostModel extends ChangeNotifier {
 
 
   //　ジャンルから飛んできたのであればセット
-  void setDefaultGenre(String propGenre) {
-    if(propGenre != null || propGenre != null){
+  void setDefaultGenre(String? propGenre) {
+    if(propGenre != null){
       genres.add(propGenre);
       debugPrint("ジャンルの初期値をセットしました");
     }
