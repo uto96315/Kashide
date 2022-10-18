@@ -11,7 +11,7 @@ class PostPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<PostModel>(
-      create: (_) => PostModel(defaultGenre)..setDefaultGenre(defaultGenre!),
+      create: (_) => PostModel(defaultGenre)..setDefaultGenre(defaultGenre),
       child: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
@@ -19,7 +19,7 @@ class PostPage extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             backgroundColor: mainColor,
-            toolbarHeight: MediaQuery.of(context).size.height * 0.07,
+            // toolbarHeight: MediaQuery.of(context).size.height * 0.07,
             actions: [
               Consumer<PostModel>(builder: (context, model, child) {
                 return // 投稿ボタン
