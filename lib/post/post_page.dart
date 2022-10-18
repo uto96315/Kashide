@@ -5,8 +5,8 @@ import 'package:str_gram_beta/post/post_model.dart';
 
 class PostPage extends StatelessWidget {
   PostPage(this.defaultGenre, {super.key});
-  String? defaultGenre;  // ジャンルから遷移した場合以外はnullでOK
 
+  String? defaultGenre; // ジャンルから遷移した場合以外はnullでOK
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +157,7 @@ class PostPage extends StatelessWidget {
 
                       const SizedBox(height: 30),
 
-                      TextButton(onPressed: (){debugPrint(defaultGenre);}, child: Text("テスト"))
+                      // TextButton(onPressed: (){debugPrint(defaultGenre);}, child: Text("テスト"))
                     ],
                   ),
                 );
