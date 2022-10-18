@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
@@ -174,7 +175,7 @@ class PostDetailPage extends StatelessWidget {
                           ),
 
                           SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.05),
+                              width: MediaQuery.of(context).size.width * 0.03),
 
                           // テキストフィールド
                           SizedBox(
@@ -202,8 +203,8 @@ class PostDetailPage extends StatelessWidget {
 
                           // 送信ボタン
                           SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.1,
-                            child: IconButton(
+                            width: MediaQuery.of(context).size.width * 0.05,
+                            child: CupertinoButton(
                                 onPressed: model.canComment
                                     ? () async {
                                         model.showCount(
@@ -213,7 +214,7 @@ class PostDetailPage extends StatelessWidget {
                                         FocusScope.of(context).unfocus();
                                       }
                                     : null,
-                                icon: Icon(Icons.send, color: model.canComment ? Colors.blue : Colors.grey)),
+                                child: Icon(Icons.send, color: model.canComment ? Colors.blue : Colors.grey)),
                           )
                         ],
                       ),
