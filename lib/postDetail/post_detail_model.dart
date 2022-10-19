@@ -3,10 +3,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import '../element/comment/comment_model.dart';
+import 'package:timeago/timeago.dart' as timeAgo;
+
+import '../domain/comment_domain.dart';
 
 class PostDetailModel extends ChangeNotifier {
-  PostDetailModel(id, commentButtontapped);
+  PostDetailModel(id, commentButtonTapped);
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -66,9 +68,8 @@ class PostDetailModel extends ChangeNotifier {
   }
 
   // ユーザーの情報取得
-  Future getUserData() async{
-    final doc = FirebaseFirestore.instance.collection("users")
-                  .doc(uid);
+  Future getUserData(String uid) async{
+    final doc = FirebaseFirestore.instance.collection("users").doc(uid);
     final snapshot = await doc.get();
     userImageUrl = snapshot["iconUrl"];
     userName = snapshot["userName"];
@@ -76,24 +77,29 @@ class PostDetailModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ユーザー情報を取得する関数 // todo: 上と一つにする
+  Future getUserDataF(String uid) async {
+    final doc = FirebaseFirestore.instance.collection("users").doc(uid);
+    final snapshot = await doc.get();
+    final data = snapshot.data();
+    final userName = data?["userName"];
+    final userImageUrl = data?["iconUrl"];
+    notifyListeners();
+    return [userName, userImageUrl];
+  }
+
 
   // コメント入力欄のカウント
   void showCount(String text) {
-    if(text.isNotEmpty) {
-      counterTextVisible = true;
-    } else {
-      counterTextVisible = false;
-    }
+    counterTextVisible = text.isNotEmpty;
     notifyListeners();
   }
 
 
   // コメントの可否判定
   void checkComment(String text) {
-    if(text.isEmpty) {
-      return;
-    }
-    canComment = true;
+    canComment = text.isNotEmpty;
+    notifyListeners();
   }
 
 
@@ -110,7 +116,83 @@ class PostDetailModel extends ChangeNotifier {
     });
 
     debugPrint("コメントを送信しました");
+    canComment = false;
+    await getComments(postId);
+    notifyListeners();
+  }
 
+
+
+
+
+  //---------------------
+
+  List<CommentDomain> commentsList = [];
+
+  // コメントの取得
+  Future getComments(String postId) async {
+    final collection = FirebaseFirestore.instance
+        .collection("posts")
+        .doc(postId)
+        .collection("comments")
+        .orderBy("createdAt");
+
+    final snapshot = await collection.get();
+
+    final userInfo = await Future.wait(
+        snapshot.docs.map((doc) => getUserDataF(doc["posterId"])).toList());
+
+    commentsList = snapshot.docs.asMap().entries.map((entry) {
+      int index = entry.key;
+      final doc = entry.value;
+
+      return CommentDomain(
+        doc.id,
+        doc["comment"],
+        createTimeMessage(doc["createdAt"].toDate()),
+        doc["posterId"],
+        "${userInfo[index][0]}",
+        "${userInfo[index][1]}",
+      );
+    }).toList();
+
+    notifyListeners();
+  }
+
+  // 投稿時間から〜分前に変換する
+  String createTimeMessage(DateTime postDateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(postDateTime);
+    return timeAgo.format(now.subtract(difference), locale: "ja");
+  }
+
+  // コメントの削除機能
+  Future deleteComment(String postId, String commentId) async {
+    final doc = FirebaseFirestore.instance
+        .collection("posts")
+        .doc(postId)
+        .collection("comments")
+        .doc(commentId);
+
+    await doc.delete();
+    debugPrint("削除しました");
+
+    await getComments(postId);
+    notifyListeners();
+  }
+
+  // コメントの報告機能
+  Future reportComment(String postId, String commentId, String commentText) async{
+    final doc = FirebaseFirestore.instance
+        .collection("reportedComments");
+
+    await doc.add({
+      "postId": postId,
+      "commentId": commentId,
+      "commentText": commentText,
+      "reportedAt": DateTime.now(),
+    });
+    debugPrint("報告しました");
     notifyListeners();
   }
 }
