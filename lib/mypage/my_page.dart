@@ -90,9 +90,12 @@ class MyPage extends StatelessWidget {
                           const SizedBox( height: 30 ),
 
                           // 自己紹介文
-                          Text(
-                              model.userIntroduction ?? "",
-                              style: const TextStyle( fontSize: 16 )
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width*0.8,
+                            child: Text(
+                                model.userIntroduction ?? "",
+                                style: const TextStyle( fontSize: 16 )
+                            ),
                           ),
                           Container(
                             height: 50,
