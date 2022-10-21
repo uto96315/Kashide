@@ -32,6 +32,7 @@ class HomePage extends StatelessWidget {
         ),
         body: const Center(
           child: TabBarView(
+            physics: NeverScrollableScrollPhysics(),
             children: [
               TimelinePage(),
               SearchPage(),
