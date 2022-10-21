@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/element/comment/comment_area.dart';
-import 'package:str_gram_beta/element/favorite/favorite_button.dart';
 import 'package:str_gram_beta/postDetail/post_detail_model.dart';
 
 var uid = FirebaseAuth.instance.currentUser?.uid;

@@ -10,7 +10,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 4,
       child: Scaffold(
         bottomNavigationBar: Container(
           color: Colors.white,
@@ -22,20 +22,19 @@ class HomePage extends StatelessWidget {
               indicatorColor: mainColor,
               unselectedLabelColor: Colors.blueGrey,
               tabs: [
-                Tab(icon: Icon(Icons.home), text: "ホーム"),
-                Tab(icon: Icon(Icons.favorite), text: "MVP"),
-                Tab(icon: Icon(Icons.search), text: "検索"),
-                Tab(icon: Icon(Icons.notifications), text: "通知"),
-                Tab(icon: Icon(Icons.person), text: "ページ"),
+                Tab(icon: Icon(Icons.home, size: 30), child: Text("ホーム", style: TextStyle(fontSize: 12))),
+                Tab(icon: Icon(Icons.search, size: 30), child: Text("検索", style: TextStyle(fontSize: 12))),
+                Tab(icon: Icon(Icons.notifications, size: 30), child: Text("通知", style: TextStyle(fontSize: 12))),
+                Tab(icon: Icon(Icons.person, size: 30), child: Text("アカウント", style: TextStyle(fontSize: 12))),
               ],
             ),
           ),
         ),
         body: const Center(
           child: TabBarView(
+            physics: NeverScrollableScrollPhysics(),
             children: [
               TimelinePage(),
-              TopPage(),
               SearchPage(),
               NotificationPage(),
               MyPage(),
