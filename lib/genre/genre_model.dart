@@ -33,6 +33,7 @@ class GenreModel extends ChangeNotifier {
 
     final snapshot = await doc.get();
 
+    // ユーザー情報の取得
     final userInfo = await Future.wait(
         snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
 

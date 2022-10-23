@@ -56,7 +56,6 @@ class SearchPage extends StatelessWidget {
                               GestureDetector(
                                 onTap: (){
                                   Navigator.push(context, MaterialPageRoute(builder: (context) => SearchResultPage(word.key, word.value[1])));
-                                  model.searchTextController.clear(); //
                                 },
                                 child: Container(
                                 width: MediaQuery.of(context).size.width * 0.8,
