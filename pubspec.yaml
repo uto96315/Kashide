@@ -45,6 +45,7 @@ dependencies:
   image_picker: ^0.8.5+3
   timeago: ^3.3.0
   flutter_launcher_icons: ^0.10.0
+  flutter_native_splash: ^2.2.12
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +65,23 @@ flutter_icons:
   android: true
   ios: true
   image_path: "icon/Kahide_logo_android.png"
+
+
+# スプラッシュスクリーン
+# flutter pub run flutter_native_splash:create
+flutter_native_splash:
+  color: '#FFFFFF'
+  image: 'images/Kashide_splash.png'
+#  color_dark: '#FFFFFF'
+#  image_dark: 'images/Kashide_splash.png'
+  fullscreen: true
+  android_12:
+    icon_background_color: '#FFFFFF'
+    image: 'images/Kashide_splash.png'
+#    icon_background_color_dark: '#FFFFFF'
+#    image_dark: 'image/Kashide_splash.png'
+
+
 
 # The following section is specific to Flutter packages.
 flutter:
