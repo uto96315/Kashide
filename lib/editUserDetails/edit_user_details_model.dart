@@ -35,7 +35,8 @@ class EditUserDetailsModel extends ChangeNotifier {
   List<String> genderList = ["男性", "女性", "ノンバイナリー"];
   String? userImageUrl; // 引数で受け取ってくるURL
 
-  bool isSetted = false;
+  bool isSetted = false; // 画像が変更されたかどうかのフラグ
+  bool canPush = false; // 登録ボタンを押せるかどうかのフラグ
   File? imageFile; // セットされたファイル本体
   String? storageURL; // 新たにStorageにセットしたURL
 
@@ -74,6 +75,7 @@ class EditUserDetailsModel extends ChangeNotifier {
   // ユーザーネームのセット
   void setUserName(String name) {
     userName = name;
+    checkCanPush();
     notifyListeners();
   }
 
@@ -112,6 +114,12 @@ class EditUserDetailsModel extends ChangeNotifier {
   // テスト用の処理
   void test() {
     print("${userName},${userAge},${userIntroduction},${userGender},${userFavorite}");
+  }
+
+  // ボタンを押せるかどうかの検出
+  void checkCanPush() {
+    canPush = userName!.isNotEmpty;
+    notifyListeners();
   }
 
 
