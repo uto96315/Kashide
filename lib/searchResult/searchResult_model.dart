@@ -25,7 +25,13 @@ class SearchResultModel extends ChangeNotifier {
     final userInfo = await Future.wait(
         snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
 
+    // コメント数の取得
+    final commentCount = await Future.wait(
+        snapshot.docs.map((doc) => getCommentCount(doc.id)).toList()
+    );
 
+
+    // ここで合体
     resultList = snapshot.docs.asMap().entries.map((entry){
       int index = entry.key;
       final postData = entry.value;
@@ -37,11 +43,11 @@ class SearchResultModel extends ChangeNotifier {
           postData["posterId"],
           postData["likedCount"],
           postData["genres"],
-          "", // todo: 修正
-          "", // todo: 修正
+          "${userInfo[index][0]}",
+          "${userInfo[index][1]}",
           createTimeMessage(postData["createdAt"].toDate()),
           postData.id,
-          0 // todo: 修正
+          commentCount[index] ?? 0
       );
     }).toList();
     resultCount = resultList.length;
@@ -64,6 +70,16 @@ class SearchResultModel extends ChangeNotifier {
     final userImageUrl = data?["iconUrl"];
     notifyListeners();
     return [userName, userImageUrl];
+  }
+
+  // コメント数の取得
+  Future getCommentCount(String id) async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts").doc(id).collection("comments");
+    final snapshot = await doc.get();
+    final count = snapshot.docs.length;
+
+    return count;
   }
 
 }
