@@ -6,6 +6,8 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/element/comment/comment_area.dart';
 import 'package:str_gram_beta/postDetail/post_detail_model.dart';
 
+import '../element/favorite/favorite_button.dart';
+
 var uid = FirebaseAuth.instance.currentUser?.uid;
 
 class PostDetailPage extends StatelessWidget {
@@ -78,15 +80,35 @@ class PostDetailPage extends StatelessWidget {
                                   ),
                                 ),
 
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 30),
 
-                                // 本文
+                                // 説明
+                                SizedBox(
+                                  width: MediaQuery.of(context).size.width*0.8,
+                                  child: Text(
+                                      model.explanation ?? "",
+                                      textAlign: TextAlign.left,
+                                      style: const TextStyle( fontSize: 15, height: 1.5)
+                                  ),
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                // 歌詞
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.only(right: 20, left: 20),
-                                  child: Text(model.postText ?? "読み込み中...",
-                                      style: const TextStyle(
-                                          fontSize: 16, height: 1.5)),
+                                  padding: const EdgeInsets.only(right: 20, left: 20),
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    decoration: BoxDecoration(
+                                        color: Colors.grey.shade200
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text("---\n${model.postText }\n---"?? "読み込み中...",
+                                          style: const TextStyle(
+                                              fontSize: 16, height: 1.5)),
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: 20),
 
@@ -136,6 +158,23 @@ class PostDetailPage extends StatelessWidget {
 
                                 const SizedBox(height: 10),
 
+                                // いいね、コメントボタン
+                                SizedBox(
+                                    width: MediaQuery.of(context).size.width*0.5,
+                                    height: 30,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        const SizedBox( width: 20 ),
+                                        SizedBox(
+                                            width: 50,
+                                            height: 30,
+                                            child: FavoriteButton(id, model.likedCount ?? 0)
+                                        ),
+                                      ],
+                                    )
+                                ),
+
                                 const Divider(
                                   color: Colors.black54,
                                 ),
@@ -152,7 +191,8 @@ class PostDetailPage extends StatelessWidget {
                   ),
 
 
-                  // 下段のコメント入力欄
+
+                  // 下段のコメント入力欄==========================
                   Padding(
                     padding:
                         const EdgeInsets.only(right: 10, left: 10, bottom: 10),
