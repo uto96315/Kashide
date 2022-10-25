@@ -100,6 +100,8 @@ class MyModel extends ChangeNotifier {
         .collection("posts").doc(id);
 
     await doc.delete();
+
+    await getUserPosts();
     notifyListeners();
   }
 
