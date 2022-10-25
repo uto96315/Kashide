@@ -105,7 +105,6 @@ class EditPostPage extends StatelessWidget {
                     child: TextField(
                       controller: model.postSingerController,
                       maxLength: 50,
-                      autofocus: true,
                       decoration: const InputDecoration(
                         labelText: "歌手名(任意)",
                       ),
@@ -123,7 +122,6 @@ class EditPostPage extends StatelessWidget {
                     child: TextField(
                       controller: model.postSingNameController,
                       maxLength: 50,
-                      autofocus: true,
                       decoration: const InputDecoration(
                         labelText: "曲名(任意)",
                       ),
