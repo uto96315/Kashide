@@ -68,7 +68,8 @@ class MyModel extends ChangeNotifier {
             userImageURL ?? "",
             createTimeMessage(doc["createdAt"].toDate()),
             doc.id,
-            0
+            0,
+            doc["explanation"],
         )
     ).toList();
   }

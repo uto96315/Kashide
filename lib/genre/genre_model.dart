@@ -55,7 +55,8 @@ class GenreModel extends ChangeNotifier {
         "${userInfo[index][1]}",
         createTimeMessage(doc["createdAt"].toDate()),
         doc.id,
-        commentCount[index]
+        commentCount[index],
+        doc["explanation"],
       );
     }).toList();
 

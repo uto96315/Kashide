@@ -121,10 +121,31 @@ class TimelinePage extends StatelessWidget {
                                           child: Padding(
                                             padding:
                                             const EdgeInsets.only(left: 20),
-                                            child: Text(post.text,
-                                                textAlign: TextAlign.left,
-                                                style: const TextStyle(
-                                                    fontSize: 16, height: 1.5)),
+                                            child: Column(
+                                              children: [
+                                                // 説明
+                                                SizedBox(
+                                                    width: MediaQuery.of(context).size.width,
+                                                    child: Text(post.explanation, textAlign: TextAlign.left),
+                                                ),
+
+                                                const SizedBox( height: 10 ),
+
+                                                // 歌詞
+                                                Container(
+                                                  width: MediaQuery.of(context).size.width,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade200
+                                                  ),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(8.0),
+                                                    child: Text('---\n${post.text}\n---',
+                                                        textAlign: TextAlign.left,
+                                                        style: const TextStyle(fontSize: 16, height: 1.5)),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),

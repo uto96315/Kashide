@@ -64,7 +64,7 @@ class PostPage extends StatelessWidget {
                         maxLength: 300,
                         autofocus: true,
                         decoration: const InputDecoration(
-                          labelText: "好きな理由を自由に書いてみましょう（任意）",
+                          labelText: "この曲への思い（任意）",
                         ),
                         onChanged: (text) {
                           model.setExplanation(text);
@@ -80,6 +80,7 @@ class PostPage extends StatelessWidget {
                         autofocus: true,
                         decoration: const InputDecoration(
                           labelText: "心に響いた歌詞を入力しましょう(必須)",
+                          labelStyle: TextStyle( color: Colors.red )
                         ),
                         onChanged: (text) {
                           model.setLyrics(text);
