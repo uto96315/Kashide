@@ -57,6 +57,21 @@ class PostPage extends StatelessWidget {
                     children: [
                       const SizedBox(height: 50),
 
+                      // 好きな理由記入欄
+                      TextField(
+                        controller: model.explanationController,
+                        maxLines: null,
+                        maxLength: 300,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: "好きな理由を自由に書いてみましょう（任意）",
+                        ),
+                        onChanged: (text) {
+                          model.setExplanation(text);
+                        },
+                      ),
+                      const SizedBox(height: 15),
+
                       // お気に入りの歌詞入力欄
                       TextField(
                         controller: model.lyricsController,
@@ -76,7 +91,6 @@ class PostPage extends StatelessWidget {
                       TextField(
                         controller: model.singerNameController,
                         maxLength: 50,
-                        autofocus: true,
                         decoration: const InputDecoration(
                           labelText: "歌手名(任意)",
                         ),

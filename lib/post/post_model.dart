@@ -14,8 +14,10 @@ class PostModel extends ChangeNotifier {
   final singerNameController = TextEditingController();
   final singNameController = TextEditingController();
   final genreController = TextEditingController();
+  final explanationController = TextEditingController();
 
   String? defaultGenres;
+  String? explanation;
   String? lyrics;
   String? singerName;
   String? singName;
@@ -23,6 +25,13 @@ class PostModel extends ChangeNotifier {
   List<String> genres = [];
   bool canPush = false;
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
+
+
+  // 理由をセット
+  void setExplanation(String explanationText) {
+    explanation = explanationText;
+    notifyListeners();
+  }
 
   // 歌詞をセットする処理
   void setLyrics(String lyrics) {
@@ -94,6 +103,7 @@ class PostModel extends ChangeNotifier {
     final doc = FirebaseFirestore.instance.collection("posts");
 
     await doc.add({
+      "explanation": explanation ?? "",
       "artist": singerName ?? "不明",
       "likedCount": 0,
       "posterId": uid,
