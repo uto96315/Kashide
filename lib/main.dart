@@ -1,3 +1,4 @@
+import 'package:fcm_config/fcm_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -15,7 +16,19 @@ import 'registerUserDetails/register_user_details_page.dart';
 import 'firebase_options.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
-void main() async{
+
+// 通知
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp();
+
+  print("Handling a background message: ${message.messageId}");
+}
+
+
+// main
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp, // 縦固定
@@ -24,28 +37,56 @@ void main() async{
     options: DefaultFirebaseOptions.currentPlatform,
   );
   timeAgo.setLocaleMessages("ja", timeAgo.JaMessages()); // 〜分前で表示するため
+
+  // 通知設定
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  FirebaseMessaging messaging = FirebaseMessaging.instance; // 通知用
+
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    debugPrint('Got a message whilst in the foreground!');
+    debugPrint('Message data: ${message.data}');
+    if (message.notification != null) {
+      debugPrint('Message also contained a notification: ${message.notification}');
+    }
+  });
+
+  debugPrint('通知可否：User granted permission: ${settings.authorizationStatus}');
+
+
+  // run App
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
+
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'StrGram',
+      title: 'Kashide',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
 
-      home: StreamBuilder<User?> (
+      home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          if(snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const SizedBox();
           }
-          if( snapshot.hasData) {
+          if (snapshot.hasData) {
             return HomePage();
           }
 
@@ -70,5 +111,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-

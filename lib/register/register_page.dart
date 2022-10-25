@@ -80,8 +80,7 @@ class RegisterPage extends StatelessWidget {
                                   style: const TextStyle(color: Colors.blue),
                                   recognizer: TapGestureRecognizer()
                                     ..onTap = () {
-                                      launch(
-                                          'https://uto96315.github.io/VtIL_privacy_policy/');
+                                      launch('https://uto96315.github.io/Kashide_tos/');
                                     },
                                 ),
                                 const TextSpan(
