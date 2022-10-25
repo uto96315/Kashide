@@ -5,9 +5,11 @@ class Post {
       this.text, this.posterId,
       this.likedCount, this.genres,
       this.userName, this.userImageUrl,
-      this.createdAt, this.id, this.commentCount
+      this.createdAt, this.id, this.commentCount,
+      this.explanation
       );
 
+  String explanation;
   String artist;
   String singName;
   String text;

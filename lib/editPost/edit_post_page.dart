@@ -13,9 +13,11 @@ class EditPostPage extends StatelessWidget {
       this.defaultSingerName,
       this.defaultSingName,
       this.defaultGenreList,
+      this.explanation,
       {super.key});
 
   String postId; // 投稿のid
+  String explanation;
   String defaultText;
   String defaultSingerName;
   String defaultSingName;
@@ -24,7 +26,7 @@ class EditPostPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditPostModel>(
-      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId),
+      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId, explanation),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: mainColor,
@@ -62,6 +64,25 @@ class EditPostPage extends StatelessWidget {
               return Column(
                 children: [
                   const SizedBox( height: 50 ),
+
+                  // 好きな理由記入欄
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width*0.8,
+                    child: TextField(
+                      controller: model.explanationController,
+                      maxLines: null,
+                      maxLength: 300,
+                      decoration: const InputDecoration(
+                        labelText: "この曲への思い（任意）",
+                      ),
+                      onChanged: (text) {
+                        model.setExplanation(text);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
+                  // 歌詞
                   SizedBox(
                     width: MediaQuery.of(context).size.width*0.8,
                     child: TextField(
@@ -84,7 +105,6 @@ class EditPostPage extends StatelessWidget {
                     child: TextField(
                       controller: model.postSingerController,
                       maxLength: 50,
-                      autofocus: true,
                       decoration: const InputDecoration(
                         labelText: "歌手名(任意)",
                       ),
@@ -102,7 +122,6 @@ class EditPostPage extends StatelessWidget {
                     child: TextField(
                       controller: model.postSingNameController,
                       maxLength: 50,
-                      autofocus: true,
                       decoration: const InputDecoration(
                         labelText: "曲名(任意)",
                       ),

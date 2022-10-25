@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/searchResult/searchResult_model.dart';
 
 import '../element/favorite/favorite_button.dart';
+import '../postDetail/post_detail_page.dart';
 
 class SearchResultPage extends StatelessWidget {
   SearchResultPage(this.searchWord, this.themeColor, {super.key});
@@ -85,45 +86,34 @@ class SearchResultPage extends StatelessWidget {
                                         ),
                                         const SizedBox( width: 10 ),
                                         Text(result.createdAt, style: const TextStyle( color: Colors.grey )),
-
-                                        // 報告及び削除ボタン
-                                        // PopupMenuButton(
-                                        //     icon: const Icon(Icons.more_horiz),
-                                        //     onSelected: (value)async{
-                                        //       if(value == "delete") {
-                                        //         await model.deletePosts(post.id);
-                                        //       } else if (value == "report") {
-                                        //         await model.reportPosts(post.id);
-                                        //       }
-                                        //     },
-                                        //     itemBuilder: (BuildContext context) =>  [
-                                        //       (result.posterId == model.result)
-                                        //           ? const PopupMenuItem(
-                                        //         value: "delete",
-                                        //         child: Text("削除する"),
-                                        //       )
-                                        //           : const PopupMenuItem(
-                                        //         value: "report",
-                                        //         child: Text("報告する"),
-                                        //       )
-                                        //     ]
-                                        // )
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: 50),
+
+                                  // 説明
+                                  SizedBox(
+                                    width: MediaQuery.of(context).size.width*0.8,
+                                    child: Text(
+                                        result.explanation,
+                                        textAlign: TextAlign.left,
+                                        style: const TextStyle( fontSize: 15, height: 1.5)
+                                    ),
+                                  ),
+
+                                  const SizedBox( height: 10 ),
 
                                   // 歌詞
                                   SizedBox(
-                                    width:
-                                    MediaQuery.of(context).size.width *
-                                        0.8,
+                                    width: MediaQuery.of(context).size.width * 0.8,
                                     child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200
+                                      ),
                                       alignment: Alignment.centerLeft,
                                       child: Padding(
-                                        padding:
-                                        const EdgeInsets.only(left: 20),
-                                        child: Text(result.text,
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text("---\n${result.text}\n---",
                                             textAlign: TextAlign.left,
                                             style: const TextStyle(
                                                 fontSize: 16, height: 1.5)),
@@ -180,7 +170,29 @@ class SearchResultPage extends StatelessWidget {
                                   SizedBox(
                                       width: MediaQuery.of(context).size.width*0.5,
                                       height: 30,
-                                      child: FavoriteButton(result.id, result.likedCount)
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          GestureDetector(
+                                              onTap: (){
+                                                Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(result.id, true)));
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.comment, color: Colors.grey ),
+                                                  const SizedBox( width: 5 ),
+                                                  Text(result.commentCount.toString() ?? "", style: const TextStyle( fontSize: 17 )),
+                                                ],
+                                              )
+                                          ),
+                                          const SizedBox( width: 20 ),
+                                          SizedBox(
+                                              width: 50,
+                                              height: 30,
+                                              child: FavoriteButton(result.id, result.likedCount)
+                                          ),
+                                        ],
+                                      )
                                   ),
                                 ],
                               ),

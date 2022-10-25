@@ -14,19 +14,7 @@ class NotificationPage extends StatelessWidget {
       child: Scaffold(
         body: Center(
           child: Consumer<NotificationModel>(builder: (context, model, child) {
-            return Column(
-              children: [
-                const SizedBox(height: 100),
-                const Text("notification_page"),
-                TextButton(
-                    onPressed: ()async{
-                      await model.getToken();
-                    },
-                    child: const Text("トークン取得")
-                ),
-                Text(model.token ?? "トークン未取得"),
-              ],
-            );
+            return const Text("現在通知はありません。");
           }),
         ),
       ),

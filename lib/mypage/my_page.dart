@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import '../editPost/edit_post_page.dart';
 import '../element/favorite/favorite_button.dart';
+import '../postDetail/post_detail_page.dart';
 import '../test/sideBar.dart';
 import 'my_model.dart';
 
@@ -158,6 +160,7 @@ class MyPage extends StatelessWidget {
                                               Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
 
                                               // 報告及び削除ボタン
+                                              // 報告、編集及び削除ボタン
                                               PopupMenuButton(
                                                   icon: const Icon(Icons.more_horiz),
                                                   onSelected: (value)async{
@@ -165,18 +168,13 @@ class MyPage extends StatelessWidget {
                                                       await model.deletePosts(post.id);
                                                     } else if (value == "report") {
                                                       await model.reportPosts(post.id);
+                                                    } else if(value == "edit") {
+                                                      Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation)));
                                                     }
                                                   },
                                                   itemBuilder: (BuildContext context) =>  [
-                                                    (post.posterId == model.uid)
-                                                        ? const PopupMenuItem(
-                                                      value: "delete",
-                                                      child: Text("削除する"),
-                                                    )
-                                                        : const PopupMenuItem(
-                                                      value: "report",
-                                                      child: Text("報告する"),
-                                                    )
+                                                    const PopupMenuItem(value: "edit", child: Text("編集する")),
+                                                    const PopupMenuItem(value: "delete", child: Text("削除する"))
                                                   ]
                                               )
                                             ],
@@ -184,22 +182,40 @@ class MyPage extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 10),
 
-                                        // 歌詞
-                                        SizedBox(
-                                          width:
-                                          MediaQuery.of(context).size.width * 0.8,
-                                          child: Container(
-                                            alignment: Alignment.centerLeft,
-                                            child: Padding(
-                                              padding:
-                                              const EdgeInsets.only(left: 20),
-                                              child: Text(post.text,
-                                                  textAlign: TextAlign.left,
-                                                  style: const TextStyle(
-                                                      fontSize: 16, height: 1.5)),
-                                            ),
+                                        // 説明
+                                        GestureDetector(
+                                          onTap: (){
+                                            Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, false)));
+                                          },
+                                          child: Column(
+                                            children: [
+                                              SizedBox(
+                                                width: MediaQuery.of(context).size.width*0.8,
+                                                child: Text(
+                                                    post.explanation,
+                                                    textAlign: TextAlign.left,
+                                                    style: const TextStyle( fontSize: 15, height: 1.5)
+                                                ),
+                                              ),
+                                              const SizedBox( height: 10 ),
+
+                                              // 歌詞
+                                              Container(
+                                                width: MediaQuery.of(context).size.width*0.8,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.grey.shade200
+                                                ),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.all(8.0),
+                                                  child: Text('---\n${post.text}\n---',
+                                                      textAlign: TextAlign.left,
+                                                      style: const TextStyle(fontSize: 16, height: 1.5)),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
+
                                         const SizedBox(height: 20),
 
                                         // ジャンル
@@ -274,7 +290,29 @@ class MyPage extends StatelessWidget {
                                         SizedBox(
                                             width: MediaQuery.of(context).size.width*0.5,
                                             height: 30,
-                                            child: FavoriteButton(post.id, post.likedCount)
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.end,
+                                              children: [
+                                                GestureDetector(
+                                                    onTap: (){
+                                                      Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));
+                                                    },
+                                                    child: Row(
+                                                      children: [
+                                                        const Icon(Icons.comment, color: Colors.grey ),
+                                                        const SizedBox( width: 5 ),
+                                                        Text(post.commentCount.toString() ?? "", style: const TextStyle( fontSize: 17 )),
+                                                      ],
+                                                    )
+                                                ),
+                                                const SizedBox( width: 20 ),
+                                                SizedBox(
+                                                    width: 50,
+                                                    height: 30,
+                                                    child: FavoriteButton(post.id, post.likedCount)
+                                                ),
+                                              ],
+                                            )
                                         ),
                                       ],
                                     ),

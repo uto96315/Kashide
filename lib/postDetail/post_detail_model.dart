@@ -20,6 +20,8 @@ class PostDetailModel extends ChangeNotifier {
   String? singName;
   String? singerName;
   List genreList = [];
+  int? likedCount;
+  String? explanation;
 
   // 投稿者関係
   String? posterName;
@@ -49,6 +51,8 @@ class PostDetailModel extends ChangeNotifier {
     singName = data?["singName"];
     singerName = data?["artist"];
     genreList = data?["genres"];
+    likedCount = data?["likedCount"];
+    explanation = data?["explanation"];
 
     await getPosterData(posterId ?? "");
 

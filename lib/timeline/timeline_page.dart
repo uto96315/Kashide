@@ -90,7 +90,7 @@ class TimelinePage extends StatelessWidget {
                                                 } else if (value == "report") {
                                                   await model.reportPosts(post.id);
                                                 } else if(value == "edit") {
-                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres)));
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation)));
                                                 }
                                               },
                                               itemBuilder: (BuildContext context) =>  [
@@ -107,7 +107,7 @@ class TimelinePage extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 10),
 
-                                    // 歌詞
+                                    // 歌詞と理由
                                     GestureDetector(
                                       onTap: (){
                                         Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, false)));
@@ -121,10 +121,35 @@ class TimelinePage extends StatelessWidget {
                                           child: Padding(
                                             padding:
                                             const EdgeInsets.only(left: 20),
-                                            child: Text(post.text,
-                                                textAlign: TextAlign.left,
-                                                style: const TextStyle(
-                                                    fontSize: 16, height: 1.5)),
+                                            child: Column(
+                                              children: [
+                                                // 説明
+                                                SizedBox(
+                                                    width: MediaQuery.of(context).size.width,
+                                                    child: Text(
+                                                      post.explanation,
+                                                      textAlign: TextAlign.left,
+                                                      style: const TextStyle( fontSize: 15, height: 1.5)
+                                                    ),
+                                                ),
+
+                                                const SizedBox( height: 10 ),
+
+                                                // 歌詞
+                                                Container(
+                                                  width: MediaQuery.of(context).size.width,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade200
+                                                  ),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(8.0),
+                                                    child: Text('---\n${post.text}\n---',
+                                                        textAlign: TextAlign.left,
+                                                        style: const TextStyle(fontSize: 16, height: 1.5)),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),

@@ -51,8 +51,9 @@ class TimelineModel extends ChangeNotifier {
           "${userInfo[index][1]}",
           createTimeMessage(doc["createdAt"].toDate()),
           doc.id,
-          commentCount[index]
-          );
+          commentCount[index],
+          doc["explanation"] ?? "",
+      );
     }).toList();
     debugPrint("投稿を読み込みました");
     notifyListeners();

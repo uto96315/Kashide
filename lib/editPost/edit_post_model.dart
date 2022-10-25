@@ -5,12 +5,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
 class EditPostModel extends ChangeNotifier {
-  EditPostModel(this.defaultText, this.defaultSingerName, this.defaultSingName, this.defaultGenreList, this.postId){
+  EditPostModel(
+      this.defaultText,
+      this.defaultSingerName,
+      this.defaultSingName,
+      this.defaultGenreList,
+      this.postId,
+      this.defaultExplanation
+      ){
     postTextController.text = defaultText ?? "";
     postSingerController.text = defaultSingerName ?? "";
     postSingNameController.text = defaultSingName ?? "";
     defaultGenreList = defaultGenreList ?? [];
     postId = postId;
+    explanationController.text = defaultExplanation ?? "";
   }
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
@@ -19,14 +27,22 @@ class EditPostModel extends ChangeNotifier {
   final postSingerController = TextEditingController();
   final postSingNameController = TextEditingController();
   final genreController = TextEditingController();
+  final explanationController = TextEditingController();
 
   String? postId;
+  String? defaultExplanation;
   String? defaultText;
   String? defaultSingerName;
   String? defaultSingName;
   List defaultGenreList = [];
   bool genreMaxLength = true; // 三つ以下
   bool canPush = true;
+
+  // 理由をセット
+  void setExplanation(String explanationText) {
+    defaultExplanation = explanationText;
+    notifyListeners();
+  }
 
   // 歌詞をセットする処理
   void setLyrics(String text) {
@@ -102,6 +118,7 @@ class EditPostModel extends ChangeNotifier {
       "genres": defaultGenreList,  // todo: ここは後から変更する
       "text": defaultText,
       "singName": defaultSingName ?? "不明",
+      "explanation": defaultExplanation ?? "",
       "updatedAt": DateTime.now()
     });
     debugPrint("投稿をアップデートしました");
