@@ -46,6 +46,8 @@ dependencies:
   timeago: ^3.3.0
   flutter_launcher_icons: ^0.10.0
   flutter_native_splash: ^2.2.12
+  firebase_messaging: ^13.1.0
+  fcm_config: ^3.4.0
 
 dev_dependencies:
   flutter_test:

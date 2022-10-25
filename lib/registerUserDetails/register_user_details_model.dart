@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fcm_config/fcm_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,6 +26,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   File? imageFile;
   String? storageURL;
   bool canPush = false;
+  String? token;  // 通知用のトークン
 
 
   bool isLoading = false;
@@ -80,12 +82,16 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     notifyListeners();
   }
 
+
   // 新規登録用の処理
   Future registerUserData() async{
     var uid = user?.uid;
     var email = user?.email;
     userName = userNameController.text;
     userIntroduction = userIntroductionController.text;
+
+    // トークンの取得
+    await getToken();
 
     userName ??= "未設定";
     userAge ??= "未設定";
@@ -111,7 +117,8 @@ class RegisterUserDetailsModel extends ChangeNotifier {
         "gender": userGender,
         "introduction": userIntroduction,
         "createdAt": DateTime.now(),
-        "iconUrl": storageURL
+        "iconUrl": storageURL,
+        // "token": token
       });
     }
   }
@@ -137,5 +144,14 @@ class RegisterUserDetailsModel extends ChangeNotifier {
       print(e);
       print(imageFile!);
     }
+  }
+
+
+  // 通知のための設定
+  // todo: nullになる
+  Future getToken() async{
+    FirebaseMessaging.instance.requestPermission();
+    token = await FirebaseMessaging.instance.getAPNSToken();
+    print(token ?? "取得失敗です");
   }
 }
