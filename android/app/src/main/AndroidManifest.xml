@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.str_gram_beta">
    <application
-        android:label="Kaside_beta"
+        android:label="Kaside"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
