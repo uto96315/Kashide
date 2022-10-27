@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
@@ -360,16 +361,34 @@ class MyPage extends StatelessWidget {
                   leading: const Icon(Icons.logout),
                   title: const Text('ログアウト', style: TextStyle(fontWeight: FontWeight.bold)),
                   onTap: () async{
-                    await model.logOut();
-                    Navigator.popUntil(context, ModalRoute.withName("/"));
+                    showCupertinoDialog(
+                        context: context,
+                        builder: (_){
+                          return CupertinoAlertDialog(
+                            title: const Text("ログアウト"),
+                            content: const Text("ログアウトしますか？"),
+                            actions: [
+                              CupertinoDialogAction(
+                                child: const Text("はい"),
+                                onPressed: ()async{
+                                  debugPrint("ログアウトさせます");
+                                  await model.logOut();
+                                  Navigator.popUntil(context, ModalRoute.withName("/"));
+                                },
+                              ),
+                              CupertinoDialogAction(
+                                child: const Text("いいえ"),
+                                onPressed: (){
+                                  debugPrint("ログアウトがキャンセルされました");
+                                  Navigator.pop(context); //Drawerを閉じる
+                                },
+                              ),
+                            ],
+                          );
+                        }
+                    );
                   },
                 ),
-                // ListTile(
-                //   title: const Text("テスト"),
-                //   onTap: (){
-                //     Navigator.push(context, MaterialPageRoute(builder: (context)=>SidebarExample()));
-                //   },
-                // )
               ],
             ),
           ),
