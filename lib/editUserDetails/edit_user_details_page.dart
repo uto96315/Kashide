@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
@@ -18,8 +19,7 @@ class EditUserDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditUserDetailsModel>(
-      create: (_) => EditUserDetailsModel(userName, userIntroduction,
-          userGender, userAge, userFavorite, userImageUrl),
+      create: (_) => EditUserDetailsModel(userName, userIntroduction, userGender, userAge, userFavorite, userImageUrl),
       child: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
@@ -175,7 +175,7 @@ class EditUserDetailsPage extends StatelessWidget {
                         height: 50,
                         child: DropdownButton(
                             isExpanded: true,
-                            value: model.userGender,
+                            value: model.userGender ?? "",
                             hint: const Text("選択してください(任意)",
                                 style: TextStyle(fontSize: 15)),
                             items: model.genderList
@@ -254,21 +254,29 @@ class EditUserDetailsPage extends StatelessWidget {
                           onPressed: () async {
                             model.startLoading();
 
-                            try {
-                              await model.deleteUser();
-                              Navigator.popUntil(
-                                  context, (route) => route.isFirst);
-                            } catch (e) {
-                              print(e.toString());
-                              final snackBar = SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text(e.toString()),
-                              );
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(snackBar);
-                            } finally {
-                              model.endLoading();
-                            }
+                            showCupertinoDialog(
+                                context: context,
+                                builder: (_){
+                                  return CupertinoAlertDialog(
+                                    content: const Text("アカウントを削除すると復元できません。よろしいですか？"),
+                                    actions: [
+                                      CupertinoDialogAction(
+                                        child: const Text("はい"),
+                                        onPressed: ()async{
+                                          Navigator.popUntil(context, (route) => route.isFirst);  // トップ画面に遷移
+                                          await model.deleteUser();  // アカウント削除
+                                        },
+                                      ),
+                                      CupertinoDialogAction(
+                                        child: const Text("いいえ"),
+                                        onPressed: (){
+                                          Navigator.pop(context);
+                                        },
+                                      )
+                                    ],
+                                  );
+                                }
+                            );
                           },
                           style: ElevatedButton.styleFrom(primary: Colors.red),
                           child: const Text("アカウントを削除する"),

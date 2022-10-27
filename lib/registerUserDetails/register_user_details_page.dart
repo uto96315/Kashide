@@ -58,6 +58,7 @@ class RegisterUserDetailsPage extends StatelessWidget {
                       // ユーザーネーム入力欄
                       TextField(
                         maxLength: 50,
+                        autofocus: true,
                         controller: model.userNameController,
                         decoration:
                             const InputDecoration(labelText: "ユーザーネーム(必須)"),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
@@ -24,15 +25,30 @@ class PostPage extends StatelessWidget {
               Consumer<PostModel>(builder: (context, model, child) {
                 return // 投稿ボタン
                     Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: MaterialButton(
-                    color: (model.canPush) ? Colors.white : null,
-                    onPressed: (model.canPush)
-                        ? () async {
-                            await model.post();
-                            Navigator.pushNamed(context, "/home");
-                          }
-                        : null,
+                        padding: const EdgeInsets.all(8.0),
+                        child: MaterialButton(
+                          color: (model.canPush) ? Colors.white : null,
+                          onPressed: (model.canPush)
+                           ? () async {
+                            await model.post();  // 投稿実行
+                            showCupertinoDialog(
+                                  context: context,
+                                  builder: (_){
+                                    return CupertinoAlertDialog(
+                                      content: const Text("投稿しました"),
+                                      actions: [
+                                        CupertinoDialogAction(
+                                            child: const Text("OK"),
+                                            onPressed: (){
+                                              Navigator.pushNamed(context, "/home");
+                                            },
+                                        )
+                                      ],
+                                    );
+                                  }
+                              );
+                             }
+                            : null,
                     child: const Padding(
                       padding: EdgeInsets.only(right: 15, left: 15),
                       child: Text(

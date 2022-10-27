@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
@@ -86,9 +87,54 @@ class TimelinePage extends StatelessWidget {
                                               icon: const Icon(Icons.more_horiz),
                                               onSelected: (value)async{
                                                 if(value == "delete") {
-                                                  await model.deletePosts(post.id);
+                                                  // 削除のアラート表示
+                                                  showCupertinoDialog(
+                                                      context: context,
+                                                      builder: (_){
+                                                        return CupertinoAlertDialog(
+                                                          content: const Text("削除しますか？"),
+                                                          actions: [
+                                                            CupertinoDialogAction(
+                                                              child: const Text('はい'),
+                                                              onPressed: () async{
+                                                                await model.deletePosts(post.id);
+                                                                Navigator.pop(context);
+                                                              },
+                                                            ),
+                                                            CupertinoDialogAction(
+                                                              child: const Text('いいえ'),
+                                                              onPressed: () {
+                                                                Navigator.pop(context);
+                                                              },
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }
+                                                  );
                                                 } else if (value == "report") {
-                                                  await model.reportPosts(post.id);
+                                                  showCupertinoDialog(
+                                                      context: context,
+                                                      builder: (_){
+                                                        return CupertinoAlertDialog(
+                                                          content: const Text("報告しますか？"),
+                                                          actions: [
+                                                            CupertinoDialogAction(
+                                                              child: const Text('はい'),
+                                                              onPressed: () async{
+                                                                await model.reportPosts(post.id);
+                                                                Navigator.pop(context);
+                                                              },
+                                                            ),
+                                                            CupertinoDialogAction(
+                                                              child: const Text('いいえ'),
+                                                              onPressed: () {
+                                                                Navigator.pop(context);
+                                                              },
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }
+                                                  );
                                                 } else if(value == "edit") {
                                                   Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation)));
                                                 }
