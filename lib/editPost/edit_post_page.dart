@@ -1,5 +1,6 @@
 
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
@@ -161,7 +162,29 @@ class EditPostPage extends StatelessWidget {
                         borderRadius:
                         const BorderRadius.all(Radius.circular(32)),
                         onTap: () {
-                          model.deleteGenre(genre); // タップされたら削除する
+                          showCupertinoDialog(
+                              context: context,
+                              builder: (_){
+                                return CupertinoAlertDialog(
+                                  content: Text("「$genre」を削除しますか？"),
+                                  actions: [
+                                    CupertinoDialogAction(
+                                      child: const Text('はい'),
+                                      onPressed: () {
+                                        model.deleteGenre(genre); // タップされたら削除する
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                    CupertinoDialogAction(
+                                      child: const Text('いいえ'),
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                );
+                              }
+                          );
                         },
                         child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
