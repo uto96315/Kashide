@@ -53,6 +53,7 @@ class TimelineModel extends ChangeNotifier {
           doc.id,
           commentCount[index],
           doc["explanation"] ?? "",
+          doc["youtubeLink"] ?? ""
       );
     }).toList();
     debugPrint("投稿を読み込みました");

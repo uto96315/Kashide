@@ -15,6 +15,7 @@ class EditPostPage extends StatelessWidget {
       this.defaultSingName,
       this.defaultGenreList,
       this.explanation,
+      this.youtubeLink,
       {super.key});
 
   String postId; // 投稿のid
@@ -22,12 +23,13 @@ class EditPostPage extends StatelessWidget {
   String defaultText;
   String defaultSingerName;
   String defaultSingName;
+  String youtubeLink;
   List defaultGenreList;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditPostModel>(
-      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId, explanation),
+      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId, explanation, youtubeLink),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: mainColor,
@@ -146,8 +148,27 @@ class EditPostPage extends StatelessWidget {
                       },
                     ),
                   ),
-
                   const SizedBox(height: 15),
+
+
+                  // Youtubeなどのリンクを貼る
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width*0.8,
+                    child: TextField(
+                      controller: model.youtubeLinkController,
+                      maxLines: 1,
+                      maxLength: 200,
+                      decoration: const InputDecoration(
+                        labelText: "Youtubeリンク",
+                        // prefixIcon: Icon(Icons.add)
+                      ),
+                      onChanged: (text){
+                        model.setYoutubeLink(text);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+
 
                   // ジャンル追加欄
                   SizedBox(

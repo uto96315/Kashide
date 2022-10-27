@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/searchResult/searchResult_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../element/favorite/favorite_button.dart';
 import '../postDetail/post_detail_page.dart';
@@ -166,13 +168,34 @@ class SearchResultPage extends StatelessWidget {
                                   ),
                                   const SizedBox( height: 15 ),
 
-                                  // いいねボタン
+                                  // いいね、コメントボタン
                                   SizedBox(
                                       width: MediaQuery.of(context).size.width*0.5,
                                       height: 30,
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.end,
                                         children: [
+                                          // youtubeリンク
+                                          Container(
+                                            child: result.youtubeLink != ""
+                                                ? CupertinoButton(
+                                                minSize: double.minPositive,
+                                                padding: EdgeInsets.zero,
+                                                onPressed: (){
+                                                  launchUrl(Uri.parse(result.youtubeLink));
+                                                },
+                                                child: Container(
+                                                    decoration:  BoxDecoration(
+                                                      color: Colors.red,
+                                                      borderRadius: BorderRadius.circular(100),
+                                                    ),
+                                                    child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
+                                                )
+                                            )
+
+                                                : null,
+                                          ),
+                                          const SizedBox( width: 35 ),
                                           GestureDetector(
                                               onTap: (){
                                                 Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(result.id, true)));

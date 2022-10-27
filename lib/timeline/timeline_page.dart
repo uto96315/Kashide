@@ -5,6 +5,7 @@ import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../common/ThemeColor.dart';
 import '../element/favorite/favorite_button.dart';
 import 'timeline_model.dart';
@@ -136,7 +137,7 @@ class TimelinePage extends StatelessWidget {
                                                       }
                                                   );
                                                 } else if(value == "edit") {
-                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation)));
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation, post.youtubeLink)));
                                                 }
                                               },
                                               itemBuilder: (BuildContext context) =>  [
@@ -280,6 +281,29 @@ class TimelinePage extends StatelessWidget {
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.end,
                                           children: [
+                                            // youtubeリンク
+                                            Container(
+                                              child: post.youtubeLink != ""
+                                                  ? CupertinoButton(
+                                                    minSize: double.minPositive,
+                                                    padding: EdgeInsets.zero,
+                                                    onPressed: (){
+                                                      launchUrl(Uri.parse(post.youtubeLink));
+                                                    },
+                                                    child: Container(
+                                                        decoration:  BoxDecoration(
+                                                          color: Colors.red,
+                                                          borderRadius: BorderRadius.circular(100),
+                                                        ),
+                                                        child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
+                                                    )
+                                                  )
+
+                                                  : null,
+                                            ),
+                                            const SizedBox( width: 35 ),
+
+                                            // コメントボタン
                                             GestureDetector(
                                               onTap: (){
                                                 Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));
@@ -293,6 +317,8 @@ class TimelinePage extends StatelessWidget {
                                                 )
                                             ),
                                             const SizedBox( width: 20 ),
+
+                                            // いいねボタン
                                             SizedBox(
                                                 width: 50,
                                                 height: 30,

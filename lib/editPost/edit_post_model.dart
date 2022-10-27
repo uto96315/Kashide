@@ -11,14 +11,17 @@ class EditPostModel extends ChangeNotifier {
       this.defaultSingName,
       this.defaultGenreList,
       this.postId,
-      this.defaultExplanation
-      ){
+      this.defaultExplanation,
+      this.youtubeLink
+      )
+  {
     postTextController.text = defaultText ?? "";
     postSingerController.text = defaultSingerName ?? "";
     postSingNameController.text = defaultSingName ?? "";
     defaultGenreList = defaultGenreList ?? [];
     postId = postId;
     explanationController.text = defaultExplanation ?? "";
+    youtubeLinkController.text = youtubeLink ?? "";
   }
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
@@ -28,6 +31,7 @@ class EditPostModel extends ChangeNotifier {
   final postSingNameController = TextEditingController();
   final genreController = TextEditingController();
   final explanationController = TextEditingController();
+  final youtubeLinkController = TextEditingController();
 
   String? postId;
   String? defaultExplanation;
@@ -37,6 +41,7 @@ class EditPostModel extends ChangeNotifier {
   List defaultGenreList = [];
   bool genreMaxLength = true; // 三つ以下
   bool canPush = true;
+  String? youtubeLink;
 
   // 理由をセット
   void setExplanation(String explanationText) {
@@ -68,6 +73,12 @@ class EditPostModel extends ChangeNotifier {
     if(sing!.isNotEmpty) {
       defaultSingName = sing;
     }
+    notifyListeners();
+  }
+
+  // youtubeのリンクをセット
+  void setYoutubeLink(String text){
+    youtubeLink = text;
     notifyListeners();
   }
 
@@ -119,7 +130,8 @@ class EditPostModel extends ChangeNotifier {
       "text": defaultText,
       "singName": defaultSingName ?? "不明",
       "explanation": defaultExplanation ?? "",
-      "updatedAt": DateTime.now()
+      "updatedAt": DateTime.now(),
+      "youtubeLink": youtubeLink ?? "",
     });
     debugPrint("投稿をアップデートしました");
 
