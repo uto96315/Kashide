@@ -87,6 +87,7 @@ class TimelinePage extends StatelessWidget {
                                               icon: const Icon(Icons.more_horiz),
                                               onSelected: (value)async{
                                                 if(value == "delete") {
+                                                  // 削除のアラート表示
                                                   showCupertinoDialog(
                                                       context: context,
                                                       builder: (_){
@@ -111,7 +112,29 @@ class TimelinePage extends StatelessWidget {
                                                       }
                                                   );
                                                 } else if (value == "report") {
-                                                  await model.reportPosts(post.id);
+                                                  showCupertinoDialog(
+                                                      context: context,
+                                                      builder: (_){
+                                                        return CupertinoAlertDialog(
+                                                          content: const Text("報告しますか？"),
+                                                          actions: [
+                                                            CupertinoDialogAction(
+                                                              child: const Text('はい'),
+                                                              onPressed: () async{
+                                                                await model.reportPosts(post.id);
+                                                                Navigator.pop(context);
+                                                              },
+                                                            ),
+                                                            CupertinoDialogAction(
+                                                              child: const Text('いいえ'),
+                                                              onPressed: () {
+                                                                Navigator.pop(context);
+                                                              },
+                                                            ),
+                                                          ],
+                                                        );
+                                                      }
+                                                  );
                                                 } else if(value == "edit") {
                                                   Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation)));
                                                 }
