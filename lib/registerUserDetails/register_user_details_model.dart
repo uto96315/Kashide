@@ -94,8 +94,8 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     await getToken();
 
     userName ??= "未設定";
-    userAge ??= "未設定";
-    userGender ??= "未設定";
+    userAge ??= "99以上";
+    userGender ??= "ノンバイナリー";
     userIntroduction ??= "未設定";
     storageURL ??= "";
 
@@ -114,7 +114,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
         "email": email ?? "",
         "favorite": [""],
         "age": userAge,
-        "gender": userGender,
+        "gender": userGender ?? "ノンバイナリー", // 未指定の場合にはノンバイナリーにする
         "introduction": userIntroduction,
         "createdAt": DateTime.now(),
         "iconUrl": storageURL,

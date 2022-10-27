@@ -190,8 +190,7 @@ class EditUserDetailsModel extends ChangeNotifier {
   // 削除するユーザーの投稿を削除する
   Future deletePosts() async{
     var uid = user?.uid;
-    final doc = FirebaseFirestore.instance.collection("posts")
-                  .where("posterId", isEqualTo: uid);
+    final doc = FirebaseFirestore.instance.collection("posts").where("posterId", isEqualTo: uid);
     final data = await doc.get();
     // 削除はForEachで回す
     data.docs.forEach((doc) async{

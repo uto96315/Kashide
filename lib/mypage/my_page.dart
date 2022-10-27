@@ -342,6 +342,8 @@ class MyPage extends StatelessWidget {
                 const DrawerHeader(
                   child: Center(child: Text("メニュー", style: TextStyle(fontSize: 18))),
                 ),
+
+                // 編集
                 ListTile(
                   leading: const Icon(Icons.edit),
                   title: const Text('プロフィール編集', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -357,6 +359,8 @@ class MyPage extends StatelessWidget {
                         )));
                   },
                 ),
+
+                // ログアウト
                 ListTile(
                   leading: const Icon(Icons.logout),
                   title: const Text('ログアウト', style: TextStyle(fontWeight: FontWeight.bold)),
