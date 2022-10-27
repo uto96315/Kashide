@@ -15,6 +15,7 @@ class PostModel extends ChangeNotifier {
   final singNameController = TextEditingController();
   final genreController = TextEditingController();
   final explanationController = TextEditingController();
+  final youtubeLinkController = TextEditingController();
 
   String? defaultGenres;
   String? explanation;
@@ -25,6 +26,7 @@ class PostModel extends ChangeNotifier {
   List<String> genres = [];
   bool canPush = false;
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
+  String? youtubeLink;
 
 
   // 理由をセット
@@ -53,6 +55,12 @@ class PostModel extends ChangeNotifier {
   // 曲名をセットする処理
   void setSing(String sing) {
     singName = sing;
+    notifyListeners();
+  }
+
+  // youtubeのリンクセット
+  void setYoutubeLink(String text) {
+    youtubeLink = text;
     notifyListeners();
   }
 
@@ -110,7 +118,8 @@ class PostModel extends ChangeNotifier {
       "genres": genres,  // todo: ここは後から変更する
       "text": lyrics,
       "singName": singName ?? "不明",
-      "createdAt": DateTime.now()
+      "createdAt": DateTime.now(),
+      "youtubeLink": youtubeLink ?? "",
     });
   }
 }
