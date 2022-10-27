@@ -57,6 +57,7 @@ class GenreModel extends ChangeNotifier {
         doc.id,
         commentCount[index],
         doc["explanation"],
+        doc["youtubeLink"],
       );
     }).toList();
 

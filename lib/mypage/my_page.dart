@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../editPost/edit_post_page.dart';
 import '../element/favorite/favorite_button.dart';
 import '../postDetail/post_detail_page.dart';
@@ -170,7 +171,7 @@ class MyPage extends StatelessWidget {
                                                     } else if (value == "report") {
                                                       await model.reportPosts(post.id);
                                                     } else if(value == "edit") {
-                                                      Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation)));
+                                                      Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation, post.youtubeLink)));
                                                     }
                                                   },
                                                   itemBuilder: (BuildContext context) =>  [
@@ -287,13 +288,36 @@ class MyPage extends StatelessWidget {
                                         ),
                                         const SizedBox( height: 15 ),
 
-                                        // いいねボタン
+                                        // いいね、コメントボタン
                                         SizedBox(
                                             width: MediaQuery.of(context).size.width*0.5,
                                             height: 30,
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.end,
                                               children: [
+                                                // youtubeリンク
+                                                Container(
+                                                  child: post.youtubeLink != ""
+                                                      ? CupertinoButton(
+                                                      minSize: double.minPositive,
+                                                      padding: EdgeInsets.zero,
+                                                      onPressed: (){
+                                                        launchUrl(Uri.parse(post.youtubeLink));
+                                                      },
+                                                      child: Container(
+                                                          decoration:  BoxDecoration(
+                                                            color: Colors.red,
+                                                            borderRadius: BorderRadius.circular(100),
+                                                          ),
+                                                          child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
+                                                      )
+                                                  )
+
+                                                      : null,
+                                                ),
+                                                const SizedBox( width: 35 ),
+
+
                                                 GestureDetector(
                                                     onTap: (){
                                                       Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));

@@ -48,7 +48,8 @@ class SearchResultModel extends ChangeNotifier {
           createTimeMessage(postData["createdAt"].toDate()),
           postData.id,
           commentCount[index] ?? 0,
-          postData["explanation"]
+          postData["explanation"],
+          postData["youtubeLink"],
       );
     }).toList();
     resultCount = resultList.length;

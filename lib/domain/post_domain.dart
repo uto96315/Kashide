@@ -6,7 +6,7 @@ class Post {
       this.likedCount, this.genres,
       this.userName, this.userImageUrl,
       this.createdAt, this.id, this.commentCount,
-      this.explanation
+      this.explanation, this.youtubeLink,
       );
 
   String explanation;
@@ -20,5 +20,6 @@ class Post {
   String userImageUrl;
   String createdAt;
   String id;
+  String youtubeLink;
   int commentCount;
 }

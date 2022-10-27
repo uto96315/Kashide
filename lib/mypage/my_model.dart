@@ -70,6 +70,7 @@ class MyModel extends ChangeNotifier {
             doc.id,
             0,
             doc["explanation"],
+            doc["youtubeLink"],
         )
     ).toList();
   }
