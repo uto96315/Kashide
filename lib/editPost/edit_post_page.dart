@@ -41,7 +41,22 @@ class EditPostPage extends StatelessWidget {
                     onPressed: (model.canPush)
                         ? () async {
                       await model.updatePost();
-                      Navigator.pushNamed(context, "/home");
+                      showCupertinoDialog(
+                          context: context,
+                          builder: (_){
+                            return CupertinoAlertDialog(
+                              content: const Text("投稿しました"),
+                              actions: [
+                                CupertinoDialogAction(
+                                  child: const Text('OK'),
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, "/home");
+                                  },
+                                ),
+                              ],
+                            );
+                          }
+                      );
                     }
                         : null,
                     child: const Padding(
