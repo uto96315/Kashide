@@ -78,7 +78,6 @@ class PostPage extends StatelessWidget {
                         controller: model.explanationController,
                         maxLines: null,
                         maxLength: 300,
-                        autofocus: true,
                         decoration: const InputDecoration(
                           labelText: "この曲への思い（任意）",
                         ),
