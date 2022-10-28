@@ -17,20 +17,28 @@ class TimelinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<TimelineModel>(
       create: (_) => TimelineModel()..getPosts(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("Kashide"),
-          automaticallyImplyLeading: false,
-          backgroundColor: mainColor,
-        ),
-        body: SingleChildScrollView(
-          child: Center(
-            child: Consumer<TimelineModel>(builder: (context, model, child) {
-              return Column(children: [
-                const SizedBox(height: 10),
-                Column(
-                  children: model.postsList
-                      .map((post)  {
+      child: Consumer<TimelineModel>(builder: (context, model, child){
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text("Kashide"),
+            automaticallyImplyLeading: false,
+            backgroundColor: mainColor,
+          ),
+
+          body: RefreshIndicator(  // 下にスワイプでリフレッシュ
+            color: mainColor,
+            onRefresh: ()async{
+              await model.getPosts();
+              debugPrint("更新しました");
+            },
+            child: SingleChildScrollView(
+              child: Center(
+                child: Consumer<TimelineModel>(builder: (context, model, child) {
+                  return Column(children: [
+                    const SizedBox(height: 10),
+                    Column(
+                      children: model.postsList
+                          .map((post)  {
                         return Container(
                           width: MediaQuery.of(context).size.width,
                           decoration: const BoxDecoration(
@@ -172,12 +180,12 @@ class TimelinePage extends StatelessWidget {
                                               children: [
                                                 // 説明
                                                 SizedBox(
-                                                    width: MediaQuery.of(context).size.width,
-                                                    child: Text(
+                                                  width: MediaQuery.of(context).size.width,
+                                                  child: Text(
                                                       post.explanation,
                                                       textAlign: TextAlign.left,
                                                       style: const TextStyle( fontSize: 15, height: 1.5)
-                                                    ),
+                                                  ),
                                                 ),
 
                                                 const SizedBox( height: 10 ),
@@ -186,7 +194,7 @@ class TimelinePage extends StatelessWidget {
                                                 Container(
                                                   width: MediaQuery.of(context).size.width,
                                                   decoration: BoxDecoration(
-                                                    color: Colors.grey.shade200
+                                                      color: Colors.grey.shade200
                                                   ),
                                                   child: Padding(
                                                     padding: const EdgeInsets.all(8.0),
@@ -285,19 +293,19 @@ class TimelinePage extends StatelessWidget {
                                             Container(
                                               child: post.youtubeLink != ""
                                                   ? CupertinoButton(
-                                                    minSize: double.minPositive,
-                                                    padding: EdgeInsets.zero,
-                                                    onPressed: (){
-                                                      launchUrl(Uri.parse(post.youtubeLink));
-                                                    },
-                                                    child: Container(
-                                                        decoration:  BoxDecoration(
-                                                          color: Colors.red,
-                                                          borderRadius: BorderRadius.circular(100),
-                                                        ),
-                                                        child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
-                                                    )
+                                                  minSize: double.minPositive,
+                                                  padding: EdgeInsets.zero,
+                                                  onPressed: (){
+                                                    launchUrl(Uri.parse(post.youtubeLink));
+                                                  },
+                                                  child: Container(
+                                                      decoration:  BoxDecoration(
+                                                        color: Colors.red,
+                                                        borderRadius: BorderRadius.circular(100),
+                                                      ),
+                                                      child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
                                                   )
+                                              )
 
                                                   : null,
                                             ),
@@ -305,14 +313,14 @@ class TimelinePage extends StatelessWidget {
 
                                             // コメントボタン
                                             GestureDetector(
-                                              onTap: (){
-                                                Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));
-                                              },
+                                                onTap: (){
+                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));
+                                                },
                                                 child: Row(
                                                   children: [
                                                     const Icon(Icons.comment, color: Colors.grey ),
                                                     const SizedBox( width: 5 ),
-                                                    Text(post.commentCount.toString() ?? "", style: const TextStyle( fontSize: 17 )),
+                                                    Text(post.commentCount.toString(), style: const TextStyle( fontSize: 17 )),
                                                   ],
                                                 )
                                             ),
@@ -333,22 +341,24 @@ class TimelinePage extends StatelessWidget {
                             ),
                           ),
                         );
-                  }
+                      }
                       )
-                      .toList(),
-                ),
-              ]);
-            }),
+                          .toList(),
+                    ),
+                  ]);
+                }),
+              ),
+            ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>PostPage(null)));
-          },
-          backgroundColor: mainColor,
-          child: const Icon(Icons.add),
-        ),
-      ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context)=>PostPage(null)));
+            },
+            backgroundColor: mainColor,
+            child: const Icon(Icons.add),
+          ),
+        );
+      })
     );
   }
 }
