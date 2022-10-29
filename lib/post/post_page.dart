@@ -79,7 +79,7 @@ class PostPage extends StatelessWidget {
                         maxLines: null,
                         maxLength: 300,
                         decoration: const InputDecoration(
-                          labelText: "この曲はあなたにとって...？（任意）",
+                          labelText: "この曲への思い（任意）",
                         ),
                         onChanged: (text) {
                           model.setExplanation(text);

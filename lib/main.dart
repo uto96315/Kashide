@@ -19,10 +19,7 @@ import 'package:timeago/timeago.dart' as timeAgo;
 
 // 通知
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // If you're going to use other Firebase services in the background, such as Firestore,
-  // make sure you call `initializeApp` before using other Firebase services.
   await Firebase.initializeApp();
-
   print("Handling a background message: ${message.messageId}");
 }
 
@@ -44,10 +41,10 @@ void main() async {
 
   NotificationSettings settings = await messaging.requestPermission(
     alert: true,
-    announcement: false,
+    announcement: true,
     badge: true,
-    carPlay: false,
-    criticalAlert: false,
+    carPlay: true,
+    criticalAlert: true,
     provisional: false,
     sound: true,
   );
@@ -56,11 +53,12 @@ void main() async {
     debugPrint('Got a message whilst in the foreground!');
     debugPrint('Message data: ${message.data}');
     if (message.notification != null) {
-      debugPrint('Message also contained a notification: ${message.notification}');
+      debugPrint('Message also contained a notification: ${message.notification.toString()}');
     }
   });
-
   debugPrint('通知可否：User granted permission: ${settings.authorizationStatus}');
+  final token = await messaging.getToken();
+  debugPrint("Token : $token");
 
 
   // run App
