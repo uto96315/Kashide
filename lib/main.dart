@@ -35,6 +35,8 @@ void main() async {
   );
   timeAgo.setLocaleMessages("ja", timeAgo.JaMessages()); // 〜分前で表示するため
 
+
+
   // 通知設定
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   FirebaseMessaging messaging = FirebaseMessaging.instance; // 通知用
