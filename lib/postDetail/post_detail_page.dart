@@ -143,15 +143,37 @@ class PostDetailPage extends StatelessWidget {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      const Text("歌手：",
-                                          style: TextStyle(fontSize: 11)),
-                                      Text(model.singerName ?? "読み込み中",
-                                          style: const TextStyle(fontSize: 11)),
-                                      const SizedBox(width: 10),
-                                      const Text("曲名：",
-                                          style: TextStyle(fontSize: 11)),
-                                      Text(model.singName ?? "読み込み中",
-                                          style: const TextStyle(fontSize: 11)),
+                                      Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Text("歌手：", style: TextStyle(fontSize: 11)),
+                                              SizedBox(
+                                                width: 100,
+                                                child: Text(
+                                                    model.singerName ?? "読み込み中",
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(fontSize: 11)
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Row(
+                                            children: [
+                                              const Text("曲名：", style: TextStyle(fontSize: 11)),
+                                              SizedBox(
+                                                width: 100,
+                                                child: Text(
+                                                    model.singName ?? "読み込み中",
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(fontSize: 11)
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),

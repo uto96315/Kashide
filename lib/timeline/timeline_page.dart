@@ -258,7 +258,7 @@ class TimelinePage extends StatelessWidget {
                                                   children: [
                                                     const Text("歌手：", style: TextStyle( fontSize: 11)),
                                                     SizedBox(
-                                                      width: 150,
+                                                      width: 100,
                                                       child: Text(
                                                           post.artist,
                                                           style: const TextStyle( fontSize: 11 ),
@@ -280,7 +280,7 @@ class TimelinePage extends StatelessWidget {
                                                   children: [
                                                     const Text("曲名：", style: TextStyle( fontSize: 11)),
                                                     SizedBox(
-                                                      width: 150,
+                                                      width: 100,
                                                       child: Text(
                                                         post.singName,
                                                         maxLines: 1,

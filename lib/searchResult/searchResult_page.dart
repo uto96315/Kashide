@@ -150,19 +150,41 @@ class SearchResultPage extends StatelessWidget {
                                   // 曲名などのデータ
                                   // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
                                   SizedBox(
-                                    width:
-                                    MediaQuery.of(context).size.width *
-                                        0.8,
+                                    width: MediaQuery.of(context).size.width * 0.8,
                                     child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.end,
+                                      mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
-                                        const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                        Text(result.artist, style: const TextStyle( fontSize: 11, color: Colors.black )),
-                                        const SizedBox(width: 20),
-                                        const Text("曲名：", style: TextStyle( fontSize: 11)),
-                                        Text(result.singName, style: const TextStyle( fontSize: 11, color: Colors.black)),
-                                        const SizedBox(width: 15),
+                                        Column(
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Text("歌手：", style: TextStyle( fontSize: 11)),
+                                                SizedBox(
+                                                  width: 100,
+                                                  child: Text(
+                                                      result.artist,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle( fontSize: 11, color: Colors.black )
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height:5),
+                                            Row(
+                                              children: [
+                                                const Text("曲名：", style: TextStyle( fontSize: 11)),
+                                                SizedBox(
+                                                  width: 100,
+                                                  child: Text(
+                                                      result.singName,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle( fontSize: 11, color: Colors.black)
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
