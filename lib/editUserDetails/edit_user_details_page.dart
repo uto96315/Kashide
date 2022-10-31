@@ -105,6 +105,13 @@ class EditUserDetailsPage extends StatelessWidget {
                                 : const Icon(Icons.person)),
                       ),
 
+                      TextButton(
+                        onPressed: ()async{
+                          await model.pickImage();
+                        },
+                        child: const Text("タップで画像を変更", style: TextStyle( color: Colors.grey)),
+                      ),
+
                       // ユーザーネーム入力欄
                       TextField(
                         maxLength: 50,

@@ -109,7 +109,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
     if(user != null) {
-      await collection.set({
+      await collection.update({
         "userName": userName,
         "email": email ?? "",
         "favorite": [""],

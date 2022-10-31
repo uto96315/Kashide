@@ -52,8 +52,13 @@ class RegisterUserDetailsPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox( height: 10 ),
-                      const Text("タップで画像を変更"),
-                      const SizedBox( height: 50 ),
+                      TextButton(
+                          onPressed: ()async{
+                            await model.pickImage();
+                          },
+                          child: const Text("タップで画像を変更", style: TextStyle( color: Colors.grey)),
+                      ),
+                      const SizedBox( height: 60 ),
 
                       // ユーザーネーム入力欄
                       TextField(
