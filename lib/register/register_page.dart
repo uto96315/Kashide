@@ -107,6 +107,7 @@ class RegisterPage extends StatelessWidget {
                                     // 成功ならFirstAccessとしてEditUserPageに遷移させる
                                     try {
                                       await model.signIn();
+                                      await model.registerBlankData();
                                       await Navigator.pushNamed(context, "/registerUserDetails");
                                     } catch (e) {
                                       final snackBar = SnackBar(

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -60,6 +61,25 @@ class RegisterModel extends ChangeNotifier {
       final uid = currentUser!.uid;
     } else {
       // パスワードまたはメールアドレスがブランクだった場合の処理
+    }
+  }
+
+  Future registerBlankData()async{
+    var uid = FirebaseAuth.instance.currentUser?.uid;
+    final collection = FirebaseFirestore.instance
+        .collection("users").doc(uid);
+
+    if(uid != null) {
+      await collection.update({
+        "userName": "",
+        "email": email ?? "",
+        "favorite": [""],
+        "age": "99以上",
+        "gender": "ノンバイナリー", // 未指定の場合にはノンバイナリーにする
+        "introduction": "",
+        "createdAt": DateTime.now(),
+        "iconUrl": "",
+      });
     }
   }
 }
