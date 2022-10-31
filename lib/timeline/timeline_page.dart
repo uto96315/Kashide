@@ -242,41 +242,58 @@ class TimelinePage extends StatelessWidget {
                                     // 曲名などのデータ
                                     // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
                                     SizedBox(
-                                      width:
-                                      MediaQuery.of(context).size.width *
-                                          0.8,
+                                      width: MediaQuery.of(context).size.width * 0.8,
                                       child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.end,
+                                        mainAxisAlignment: MainAxisAlignment.end,
                                         children: [
+                                          Column(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              // 歌手名
+                                              GestureDetector(
+                                                onTap: (){
+                                                  Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.artist, "artist")));
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    const Text("歌手：", style: TextStyle( fontSize: 11)),
+                                                    SizedBox(
+                                                      width: 150,
+                                                      child: Text(
+                                                          post.artist,
+                                                          style: const TextStyle( fontSize: 11 ),
+                                                          overflow: TextOverflow.ellipsis
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
 
-                                          // 歌手名
-                                          GestureDetector(
-                                            onTap: (){
-                                              Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.artist, "artist")));
-                                            },
-                                            child: Row(
-                                              children: [
-                                                const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                                Text(post.artist, style: const TextStyle( fontSize: 11 )),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox( width: 10 ),
+                                              const SizedBox(height: 5),
 
-                                          // 曲名
-                                          GestureDetector(
-                                            onTap: (){
-                                              Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.singName, "singName")));
-                                            },
-                                            child: Row(
-                                              children: [
-                                                const Text("曲名：", style: TextStyle( fontSize: 11)),
-                                                Text(post.singName, style: const TextStyle( fontSize: 11 )),
-                                              ],
-                                            ),
+                                              // 曲名
+                                              GestureDetector(
+                                                onTap: (){
+                                                  Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.singName, "singName")));
+                                                },
+                                                child: Row(
+                                                  children: [
+                                                    const Text("曲名：", style: TextStyle( fontSize: 11)),
+                                                    SizedBox(
+                                                      width: 150,
+                                                      child: Text(
+                                                        post.singName,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle( fontSize: 11 ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const SizedBox(width: 15),
+                                            ],
                                           ),
-                                          const SizedBox(width: 15),
                                         ],
                                       ),
                                     ),
