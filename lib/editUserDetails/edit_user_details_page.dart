@@ -26,7 +26,7 @@ class EditUserDetailsPage extends StatelessWidget {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text("アカウント編集"),
+            title: const Text("アカウント編集", style: TextStyle( fontSize: 17)),
             backgroundColor: mainColor,
             actions: [
               Consumer<EditUserDetailsModel>(builder: (context, model, child) {

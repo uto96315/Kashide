@@ -1,25 +1,40 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
 
 class SearchResultModel extends ChangeNotifier {
   SearchResultModel(this.searchWord);
+  
 
   String? searchWord;
 
-  List<Post> resultList= []; // 検索に引っかかった投稿
-  int resultCount = 0; // 結果の総数
+  List<Post> genreResultList= []; // ジャンル検索に引っかかった投稿
+  List<Post> singerResultList= []; // 歌手検索に引っかかった投稿
 
 
-  // 検索ワードから探す処理
-  Future searchFromText(String searchWord) async{
-    final collection = FirebaseFirestore.instance
+  int genreResultCount = 0; // ジャンル結果の総数
+  int singerResultCount = 0; // 歌手結果の総数
+
+
+  // 表示するタブのリストを作成
+  final List<Tab> tabs = <Tab>[
+    const Tab(text: 'tab1'),
+    const Tab(text: 'tab2'),
+    const Tab(text: 'tab3'),
+  ];
+
+
+
+  // ジャンルから探す処理=========================
+  Future searchFromGenre(String searchWord) async{
+    final genreCollection = FirebaseFirestore.instance
         .collection("posts")
         .where("genres", arrayContains: searchWord);
 
-    final snapshot = await collection.get();
+    final snapshot = await genreCollection.get();
 
     // ユーザー情報の取得
     final userInfo = await Future.wait(
@@ -32,7 +47,7 @@ class SearchResultModel extends ChangeNotifier {
 
 
     // ここで合体
-    resultList = snapshot.docs.asMap().entries.map((entry){
+    genreResultList = snapshot.docs.asMap().entries.map((entry){
       int index = entry.key;
       final postData = entry.value;
 
@@ -52,9 +67,57 @@ class SearchResultModel extends ChangeNotifier {
           postData["youtubeLink"],
       );
     }).toList();
-    resultCount = resultList.length;
+    genreResultCount = genreResultList.length;
     notifyListeners();
   }
+  // ジャンルから探す処理=========================
+
+
+  // 歌手から探す処理=========================
+  Future searchFromSinger(String searchWord) async{
+    final genreCollection = FirebaseFirestore.instance
+        .collection("posts")
+        .where("artist", arrayContains: searchWord);
+
+    final snapshot = await genreCollection.get();
+
+    // ユーザー情報の取得
+    final userInfo = await Future.wait(
+        snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
+
+    // コメント数の取得
+    final commentCount = await Future.wait(
+        snapshot.docs.map((doc) => getCommentCount(doc.id)).toList()
+    );
+
+
+    // ここで合体
+    singerResultList = snapshot.docs.asMap().entries.map((entry){
+      int index = entry.key;
+      final postData = entry.value;
+
+      return Post(
+        postData["artist"],
+        postData["singName"],
+        postData["text"],
+        postData["posterId"],
+        postData["likedCount"],
+        postData["genres"],
+        "${userInfo[index][0]}",
+        "${userInfo[index][1]}",
+        createTimeMessage(postData["createdAt"].toDate()),
+        postData.id,
+        commentCount[index] ?? 0,
+        postData["explanation"],
+        postData["youtubeLink"],
+      );
+    }).toList();
+    singerResultCount = genreResultList.length;
+    notifyListeners();
+  }
+  // 歌手から探す処理=========================
+
+
 
   // 投稿時間から〜分前に変換する
   String createTimeMessage(DateTime postDateTime) {
