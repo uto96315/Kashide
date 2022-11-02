@@ -345,7 +345,7 @@ class TimelinePage extends StatelessWidget {
 
                                             // いいねボタン
                                             SizedBox(
-                                                width: 50,
+                                                width: 60,
                                                 height: 30,
                                                 child: FavoriteButton(post.id, post.likedCount)
                                             ),
