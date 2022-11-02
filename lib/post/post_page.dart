@@ -145,84 +145,127 @@ class PostPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 15),
 
-                      // ジャンル追加欄
-                      TextFormField(
-                        controller: model.genreController,
-                        enabled: model.genreMaxLength,
-                        maxLength: 15,
-                        decoration: const InputDecoration(
-                          labelText: "ジャンル（最大三つ）",
-                          hintText: "エンターを押すことで追加できます",
-                        ),
-                        onFieldSubmitted: (text) {
-                          model.setGenre(text);
-                        },
-                      ),
-                      const SizedBox(height: 15),
 
-                      // 選択されたジャンルを表示
+                      // デフォルトジャンルリスト
+                      Row(
+                        children: const [
+                          Text("ジャンル(タップで選択)", style: TextStyle( fontSize: 17, color: Colors.black54 ),),
+                          SizedBox( width: 10 ),
+                        ],
+                      ),
+                      const SizedBox( height: 20 ),
                       Wrap(
                         runSpacing: 15,
                         spacing: 10,
-                        children: model.genres.map((genre) {
+                        children: model.defaultGenresList.map((genre){
                           return InkWell(
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(32)),
-                            onTap: () {
-                              showCupertinoDialog(
-                                  context: context,
-                                  builder: (_){
-                                    return CupertinoAlertDialog(
-                                      content: Text("「$genre」を削除しますか？"),
-                                      actions: [
-                                        CupertinoDialogAction(
-                                          child: const Text('はい'),
-                                          onPressed: () {
-                                            model.deleteGenre(genre); // タップされたら削除する
-                                            Navigator.pop(context);
-                                          },
-                                        ),
-                                        CupertinoDialogAction(
-                                          child: const Text('いいえ'),
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                        ),
-                                      ],
-                                    );
-                                  }
-                              );
+                            onTap: (){
+                              if(model.genres.contains(genre)){
+                                model.deleteGenre(genre);
+                                return;
+                              }
+                              model.setGenre(genre);
                             },
                             child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 15, vertical: 8),
                                 decoration: BoxDecoration(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(32)),
-                                    border: Border.all(
-                                        width: 2, color: Colors.blue),
+                                    borderRadius: BorderRadius.all(Radius.circular(32)),
+                                    border: Border.all(width: 2, color:
+                                    (model.genres.contains(genre)) ? mainColor : Colors.blue),
                                     color: Colors.white),
                                 child: RichText(
                                   text: TextSpan(children: [
                                     TextSpan(
                                         text: genre,
-                                        style: const TextStyle(
-                                            color: Colors.blue)),
-                                    const WidgetSpan(
-                                        child: SizedBox(width: 10)),
-                                    const WidgetSpan(
-                                        child: Icon(
-                                      Icons.clear,
-                                      size: 17,
-                                    )),
+                                        style: TextStyle(
+                                            color: model.genres.contains(genre) ? mainColor : Colors.blue)
+                                    ),
                                   ]),
                                 )),
                           );
                         }).toList(),
                       ),
 
-                      const SizedBox(height: 30),
+                      // ジャンル追加欄
+                      // TextFormField(
+                      //   controller: model.genreController,
+                      //   enabled: model.genreMaxLength,
+                      //   maxLength: 15,
+                      //   decoration: const InputDecoration(
+                      //     labelText: "ジャンル追加",
+                      //     hintText: "エンターを押すことで追加できます",
+                      //   ),
+                      //   onFieldSubmitted: (text) {
+                      //     model.setGenre(text);
+                      //   },
+                      // ),
+                      // const SizedBox(height: 15),
+
+                      // 選択されたジャンルを表示
+                      // Wrap(
+                      //   runSpacing: 15,
+                      //   spacing: 10,
+                      //   children: model.genres.map((genre) {
+                      //     return InkWell(
+                      //       borderRadius:
+                      //           const BorderRadius.all(Radius.circular(32)),
+                      //       onTap: () {
+                      //         showCupertinoDialog(
+                      //             context: context,
+                      //             builder: (_){
+                      //               return CupertinoAlertDialog(
+                      //                 content: Text("「$genre」を削除しますか？"),
+                      //                 actions: [
+                      //                   CupertinoDialogAction(
+                      //                     child: const Text('はい'),
+                      //                     onPressed: () {
+                      //                       model.deleteGenre(genre); // タップされたら削除する
+                      //                       Navigator.pop(context);
+                      //                     },
+                      //                   ),
+                      //                   CupertinoDialogAction(
+                      //                     child: const Text('いいえ'),
+                      //                     onPressed: () {
+                      //                       Navigator.pop(context);
+                      //                     },
+                      //                   ),
+                      //                 ],
+                      //               );
+                      //             }
+                      //         );
+                      //       },
+                      //       child: AnimatedContainer(
+                      //           duration: const Duration(milliseconds: 200),
+                      //           padding: const EdgeInsets.symmetric(
+                      //               horizontal: 15, vertical: 8),
+                      //           decoration: BoxDecoration(
+                      //               borderRadius:
+                      //                   BorderRadius.all(Radius.circular(32)),
+                      //               border: Border.all(
+                      //                   width: 2, color: Colors.blue),
+                      //               color: Colors.white),
+                      //           child: RichText(
+                      //             text: TextSpan(children: [
+                      //               TextSpan(
+                      //                   text: genre,
+                      //                   style: const TextStyle(
+                      //                       color: Colors.blue)),
+                      //               const WidgetSpan(
+                      //                   child: SizedBox(width: 10)),
+                      //               const WidgetSpan(
+                      //                   child: Icon(
+                      //                 Icons.clear,
+                      //                 size: 17,
+                      //               )),
+                      //             ]),
+                      //           )),
+                      //     );
+                      //   }).toList(),
+                      // ),
+
+                      const SizedBox(height: 200),
 
                       // TextButton(onPressed: (){debugPrint(defaultGenre);}, child: Text("テスト"))
                     ],

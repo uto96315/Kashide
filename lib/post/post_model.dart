@@ -28,6 +28,21 @@ class PostModel extends ChangeNotifier {
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
   String? youtubeLink;
 
+  List<String> defaultGenresList = [
+    "恋愛ソング",
+    "懐メロ",
+    "JPOP",
+    "洋楽",
+    "失恋ソング",
+    "人生",
+    "元気になれる曲",
+    "R&B ソウル",
+    "アイドル",
+    "青春",
+    "勇気",
+    "その他",
+  ];
+
 
   // 理由をセット
   void setExplanation(String explanationText) {

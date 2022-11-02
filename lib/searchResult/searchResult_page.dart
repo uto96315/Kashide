@@ -1,16 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:str_gram_beta/searchResult/genreSearch/genre_search_page.dart';
 import 'package:str_gram_beta/searchResult/lyricsSearch/lyrics_search_page.dart';
-import 'package:str_gram_beta/searchResult/searchResult_model.dart';
 import 'package:str_gram_beta/searchResult/singSearch/sing_search_page.dart';
 import 'package:str_gram_beta/searchResult/singerSearch/singer_result_page.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../common/ThemeColor.dart';
-import '../element/favorite/favorite_button.dart';
-import '../postDetail/post_detail_page.dart';
 
 class SearchResultPage extends StatelessWidget {
   SearchResultPage(this.searchWord, this.themeColor, {super.key});
@@ -38,25 +32,6 @@ class SearchResultPage extends StatelessWidget {
             ],
           ),
         ),
-
-
-        // bottomNavigationBar: Container(
-        //   color: Colors.white,
-        //   height: 80,
-        //   child: const Padding(
-        //     padding: EdgeInsets.only(right: 20, left: 20),
-        //     child: TabBar(
-        //       labelColor: mainColor,
-        //       indicatorColor: mainColor,
-        //       unselectedLabelColor: Colors.blueGrey,
-        //       tabs: [
-        //         Tab(icon: Icon(Icons.home, size: 25), child: Text("ホーム", style: TextStyle(fontSize: 10))),
-        //         Tab(icon: Icon(Icons.search, size: 25), child: Text("検索", style: TextStyle(fontSize: 10))),
-        //         Tab(icon: Icon(Icons.notifications, size: 25), child: Text("通知", style: TextStyle(fontSize: 10))),
-        //       ],
-        //     ),
-        //   ),
-        // ),
 
 
         body: Center(
