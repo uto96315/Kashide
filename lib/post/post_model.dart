@@ -36,6 +36,8 @@ class PostModel extends ChangeNotifier {
     "洋楽",
     "失恋ソング",
     "人生",
+    "ロック",
+    "ジャニーズ",
     "元気になれる曲",
     "R&B ソウル",
     "アイドル",
