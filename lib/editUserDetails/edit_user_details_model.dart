@@ -36,7 +36,7 @@ class EditUserDetailsModel extends ChangeNotifier {
   String? userImageUrl; // 引数で受け取ってくるURL
 
   bool isSetted = false; // 画像が変更されたかどうかのフラグ
-  bool canPush = false; // 登録ボタンを押せるかどうかのフラグ
+  bool canPush = true; // 登録ボタンを押せるかどうかのフラグ
   File? imageFile; // セットされたファイル本体
   String? storageURL; // 新たにStorageにセットしたURL
 
