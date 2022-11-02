@@ -10,10 +10,11 @@ class SearchModel extends ChangeNotifier {
    final searchTextController = TextEditingController();
 
    Map<String, List<dynamic>> wordObject = {
-      "あなたにおすすめ": ["recommend", recommendColor],
+      // "あなたにおすすめ": ["recommend", recommendColor],
       "恋愛ソング": ["loveSong", loveColor],
       "失恋ソング": ["lostLoveSong", lostLoveColor],
       "元気が出る歌": ["energySong", energyColor],
+      "懐メロ": ["", recommendColor],
    };
 
    // 変数関係
