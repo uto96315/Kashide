@@ -230,7 +230,7 @@ class GenreSearchPage extends StatelessWidget {
                                             ),
                                             const SizedBox( width: 20 ),
                                             SizedBox(
-                                                width: 50,
+                                                width: 60,
                                                 height: 30,
                                                 child: FavoriteButton(result.id, result.likedCount)
                                             ),

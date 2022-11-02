@@ -189,7 +189,7 @@ class PostDetailPage extends StatelessWidget {
                                       children: [
                                         const SizedBox( width: 20 ),
                                         SizedBox(
-                                            width: 50,
+                                            width: 60,
                                             height: 30,
                                             child: FavoriteButton(id, model.likedCount ?? 0)
                                         ),
