@@ -259,7 +259,6 @@ class EditUserDetailsModel extends ChangeNotifier {
 
       await storageRef.delete();
     } catch (e) {
-      debugPrint("アカウントの画像を削除しました");
     }
   }
 }

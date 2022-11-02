@@ -218,10 +218,8 @@ class EditUserDetailsPage extends StatelessWidget {
                               onTap: () {
                                 if (isSelected) {
                                   model.removeFavorite(tag);
-                                  debugPrint("remove $tag");
                                 } else {
                                   model.setFavorite(tag);
-                                  debugPrint("set $tag");
                                 }
                               },
                               child: AnimatedContainer(

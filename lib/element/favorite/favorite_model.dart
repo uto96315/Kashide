@@ -36,7 +36,6 @@ class FavoriteModel extends ChangeNotifier {
   Future doLike(String id, int likeCount) async {
     // todo: もし既にいいねしているなら削除する
     if (isLiked) {
-      debugPrint("既にいいねされていたので削除しました");
       await removeLike(id);
       likedNumber = await getLikedCount(id);
       likedCount = likedNumber;
@@ -44,7 +43,6 @@ class FavoriteModel extends ChangeNotifier {
       return;
     }
 
-    debugPrint("いいねしました");
 
     // ユーザーにセットする
     // todo: collectionをlikePostsに変更する

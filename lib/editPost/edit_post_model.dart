@@ -133,7 +133,6 @@ class EditPostModel extends ChangeNotifier {
       "updatedAt": DateTime.now(),
       "youtubeLink": youtubeLink ?? "",
     });
-    debugPrint("投稿をアップデートしました");
 
     notifyListeners();
   }

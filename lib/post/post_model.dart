@@ -87,7 +87,6 @@ class PostModel extends ChangeNotifier {
   void setDefaultGenre(String? propGenre) {
     if(propGenre != null){
       genres.add(propGenre);
-      debugPrint("ジャンルの初期値をセットしました");
     }
   }
 

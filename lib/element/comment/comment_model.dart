@@ -67,7 +67,6 @@ class CommentModel extends ChangeNotifier {
         .doc(commentId);
 
     await doc.delete();
-    debugPrint("削除しました");
 
     await getComments(postId);
     notifyListeners();
@@ -84,7 +83,6 @@ class CommentModel extends ChangeNotifier {
       "commentText": commentText,
       "reportedAt": DateTime.now(),
     });
-    debugPrint("報告しました");
     notifyListeners();
   }
 }
