@@ -153,6 +153,12 @@ class PostPage extends StatelessWidget {
                           SizedBox( width: 10 ),
                         ],
                       ),
+                      Row(
+                        children: const [
+                          Text("※最大三つまで", style: TextStyle( fontSize: 12, color: Colors.black54 )),
+                          SizedBox( width: 10 ),
+                        ],
+                      ),
                       const SizedBox( height: 20 ),
                       Wrap(
                         runSpacing: 15,
@@ -164,6 +170,11 @@ class PostPage extends StatelessWidget {
                                 model.deleteGenre(genre);
                                 return;
                               }
+                              // if(genre == "その他"){
+                              //   model.genreAddFlag = true; // toggle
+                              //   print("その他が選択されました: ${model.genreAddFlag}");
+                              //   return;
+                              // }
                               model.setGenre(genre);
                             },
                             child: AnimatedContainer(
@@ -186,6 +197,23 @@ class PostPage extends StatelessWidget {
                                 )),
                           );
                         }).toList(),
+                      ),
+
+                      const SizedBox( height: 30 ),
+
+
+                      // その他が選択された場合に使う
+                      TextFormField(
+                        controller: model.genreController,
+                        autofocus: true,
+                        onFieldSubmitted: (text){
+                          model.addGenre(text);
+                          model.genreController.clear();
+                        },
+                        decoration: const InputDecoration(
+                          labelText: "ジャンルを追加する",
+                          hintText: "完了またはエンターを押すと追加できます",
+                        ),
                       ),
 
                       // ジャンル追加欄

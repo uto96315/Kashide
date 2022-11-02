@@ -27,6 +27,7 @@ class PostModel extends ChangeNotifier {
   bool canPush = false;
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
   String? youtubeLink;
+  bool genreAddFlag = false;  // その他が選択された場合にテキストフィールドを出すかのフラグ
 
   List<String> defaultGenresList = [
     "恋愛ソング",
@@ -94,10 +95,11 @@ class PostModel extends ChangeNotifier {
       // genres.remove(genre);
       return;
     } else {
-      genres.add(genre);
       if(genres.length == 3) {
         genreMaxLength = false;
+        return;
       }
+      genres.add(genre);
     }
 
     // 一度テキストフィールド内をクリアする
@@ -136,5 +138,18 @@ class PostModel extends ChangeNotifier {
       "createdAt": DateTime.now(),
       "youtubeLink": youtubeLink ?? "",
     });
+  }
+
+  // その他が選択された際にジャンルを追加する
+  void addGenre(String genre){
+    if(genres.contains(genre)){
+      return;
+    }
+    defaultGenresList.add(genre);
+    if(genres.length == 3) {
+      return;
+    }
+    genres.add(genre);
+    notifyListeners();
   }
 }
