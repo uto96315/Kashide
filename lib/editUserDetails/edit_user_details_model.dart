@@ -153,6 +153,7 @@ class EditUserDetailsModel extends ChangeNotifier {
       await collection.set({
         "userName": userName,
         "age": userAge,
+        "email": user?.email ?? "",
         "gender": userGender,
         "introduction": userIntroduction,
         "favorite": userFavorite,

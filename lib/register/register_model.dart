@@ -70,7 +70,7 @@ class RegisterModel extends ChangeNotifier {
         .collection("users").doc(uid);
 
     if(uid != null) {
-      await collection.update({
+      await collection.set({
         "userName": "",
         "email": email ?? "",
         "favorite": [""],
