@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 
 class PostModel extends ChangeNotifier {
@@ -28,6 +29,8 @@ class PostModel extends ChangeNotifier {
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
   String? youtubeLink;
   bool genreAddFlag = false;  // その他が選択された場合にテキストフィールドを出すかのフラグ
+
+  final clipBoardText = Clipboard.getData(Clipboard.kTextPlain);  // ペーストする時用
 
   List<String> defaultGenresList = [
     "恋愛ソング",
@@ -156,4 +159,12 @@ class PostModel extends ChangeNotifier {
     genres.add(genre);
     notifyListeners();
   }
+
+  // ペーストする関数
+   void pasteText(controller) async{
+     var data = await Clipboard.getData(Clipboard.kTextPlain);
+     controller.text = data?.text.toString() ?? "";
+     print(lyricsController.text);
+     notifyListeners();
+   }
 }
