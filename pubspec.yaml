@@ -66,22 +66,22 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "icon/Kahide_logo_android.png"
+  image_path: "icon/kashide_logo_new.png"
 
 
 # スプラッシュスクリーン
 # flutter pub run flutter_native_splash:create
 flutter_native_splash:
   color: '#FFFFFF'
-  image: 'images/Kashide_splash.png'
+  image: 'images/splash_new.png'
 #  color_dark: '#FFFFFF'
-#  image_dark: 'images/Kashide_splash.png'
+#  image_dark: 'images/splash_new.png'
   fullscreen: true
   android_12:
     icon_background_color: '#FFFFFF'
-    image: 'images/Kashide_splash.png'
+    image: 'images/splash_new.png'
 #    icon_background_color_dark: '#FFFFFF'
-#    image_dark: 'image/Kashide_splash.png'
+#    image_dark: 'image/splash_new.png'
 
 
 

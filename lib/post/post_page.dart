@@ -19,8 +19,8 @@ class PostPage extends StatelessWidget {
         },
         child: Scaffold(
           appBar: AppBar(
+            title: const Text("投稿"),
             backgroundColor: mainColor,
-            // toolbarHeight: MediaQuery.of(context).size.height * 0.07,
             actions: [
               Consumer<PostModel>(builder: (context, model, child) {
                 return // 投稿ボタン
@@ -48,7 +48,7 @@ class PostPage extends StatelessWidget {
                                   }
                               );
                              }
-                            : null,
+                            : (){},
                     child: const Padding(
                       padding: EdgeInsets.only(right: 15, left: 15),
                       child: Text(

@@ -18,7 +18,7 @@ class TopPage extends StatelessWidget {
           child: Consumer<TopModel>(builder: (context, model, child) {
             return Container(
               decoration: const BoxDecoration(
-                  color: mainColor
+                  color: Colors.white60
               ),
               child: Center(
                 child: Column(
@@ -28,18 +28,18 @@ class TopPage extends StatelessWidget {
                     SizedBox(
                         width: MediaQuery.of(context).size.width*0.6,
                         height: MediaQuery.of(context).size.width*0.6,
-                        child: Image.asset("images/logo_white.png", fit: BoxFit.contain)
+                        child: Image.asset("images/splash_new.png", fit: BoxFit.contain)
                     ),
-                    OutlinedButton(
+                    ElevatedButton(
                       onPressed: () {
                         Navigator.pushNamed(context, "/login");
                       },
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: mainColor,
                       ),
                       child: const Padding(
                         padding: EdgeInsets.only(top: 20, bottom: 20, right: 50, left: 50),
-                        child: Text("はじめる", style: TextStyle( fontSize: 16, fontWeight: FontWeight.bold, color: mainColor )),
+                        child: Text("はじめる", style: TextStyle( fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white )),
                       ),
                     ),
                     const SizedBox(height: 100),
