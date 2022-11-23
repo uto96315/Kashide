@@ -24,7 +24,7 @@ class ResetPasswordPage extends StatelessWidget {
               width: MediaQuery.of(context).size.width*0.8,
               child: Column(
                 children: [
-                  const SizedBox( height: 50 ),
+                  const SizedBox( height: 30 ),
                   const Text(
                       "登録されているEmailアドレス宛にパスワード再設定用のメールをお送りします",
                       style: TextStyle( fontSize: 16, height: 1.5 ),
@@ -32,13 +32,13 @@ class ResetPasswordPage extends StatelessWidget {
                   const SizedBox( height: 20 ),
                   const Text(
                       "注意：迷惑メールに入ることがあるので、届かない場合にはそちらをご確認ください",
-                      style: TextStyle( fontSize: 15, height: 1.2, color: Colors.red ),
+                      style: TextStyle( fontSize: 13, height: 1.2, color: Colors.red ),
                   ),
-                  const SizedBox( height: 50 ),
+                  const SizedBox( height: 40 ),
                   TextField(
                     controller: model.resetEmailController,
                     decoration: const InputDecoration(
-                      labelText: "メールアドレス",
+                      labelText: "ご登録メールアドレス",
                       hintText: "example@test.com"
                     ),
                     onChanged: (text){
