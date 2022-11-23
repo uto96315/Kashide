@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/home/home_page.dart';
 import 'package:str_gram_beta/login/login_model.dart';
+import 'package:str_gram_beta/resetPassword/reset_password_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -58,6 +59,15 @@ class LoginPage extends StatelessWidget {
                         onChanged: (text) {
                           model.setPassword(text);
                         },
+                      ),
+
+                      const SizedBox( height: 10 ),
+                      // パスワードの再設定に遷移
+                      TextButton(
+                          onPressed: (){
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=>ResetPasswordPage()));
+                          },
+                          child: const Text("パスワードを忘れましたか？")
                       ),
                       const SizedBox( height: 100 ),
 

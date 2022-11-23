@@ -175,12 +175,12 @@ class EditUserDetailsModel extends ChangeNotifier {
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
     await doc.delete();
 
+    // 紐づく投稿を削除する
+    await deletePosts();
+
     // Authから削除
     await user?.delete();
     await FirebaseAuth.instance.signOut();
-
-    // 紐づく投稿を削除する
-    await deletePosts();
 
     // Storageの画像を削除する
     await deleteFromStorage();
@@ -260,6 +260,7 @@ class EditUserDetailsModel extends ChangeNotifier {
 
       await storageRef.delete();
     } catch (e) {
+      print(e.toString());
     }
   }
 }

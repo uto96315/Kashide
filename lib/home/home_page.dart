@@ -23,7 +23,7 @@ class HomePage extends StatelessWidget {
               unselectedLabelColor: Colors.blueGrey,
               tabs: [
                 Tab(icon: Icon(Icons.home, size: 25), child: Text("ホーム", style: TextStyle(fontSize: 10))),
-                Tab(icon: Icon(Icons.search, size: 25), child: Text("検索", style: TextStyle(fontSize: 10))),
+                Tab(icon: Icon(Icons.search, size: 25), child: Text("探す", style: TextStyle(fontSize: 10))),
                 Tab(icon: Icon(Icons.notifications, size: 25), child: Text("通知", style: TextStyle(fontSize: 10))),
                 Tab(icon: Icon(Icons.person, size: 25), child: Text("アカウント", style: TextStyle(fontSize: 10))),
               ],
