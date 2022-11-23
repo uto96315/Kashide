@@ -95,7 +95,6 @@ class MyModel extends ChangeNotifier {
 
 
   // 投稿を削除する処理
-  // todo: 処理後にダイアログを表示する
   Future deletePosts(String id) async{
     final doc = FirebaseFirestore.instance
         .collection("posts").doc(id);

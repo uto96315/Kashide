@@ -246,7 +246,8 @@ class EditUserDetailsPage extends StatelessWidget {
                                 ),
                               ),
                             );
-                          }).toList()),
+                          }).toList()
+                      ),
                       const SizedBox(height: 50),
 
                       const SizedBox(height: 100),
@@ -268,8 +269,14 @@ class EditUserDetailsPage extends StatelessWidget {
                                       CupertinoDialogAction(
                                         child: const Text("はい"),
                                         onPressed: ()async{
-                                          Navigator.popUntil(context, (route) => route.isFirst);  // トップ画面に遷移
-                                          await model.deleteUser();  // アカウント削除
+                                          try {
+                                            await model.deleteUser();
+                                          } catch(e) {
+                                            print(e.toString());
+                                            return;
+                                          } finally {
+                                            Navigator.popUntil(context, (route) => route.isFirst);  // トップ画面に遷移
+                                          }
                                         },
                                       ),
                                       CupertinoDialogAction(
