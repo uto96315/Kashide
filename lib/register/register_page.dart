@@ -35,6 +35,7 @@ class RegisterPage extends StatelessWidget {
                       TextField(
                         controller: model.registerEmailController,
                         autofocus: true,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(labelText: 'メールアドレス'),
                         onChanged: (text) {
                           model.setEmail(text);
@@ -59,7 +60,7 @@ class RegisterPage extends StatelessWidget {
                           model.setPassword(text);
                         },
                       ),
-                      const SizedBox(height: 70),
+                      const SizedBox(height: 30),
 
                       // 利用規約同意ステップ
                       Row(
@@ -92,7 +93,7 @@ class RegisterPage extends StatelessWidget {
                           )
                         ],
                       ),
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 20),
 
                       // 新規登録ボタン
                       SizedBox(
@@ -126,7 +127,7 @@ class RegisterPage extends StatelessWidget {
                             child: const Text("登録する"),
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 10),
 
                       // ログインに遷移
                       TextButton(

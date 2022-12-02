@@ -34,8 +34,9 @@ class LoginPage extends StatelessWidget {
                       TextField(
                         controller: model.loginEmailController,
                         autofocus: true,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
-                            labelText: 'メールアドレス'
+                            labelText: 'メールアドレス',
                         ),
                         onChanged: (text) {
                           model.setEmail(text);
@@ -69,7 +70,7 @@ class LoginPage extends StatelessWidget {
                           },
                           child: const Text("パスワードを忘れましたか？")
                       ),
-                      const SizedBox( height: 100 ),
+                      const SizedBox( height: 20 ),
 
                       // ログインボタン
                       SizedBox(
@@ -78,6 +79,12 @@ class LoginPage extends StatelessWidget {
                         child: ElevatedButton(
                             onPressed: () async{
                               model.startLoading();
+
+                              try {
+                                await model.login();
+                              } catch(e) {
+                                print(e.toString());
+                              }
 
                               try {
                                 await model.login();
@@ -99,7 +106,7 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox( height: 30 ),
+                      const SizedBox( height: 10 ),
 
                       // 新規登録に遷移
                       TextButton(
