@@ -48,8 +48,30 @@ class PostPage extends StatelessWidget {
                                   }
                               );
                              }
-                            : (){},
-                    child: const Padding(
+                            : (){
+                            showCupertinoDialog(
+                                context: context,
+                                builder: (_){
+                                  return CupertinoAlertDialog(
+                                    title: const Text("投稿エラー", style: TextStyle( fontWeight: FontWeight.normal )),
+                                    content: const Padding(
+                                      padding: EdgeInsets.all(10.0),
+                                      child: Text("歌詞を入力してください"),
+                                    ),
+                                    actions: [
+                                      CupertinoDialogAction(
+                                        child: const Text("OK"),
+                                        onPressed: ()async{
+                                          debugPrint("承認されました");
+                                          Navigator.pop(context); //Drawerを閉じる
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                }
+                            );
+                          },
+                      child: const Padding(
                       padding: EdgeInsets.only(right: 15, left: 15),
                       child: Text(
                         "投稿する",
