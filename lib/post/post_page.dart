@@ -27,7 +27,7 @@ class PostPage extends StatelessWidget {
                     Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: MaterialButton(
-                          color: (model.canPush) ? Colors.white : null,
+                          color: (model.canPush) ? Colors.white : Colors.white60,
                           onPressed: (model.canPush)
                            ? () async {
                             await model.post();  // 投稿実行
@@ -56,7 +56,8 @@ class PostPage extends StatelessWidget {
                         style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: mainColor),
+                            color: mainColor
+                        ),
                       ),
                     ),
                   ),
@@ -92,7 +93,7 @@ class PostPage extends StatelessWidget {
                         controller: model.lyricsController,
                         maxLines: null,
                         maxLength: 300,
-                        autofocus: true,
+                        autofocus: false,
                         decoration: InputDecoration(
                           labelText: "心に響いた歌詞を入力してみよう(必須)",
                           labelStyle: const TextStyle( color: Colors.red, fontSize: 14 ),
@@ -132,7 +133,7 @@ class PostPage extends StatelessWidget {
                       TextField(
                         controller: model.singNameController,
                         maxLength: 50,
-                        autofocus: true,
+                        autofocus: false,
                         decoration: InputDecoration(
                           labelText: "曲名(任意)",
                             suffixIcon: IconButton(
@@ -223,7 +224,7 @@ class PostPage extends StatelessWidget {
                       // その他が選択された場合に使う
                       TextFormField(
                         controller: model.genreController,
-                        autofocus: true,
+                        autofocus: false,
                         onFieldSubmitted: (text){
                           model.addGenre(text);
                           model.genreController.clear();

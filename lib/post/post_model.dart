@@ -134,6 +134,12 @@ class PostModel extends ChangeNotifier {
     var uid = user?.uid;
     final doc = FirebaseFirestore.instance.collection("posts");
 
+    explanation = explanationController.text;
+    lyrics = lyricsController.text;
+    singerName = singerNameController.text;
+    singName = singNameController.text;
+    youtubeLink = youtubeLinkController.text;
+
     await doc.add({
       "explanation": explanation ?? "",
       "artist": singerName ?? "不明",
@@ -164,6 +170,9 @@ class PostModel extends ChangeNotifier {
    void pasteText(controller) async{
      var data = await Clipboard.getData(Clipboard.kTextPlain);
      controller.text = data?.text.toString() ?? "";
+     if(data != null) {
+       canPush = true;
+     }
      print(lyricsController.text);
      notifyListeners();
    }
