@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:str_gram_beta/domain/user_domain.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../domain/post_domain.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
@@ -103,5 +104,19 @@ class TimelineModel extends ChangeNotifier {
       "posterId": uid
     });
     notifyListeners();
+  }
+
+  // Youtubeアプリを開く処理
+  Future launchURL(String url) async {
+    try {
+      if (await canLaunch(url)) {
+        await launch(
+            url,
+            forceSafariVC: false,
+        );
+      }
+    } catch(e) {
+      print(e.toString());
+    }
   }
 }

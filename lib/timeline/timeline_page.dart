@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../common/ThemeColor.dart';
 import '../element/favorite/favorite_button.dart';
 import 'timeline_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TimelinePage extends StatelessWidget {
   const TimelinePage({super.key});
@@ -312,8 +313,9 @@ class TimelinePage extends StatelessWidget {
                                                   ? CupertinoButton(
                                                   minSize: double.minPositive,
                                                   padding: EdgeInsets.zero,
-                                                  onPressed: (){
-                                                    launchUrl(Uri.parse(post.youtubeLink));
+                                                  onPressed: ()async{
+                                                    // launchUrl(Uri.parse(post.youtubeLink));
+                                                    await model.launchURL(post.youtubeLink);
                                                   },
                                                   child: Container(
                                                       decoration:  BoxDecoration(
@@ -326,7 +328,7 @@ class TimelinePage extends StatelessWidget {
 
                                                   : null,
                                             ),
-                                            const SizedBox( width: 35 ),
+                                            const SizedBox( width: 40 ),
 
                                             // コメントボタン
                                             GestureDetector(
@@ -341,7 +343,7 @@ class TimelinePage extends StatelessWidget {
                                                   ],
                                                 )
                                             ),
-                                            const SizedBox( width: 20 ),
+                                            const SizedBox( width: 10 ),
 
                                             // いいねボタン
                                             SizedBox(
