@@ -47,49 +47,8 @@ class SearchPage extends StatelessWidget {
 
                     const SizedBox(height: 30),
 
-                    // ジャンル一覧から生成
-                    Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: model.wordObject.entries.map((word) {
-                          return Column(
-                            children: [
-                              GestureDetector(
-                                onTap: (){
-                                  Navigator.push(context, MaterialPageRoute(builder: (context) => SearchResultPage(word.key, word.value[1])));
-                                },
-                                child: Container(
-                                width: MediaQuery.of(context).size.width * 0.8,
-                                decoration: BoxDecoration(
-                                    border: Border.all(color: word.value[1]),
-                                    borderRadius: BorderRadius.circular(15),
-                                    color: Colors.white,
-                                    boxShadow: [
-                                       BoxShadow(
-                                          color: Colors.grey.shade200,
-                                          spreadRadius: 2,
-                                          blurRadius: 2,
-                                          offset: const Offset(2, 2),
-                                      )
-                                    ]
-                                ),
-                                alignment: Alignment.center,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 30, bottom: 30),
+                    // TODO: ジャンルの一覧を表示する
 
-                                  // ここがジャンルのテキスト
-                                  child: Text(
-                                      word.key,
-                                      style: TextStyle(
-                                          color: word.value[1],
-                                          fontSize: 17
-                                      )
-                                  ),
-                                )),
-                              ),
-                              const SizedBox( height: 20 ),
-                            ],
-                          );
-                    }).toList())
                   ],
                 );
               }),

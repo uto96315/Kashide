@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:str_gram_beta/playlist/playlist_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../editPost/edit_post_page.dart';
 import '../element/favorite/favorite_button.dart';
@@ -34,7 +35,6 @@ class MyPage extends StatelessWidget {
                       width: MediaQuery.of(context).size.width,
                       child: Column(
                         children: [
-
                           // メニューボタン
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -59,8 +59,8 @@ class MyPage extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                    width: 100,
-                                    height: 100,
+                                    width: 70,
+                                    height: 70,
                                     decoration: BoxDecoration(
                                         border: Border.all( color: Colors.grey ),
                                         borderRadius: BorderRadius.circular(100),
@@ -86,7 +86,7 @@ class MyPage extends StatelessWidget {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(model.userName ?? "読み込み中...", style: const TextStyle( fontSize: 20, fontWeight: FontWeight.bold )),
+                                Text(model.userName ?? "読み込み中...", style: const TextStyle( fontSize: 17, fontWeight: FontWeight.bold )),
                                 const SizedBox( width: 10 ),
                               ],
                             ),
@@ -306,7 +306,7 @@ class MyPage extends StatelessWidget {
 
                                         // いいね、コメントボタン
                                         SizedBox(
-                                            width: MediaQuery.of(context).size.width*0.5,
+                                            width: MediaQuery.of(context).size.width*0.8,
                                             height: 30,
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.end,
@@ -318,7 +318,7 @@ class MyPage extends StatelessWidget {
                                                       minSize: double.minPositive,
                                                       padding: EdgeInsets.zero,
                                                       onPressed: (){
-                                                        launchUrl(Uri.parse(post.youtubeLink));
+                                                        launchUrl(Uri.parse(post.youtubeLink)); // todo: ディープリンクにする
                                                       },
                                                       child: Container(
                                                           decoration:  BoxDecoration(
@@ -331,7 +331,7 @@ class MyPage extends StatelessWidget {
 
                                                       : null,
                                                 ),
-                                                const SizedBox( width: 35 ),
+                                                const SizedBox( width: 40 ),
 
 
                                                 GestureDetector(
@@ -346,7 +346,7 @@ class MyPage extends StatelessWidget {
                                                       ],
                                                     )
                                                 ),
-                                                const SizedBox( width: 20 ),
+                                                const SizedBox( width: 10 ),
                                                 SizedBox(
                                                     width: 60,
                                                     height: 30,
@@ -360,14 +360,9 @@ class MyPage extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                            ))
-                                .toList(),
+                            )).toList(),
                           ),
                           // 自分の投稿を表示----------------------
-
-
-
-
                         ],
                       ),
                     ),
@@ -379,9 +374,10 @@ class MyPage extends StatelessWidget {
           endDrawer: Drawer(
             child: ListView(
               children: [
-                const DrawerHeader(
-                  child: Center(child: Text("メニュー", style: TextStyle(fontSize: 18))),
-                ),
+                // const DrawerHeader(
+                //   child: Center(child: Text("メニュー", style: TextStyle(fontSize: 18))),
+                // ),
+                const SizedBox( height: 50 ),
 
                 // 編集
                 ListTile(
@@ -397,6 +393,15 @@ class MyPage extends StatelessWidget {
                             model.userFavorite!,
                             model.userImageURL ?? ""  // todo: nullにするとエラーになるので他も修正必要
                         )));
+                  },
+                ),
+
+                // プレイリスト
+                ListTile(
+                  leading: const Icon(Icons.list),
+                  title: const Text("プレイリスト", style: TextStyle(fontWeight: FontWeight.bold)),
+                  onTap: (){
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const PlaylistPage()));
                   },
                 ),
 
