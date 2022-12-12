@@ -20,6 +20,25 @@ class SearchModel extends ChangeNotifier {
    // 変数関係
    String? searchText; // 検索されたワード
    String? userName;
+   List<String> defaultGenresList = [
+      "恋愛ソング",
+      "懐メロ",
+      "JPOP",
+      "男性目線",
+      "女性目線",
+      "LGBTQ",
+      "洋楽",
+      "失恋ソング",
+      "人生",
+      "ロック",
+      "ジャニーズ",
+      "元気になれる曲",
+      "R&B ソウル",
+      "アイドル",
+      "青春",
+      "勇気",
+      "その他",
+   ];
 
 
 

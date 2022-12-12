@@ -4,6 +4,8 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/search/search_model.dart';
 import 'package:str_gram_beta/searchResult/searchResult_page.dart';
 
+import '../genre/genre_page.dart';
+
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
 
@@ -48,6 +50,36 @@ class SearchPage extends StatelessWidget {
                     const SizedBox(height: 30),
 
                     // TODO: ジャンルの一覧を表示する
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width*0.8,
+                      child: Wrap(
+                        runSpacing: 15,
+                        spacing: 10,
+                        children: model.defaultGenresList.map((genre){
+                          return InkWell(
+                            onTap: (){
+                              Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(genre, "genre")));
+                            },
+                            child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15, vertical: 8),
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(Radius.circular(32)),
+                                    border: Border.all( width: 2, color: mainColor ),
+                                    color: Colors.white),
+                                child: RichText(
+                                  text: TextSpan(children: [
+                                    TextSpan(
+                                        text: genre,
+                                        style: const TextStyle(color:  mainColor),
+                                    ),
+                                  ]),
+                                )),
+                          );
+                        }).toList(),
+                      ),
+                    )
 
                   ],
                 );
