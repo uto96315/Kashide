@@ -18,7 +18,7 @@ class GenrePage extends StatelessWidget {
       create: (_) => GenreModel(genre, condition)..getGenrePosts(genre),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(condition == "genre" ?"「$genre」の一覧" : "$genre"),
+          title: Text(condition == "genre" ?"「$genre」の一覧" : genre, style: const TextStyle( fontSize: 16 ),),
           centerTitle: true,
           backgroundColor: mainColor,
         ),
