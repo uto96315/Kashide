@@ -5,11 +5,9 @@ import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../common/ThemeColor.dart';
 import '../element/favorite/favorite_button.dart';
 import 'timeline_model.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class TimelinePage extends StatelessWidget {
   const TimelinePage({super.key});
@@ -17,7 +15,7 @@ class TimelinePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<TimelineModel>(
-      create: (_) => TimelineModel()..getPosts(),
+      create: (_) => TimelineModel()..getPosts()..getPlayListData(),
       child: Consumer<TimelineModel>(builder: (context, model, child){
         return Scaffold(
           appBar: AppBar(
@@ -217,6 +215,7 @@ class TimelinePage extends StatelessWidget {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width*0.8,
                                       child: Wrap(
+                                        alignment: WrapAlignment.center,
                                         runSpacing: 15,
                                         spacing: 10,
                                         children: post.genres.map((genre) =>
@@ -302,7 +301,7 @@ class TimelinePage extends StatelessWidget {
 
                                     // いいね、コメントボタン
                                     SizedBox(
-                                        width: MediaQuery.of(context).size.width*0.5,
+                                        width: MediaQuery.of(context).size.width*0.7,
                                         height: 30,
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.end,
@@ -325,7 +324,6 @@ class TimelinePage extends StatelessWidget {
                                                       child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
                                                   )
                                               )
-
                                                   : null,
                                             ),
                                             const SizedBox( width: 40 ),
@@ -350,6 +348,131 @@ class TimelinePage extends StatelessWidget {
                                                 width: 60,
                                                 height: 30,
                                                 child: FavoriteButton(post.id, post.likedCount)
+                                            ),
+                                            const SizedBox( width: 30 ),
+
+                                            // プレイリストボタン
+                                            GestureDetector(
+                                                onTap: ()async{
+                                                  await showDialog(
+                                                      context: context,
+                                                      builder: (_){
+                                                        return SimpleDialog(
+                                                          title: const Text('この曲をプレイリストに追加する', style: TextStyle( fontSize: 15, fontWeight: FontWeight.bold, color: mainColor )),
+                                                          children: [
+                                                            for(final playlist in model.playList)
+                                                              Padding(
+                                                                padding: const EdgeInsets.only( top: 5, bottom: 0),
+                                                                child: Container(
+                                                                  decoration: BoxDecoration(
+                                                                    border: Border(
+                                                                      top: BorderSide( color: Colors.grey.shade200 ),
+                                                                    )
+                                                                  ),
+                                                                  child: SimpleDialogOption(
+                                                                    child: Padding(
+                                                                      padding: const EdgeInsets.only( top: 5 ),
+                                                                      child: Center(child: Text(playlist["playlistName"])),
+                                                                    ),
+                                                                    onPressed: ()async{
+                                                                      await model.addToPlaylist(playlist["id"], post.artist, post.singName, post.youtubeLink, post.id);
+                                                                      Navigator.pop(context);
+                                                                      showDialog(
+                                                                          context: context,
+                                                                          builder: (_){
+                                                                            return CupertinoAlertDialog(
+                                                                              title: const Text("プレイリストに追加しました"),
+                                                                              actions: [
+                                                                                CupertinoDialogAction(
+                                                                                    child: const Text("OK"),
+                                                                                  onPressed: (){
+                                                                                      Navigator.pop(context);
+                                                                                  },
+                                                                                )
+                                                                              ],
+                                                                            );
+                                                                          }
+                                                                      );
+                                                                    }
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              const SizedBox( height: 5 ),
+                                                              Container(
+                                                                decoration: BoxDecoration(
+                                                                  // color: Colors.grey.shade200,
+                                                                    border: Border(
+                                                                      top: BorderSide( color: Colors.grey.shade200 ),
+                                                                    )
+                                                                ),
+                                                                child: Padding(
+                                                                  padding: const EdgeInsets.only( top: 10 ),
+                                                                  child: SimpleDialogOption(
+                                                                    child: Row(
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                      children: const [
+                                                                        Icon(Icons.add, color: Colors.blue),
+                                                                        Text("プレイリストを新規作成", style: TextStyle( color: Colors.blue )),
+                                                                      ],
+                                                                    ),
+                                                                    onPressed: ()async{
+                                                                      await showDialog(context: context, builder: (_){
+                                                                        return SimpleDialog(
+                                                                          insetPadding: const EdgeInsets.all(10),
+                                                                          title: const Text("プレイリストを追加する"),
+                                                                          children: [
+                                                                            SimpleDialogOption(
+                                                                              child: SizedBox(
+                                                                                width: MediaQuery.of(context).size.width*0.8,
+                                                                                child: TextField(
+                                                                                  autofocus: true,
+                                                                                  controller: model.addPlaylistController,
+                                                                                  decoration: const InputDecoration(
+                                                                                      hintText: "例）お気に入りの曲"
+                                                                                  ),
+                                                                                  onChanged: (text){
+                                                                                    model.setNewName(text);
+                                                                                  },
+                                                                                ),
+                                                                              ),
+                                                                              // onPressed: () => Navigator.pop(context),
+                                                                            ),
+                                                                            SimpleDialogOption(
+                                                                              child: ElevatedButton(
+                                                                                // 新規追加
+                                                                                onPressed: ()async{
+                                                                                  if(model.addPlaylistController.text.isEmpty){
+                                                                                    return;
+                                                                                  }
+                                                                                  try{
+                                                                                    await model.addNewPlaylist();
+                                                                                  } catch(e) {
+                                                                                    print(e.toString());
+                                                                                  }
+                                                                                  await model.getPlayListData();
+                                                                                  model.addPlaylistController.text = "";
+                                                                                  Navigator.pop(context);
+                                                                                },
+                                                                                style: ElevatedButton.styleFrom(
+                                                                                    backgroundColor: mainColor
+                                                                                ),
+                                                                                child: const Text("追加する"),
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        );
+                                                                      });
+                                                                      Navigator.pop(context);
+                                                                    },
+                                                            ),
+                                                                ),
+                                                              ),
+                                                          ]
+                                                        );
+                                                      }
+                                                  );
+                                                },
+                                                child: const Icon(Icons.playlist_add, color: Colors.grey, size: 30,)
                                             ),
                                           ],
                                         )
