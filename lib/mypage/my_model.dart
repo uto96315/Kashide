@@ -73,6 +73,7 @@ class MyModel extends ChangeNotifier {
             doc["youtubeLink"],
         )
     ).toList();
+    notifyListeners();
   }
 
   // 投稿時間から〜分前に変換する
