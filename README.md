@@ -17,3 +17,8 @@
 - 歌い手にリクエスト機能（クラファンのような形で）
 - ランキング機能
 - スーパーライク機能
+
+## リリース時
+### android
+- versionを上げる（pubspec.yaml）
+- ```flutter build appbundle```を実行
