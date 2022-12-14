@@ -80,6 +80,44 @@ class TimelineModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future getFirstPostData()async{
+    final doc = FirebaseFirestore.instance
+        .collection("posts")
+        .orderBy("createdAt", descending: true).limit(10);
+
+    final snapshot = await doc.get();
+
+    final userInfo = await Future.wait(
+        snapshot.docs.map((doc) => getUserData(doc["posterId"])).toList());
+
+    final commentCount = await Future.wait(
+        snapshot.docs.map((doc) => getCommentCount(doc.id)).toList()
+    );
+
+
+    postsList = snapshot.docs.asMap().entries.map((entry) {
+      int index = entry.key;
+      final doc = entry.value;
+      return Post(
+          doc["artist"],
+          doc["singName"],
+          doc["text"],
+          doc["posterId"],
+          doc["likedCount"],
+          doc["genres"],
+          "${userInfo[index][0]}",
+          "${userInfo[index][1]}",
+          createTimeMessage(doc["createdAt"].toDate()),
+          doc.id,
+          commentCount[index],
+          doc["explanation"] ?? "",
+          doc["youtubeLink"] ?? ""
+      );
+    }).toList();
+    debugPrint("投稿を読み込みました");
+    notifyListeners();
+  }
+
   // 投稿時間から〜分前に変換する
   String createTimeMessage(DateTime postDateTime) {
     final now = DateTime.now();
