@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:str_gram_beta/howToUse/how_to_use_page.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
@@ -22,6 +23,14 @@ class TimelinePage extends StatelessWidget {
             title: const Text("Kashide"),
             automaticallyImplyLeading: false,
             backgroundColor: mainColor,
+            actions: [
+              IconButton(
+                  onPressed: (){
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=>const HowToUsePage()));
+                  },
+                  icon: const Icon(Icons.help_outline)
+              ),
+            ],
           ),
 
           body: RefreshIndicator(  // 下にスワイプでリフレッシュ
@@ -313,8 +322,11 @@ class TimelinePage extends StatelessWidget {
                                                   minSize: double.minPositive,
                                                   padding: EdgeInsets.zero,
                                                   onPressed: ()async{
-                                                    // launchUrl(Uri.parse(post.youtubeLink));
-                                                    await model.launchURL(post.youtubeLink);
+                                                    try {
+                                                      await model.launchURL(post.youtubeLink);
+                                                    } catch(e) {
+                                                      print(e.toString());
+                                                    }
                                                   },
                                                   child: Container(
                                                       decoration:  BoxDecoration(
