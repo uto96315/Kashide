@@ -322,8 +322,11 @@ class TimelinePage extends StatelessWidget {
                                                   minSize: double.minPositive,
                                                   padding: EdgeInsets.zero,
                                                   onPressed: ()async{
-                                                    // launchUrl(Uri.parse(post.youtubeLink));
-                                                    await model.launchURL(post.youtubeLink);
+                                                    try {
+                                                      await model.launchURL(post.youtubeLink);
+                                                    } catch(e) {
+                                                      print(e.toString());
+                                                    }
                                                   },
                                                   child: Container(
                                                       decoration:  BoxDecoration(
