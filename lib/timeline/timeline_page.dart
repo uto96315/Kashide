@@ -16,7 +16,7 @@ class TimelinePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<TimelineModel>(
-      create: (_) => TimelineModel()..getPosts()..getPlayListData(),
+      create: (_) => TimelineModel()..getFirstPostData()..getPlayListData(),
       child: Consumer<TimelineModel>(builder: (context, model, child){
         return Scaffold(
           appBar: AppBar(
@@ -36,7 +36,7 @@ class TimelinePage extends StatelessWidget {
           body: RefreshIndicator(  // 下にスワイプでリフレッシュ
             color: mainColor,
             onRefresh: ()async{
-              await model.getPosts();
+              await model.getFirstPostData();
               debugPrint("更新しました");
             },
             child: SingleChildScrollView(
@@ -498,6 +498,14 @@ class TimelinePage extends StatelessWidget {
                       }
                       )
                           .toList(),
+                    ),
+
+                    const SizedBox( height: 10 ),
+                    TextButton(
+                        onPressed: ()async{
+                          await model.getPosts();
+                        },
+                        child: const Text("投稿をさらに読み込む")
                     ),
                   ]);
                 }),
