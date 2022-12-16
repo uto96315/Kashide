@@ -12,7 +12,7 @@ class PostPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<PostModel>(
-      create: (_) => PostModel(defaultGenre)..setDefaultGenre(defaultGenre),
+      create: (_) => PostModel(defaultGenre)..setDefaultGenre(defaultGenre)..getDefaultGenres(),
       child: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
@@ -209,41 +209,41 @@ class PostPage extends StatelessWidget {
                       Wrap(
                         runSpacing: 15,
                         spacing: 10,
-                        children: model.defaultGenresList.map((genre){
-                          return InkWell(
-                            onTap: (){
-                              if(model.genres.contains(genre)) {
-                                model.deleteGenre(genre);
-                                return;
-                              }
-                              model.setGenre(genre);
-                            },
-                            child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 15, vertical: 8),
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.all(Radius.circular(32)),
-                                    border: Border.all(width: 2, color:
-                                    (model.genres.contains(genre)) ? mainColor : Colors.blue),
-                                    color: Colors.white),
-                                child: RichText(
-                                  text: TextSpan(children: [
-                                    TextSpan(
-                                        text: genre,
-                                        style: TextStyle(
-                                            color: model.genres.contains(genre) ? mainColor : Colors.blue)
-                                    ),
-                                  ]),
-                                )),
-                          );
-                        }).toList(),
+                        children: [
+                          for(final genre in model.defaultGenresList)
+                            InkWell(
+                              onTap: (){
+                                if(model.genres.contains(genre)) {
+                                  model.deleteGenre(genre);
+                                  return;
+                                }
+                                model.setGenre(genre);
+                              },
+                              child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15, vertical: 8),
+                                  decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.all(Radius.circular(32)),
+                                      border: Border.all(width: 2, color:
+                                      (model.genres.contains(genre)) ? mainColor : Colors.blue),
+                                      color: Colors.white),
+                                  child: RichText(
+                                    text: TextSpan(children: [
+                                      TextSpan(
+                                          text: genre,
+                                          style: TextStyle(
+                                              color: model.genres.contains(genre) ? mainColor : Colors.blue)
+                                      ),
+                                    ]),
+                                  )),
+                            ),
+                        ],
                       ),
 
                       const SizedBox( height: 30 ),
 
 
-                      // その他が選択された場合に使う
                       TextFormField(
                         controller: model.genreController,
                         autofocus: false,
