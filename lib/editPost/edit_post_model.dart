@@ -130,7 +130,7 @@ class EditPostModel extends ChangeNotifier {
       "text": defaultText,
       "singName": defaultSingName ?? "不明",
       "explanation": defaultExplanation ?? "",
-      "updatedAt": DateTime.now(),
+      "createdAt": DateTime.now(),
       "youtubeLink": youtubeLink ?? "",
     });
 
