@@ -3,22 +3,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 class EditPostModel extends ChangeNotifier {
   EditPostModel(
-      this.defaultText,
+      this.defaultLyrics,
       this.defaultSingerName,
       this.defaultSingName,
-      this.defaultGenreList,
+      this.selectedGenreList,
       this.postId,
       this.defaultExplanation,
       this.youtubeLink
       )
   {
-    postTextController.text = defaultText ?? "";
+    postLyricsController.text = defaultLyrics ?? "";
     postSingerController.text = defaultSingerName ?? "";
     postSingNameController.text = defaultSingName ?? "";
-    defaultGenreList = defaultGenreList ?? [];
+    selectedGenreList = selectedGenreList ?? [];
     postId = postId;
     explanationController.text = defaultExplanation ?? "";
     youtubeLinkController.text = youtubeLink ?? "";
@@ -26,7 +27,7 @@ class EditPostModel extends ChangeNotifier {
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
-  final postTextController = TextEditingController();
+  final postLyricsController = TextEditingController();
   final postSingerController = TextEditingController();
   final postSingNameController = TextEditingController();
   final genreController = TextEditingController();
@@ -35,13 +36,39 @@ class EditPostModel extends ChangeNotifier {
 
   String? postId;
   String? defaultExplanation;
-  String? defaultText;
+  String? defaultLyrics;
   String? defaultSingerName;
   String? defaultSingName;
-  List defaultGenreList = [];
+  List selectedGenreList = []; // 選択されているジャンルの一覧
+  List<String> defaultGenresList = [
+    "恋愛ソング",
+    "懐メロ",
+    "JPOP",
+    "男性目線",
+    "女性目線",
+    "LGBTQ",
+    "洋楽",
+    "失恋ソング",
+    "人生",
+    "ロック",
+    "ジャニーズ",
+    "元気になれる曲",
+    "R&B ソウル",
+    "アイドル",
+    "青春",
+    "勇気",
+  ];
   bool genreMaxLength = true; // 三つ以下
   bool canPush = true;
   String? youtubeLink;
+
+  // firestoreからジャンルを取得する
+  Future getDefaultGenres()async{
+    final doc = FirebaseFirestore.instance.collection("genres").doc("defaultGenres");
+    final snapshot = await doc.get();
+    defaultGenresList = snapshot.data()?["genres"].cast<String>();
+    notifyListeners();
+  }
 
   // 理由をセット
   void setExplanation(String explanationText) {
@@ -52,7 +79,7 @@ class EditPostModel extends ChangeNotifier {
   // 歌詞をセットする処理
   void setLyrics(String text) {
     if(text.isNotEmpty) {
-      defaultText = text;
+      defaultLyrics = text;
       canPush = true;
     }
     notifyListeners();
@@ -85,29 +112,32 @@ class EditPostModel extends ChangeNotifier {
 
   // ジャンルを付与する処理
   void setGenre(String genre) {
-    if(defaultGenreList.contains(genre)) {
-      // genres.remove(genre);
+    print(selectedGenreList.length);
+
+    if(selectedGenreList.length >= 3) {
+      return;
+    }
+    if(selectedGenreList.contains(genre)) {
       return;
     } else {
-      defaultGenreList.add(genre);
-      if(defaultGenreList.length == 3) {
+      if(!defaultGenresList.contains(genre)){
+        defaultGenresList.add(genre);
+      }
+      selectedGenreList.add(genre);
+      if(selectedGenreList.length == 3) {
         genreMaxLength = false;
       }
     }
-
     // 一度テキストフィールド内をクリアする
     genreController.clear();
-
-    // todo: この後再度フォーカスさせたい
-
     notifyListeners();
   }
 
 
   // ジャンルを削除する機能
   void deleteGenre(String genre) {
-    if(defaultGenreList.contains(genre)) {
-      defaultGenreList.remove(genre);
+    if(selectedGenreList.contains(genre)) {
+      selectedGenreList.remove(genre);
     }
     if(genreMaxLength == false) {
       genreMaxLength = true;
@@ -126,14 +156,24 @@ class EditPostModel extends ChangeNotifier {
       "artist": defaultSingerName ?? "不明",
       "likedCount": 0,
       "posterId": uid,
-      "genres": defaultGenreList,  // todo: ここは後から変更する
-      "text": defaultText,
+      "genres": selectedGenreList,  // todo: ここは後から変更する
+      "text": defaultLyrics,
       "singName": defaultSingName ?? "不明",
       "explanation": defaultExplanation ?? "",
       "createdAt": DateTime.now(),
       "youtubeLink": youtubeLink ?? "",
     });
 
+    notifyListeners();
+  }
+
+  // ペーストする関数
+  void pasteText(controller) async{
+    var data = await Clipboard.getData(Clipboard.kTextPlain);
+    controller.text = data?.text.toString() ?? "";
+    if(data != null) {
+      canPush = true;
+    }
     notifyListeners();
   }
 }
