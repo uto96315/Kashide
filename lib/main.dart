@@ -15,6 +15,8 @@ import 'package:str_gram_beta/top/top_page.dart';
 import 'registerUserDetails/register_user_details_page.dart';
 import 'firebase_options.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
+import 'package:flutter_app_badger/flutter_app_badger.dart';
+
 
 
 // 通知
@@ -62,6 +64,12 @@ void main() async {
   final token = await messaging.getToken();
   debugPrint("Token : $token");
 
+  // 開いた時に通知のバッジを削除する
+  try{
+    FlutterAppBadger.removeBadge();
+  } catch(e) {
+    debugPrint(e.toString());
+  }
 
   // run App
   runApp(const MyApp());
@@ -89,14 +97,12 @@ class MyApp extends StatelessWidget {
           if (snapshot.hasData) {
             return HomePage();
           }
-
-          return TopPage();
-        },
+          return const TopPage();
+          },
       ),
 
       // 以下にルーティングを記載
       routes: {
-        // "/": (context) => const TopPage(), // homeを指定した場合には不要になる
         "/login": (context) => const LoginPage(),
         "/register": (context) => const RegisterPage(),
         "/home": (context) => HomePage(),
