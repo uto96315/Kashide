@@ -2,9 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 import '../domain/post_domain.dart';
-
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io';
 
 
 class MyModel extends ChangeNotifier {
@@ -12,6 +14,7 @@ class MyModel extends ChangeNotifier {
   var user = FirebaseAuth.instance.currentUser;
   var uid = FirebaseAuth.instance.currentUser?.uid;
   var sidebarKey = GlobalKey<ScaffoldState>();
+  final deviceInfoPlugin = DeviceInfoPlugin();
 
   String? userName;
   String? userIntroduction;
@@ -20,6 +23,10 @@ class MyModel extends ChangeNotifier {
   String? userImageURL;
   List<dynamic>? userFavorite;
   List<Post> userPostsList = []; // 投稿全体を格納する
+  String? iosVersion;// 現在のiosバージョン
+  String? androidVersion; // 現在のandroidバージョン
+  String? latestIosVersion; // 最新のiosバージョン
+  String? latestAndroidVersion; // 最新のandroidバージョン
 
   // ユーザー情報の取得
   Future getUserData() async{
@@ -43,6 +50,21 @@ class MyModel extends ChangeNotifier {
   Future logOut() async{
     await FirebaseAuth.instance.signOut();
     notifyListeners();
+  }
+
+  // バージョンを取得する関数
+  Future getVersions()async{
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String version = packageInfo.version; // 現在のバージョンを取得
+
+    if(Platform.isAndroid) {
+      print("OSはandroidでバージョンは${version}です");
+      androidVersion = version;
+    }
+    else {
+      print("OSはiOSでバージョンは${version}です");
+      iosVersion = version;
+    }
   }
 
   // ユーザーの投稿を取得する処理

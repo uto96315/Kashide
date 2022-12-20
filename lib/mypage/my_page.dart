@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/playlist/playlist_page.dart';
@@ -9,8 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../editPost/edit_post_page.dart';
 import '../element/favorite/favorite_button.dart';
 import '../postDetail/post_detail_page.dart';
-import '../test/sideBar.dart';
 import 'my_model.dart';
+import 'dart:io';
 
 
 
@@ -20,7 +19,7 @@ class MyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MyModel>(
-      create: (_) => MyModel()..getUserData()..getUserPosts(),
+      create: (_) => MyModel()..getUserData()..getUserPosts()..getVersions(),
       child: Consumer<MyModel>(builder: (context, model, child) {
         return Scaffold(
           key: model.sidebarKey,
@@ -248,7 +247,6 @@ class MyPage extends StatelessWidget {
                                         const SizedBox( height: 15 ),
 
                                         // 曲名などのデータ
-                                        // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
                                         SizedBox(
                                           width: MediaQuery.of(context).size.width*0.8,
                                           child: Row(
@@ -326,9 +324,8 @@ class MyPage extends StatelessWidget {
                                                             borderRadius: BorderRadius.circular(100),
                                                           ),
                                                           child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
+                                                          ),
                                                       )
-                                                  )
-
                                                       : null,
                                                 ),
                                                 const SizedBox( width: 40 ),
@@ -374,10 +371,10 @@ class MyPage extends StatelessWidget {
           endDrawer: Drawer(
             child: ListView(
               children: [
-                // const DrawerHeader(
-                //   child: Center(child: Text("メニュー", style: TextStyle(fontSize: 18))),
-                // ),
-                const SizedBox( height: 50 ),
+                // const SizedBox( height: 50 ),
+                ListTile(
+                  title: Center(child: Text("Version ${Platform.isIOS ? model.iosVersion ?? "" : model.androidVersion ?? ""}"))
+                ),
 
                 // 編集
                 ListTile(
