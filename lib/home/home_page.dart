@@ -4,7 +4,6 @@ import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
-import 'package:str_gram_beta/top/top_page.dart';
 
 class HomePage extends StatelessWidget {
   @override
