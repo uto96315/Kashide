@@ -22,3 +22,15 @@
 ### android
 - versionを上げる（pubspec.yaml）
 - ```flutter build appbundle```を実行
+
+
+## 開発までの流れ
+- Flutter学習開始 2022年10月初旬くらい？
+  - Youtubeでハンズオンを一度
+  - 得た知識で何も見ないでやってみる一回
+- 投票アプリ開発（Firebaseの練習とAppStoreとplayStoreに審査出す練習）7日くらい
+- Kashide開発開始
+  - きっかけは歌詞から探せるサイトが存在しないなと感じたから
+  - マネタイズなどは全く考慮していない
+  - Providerで状態管理している
+- 
