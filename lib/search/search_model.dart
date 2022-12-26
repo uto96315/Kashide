@@ -68,5 +68,14 @@ class SearchModel extends ChangeNotifier {
 
       notifyListeners();
    }
+
+   // firestoreからジャンルを取得する
+   Future getDefaultGenres()async{
+      final doc = FirebaseFirestore.instance.collection("genres").doc("defaultGenres");
+      final snapshot = await doc.get();
+      defaultGenresList = snapshot.data()?["genres"].cast<String>();
+      print(defaultGenresList);
+      notifyListeners();
+   }
 }
 

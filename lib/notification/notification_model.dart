@@ -1,3 +1,4 @@
+import 'package:app_review/app_review.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 

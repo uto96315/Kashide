@@ -3,15 +3,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
-
+import 'package:url_launcher/url_launcher.dart';
 
 
 class GenreModel extends ChangeNotifier {
   GenreModel(this.genre, this.condition);
+
+  final addPlaylistController = TextEditingController();
+
   String? genre;
   String? condition;
   int? postCount;
   List<Post> genrePostsList = [];
+  List playList = [];
+  String? newPlaylistName;
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -64,6 +69,20 @@ class GenreModel extends ChangeNotifier {
     postCount = genrePostsList.length;
 
     debugPrint("読み込みました");
+    notifyListeners();
+  }
+
+  // プレイリストを取得する関数
+  Future getPlayListData()async{
+    final doc = FirebaseFirestore.instance
+        .collection("users").doc(uid).collection("playlists");
+    final snapshot = await doc.get();
+    playList = snapshot.docs.asMap().entries.map((entry){
+      return {
+        "id": entry.value.id,
+        "playlistName": entry.value["playlistName"],
+      };
+    }).toList();
     notifyListeners();
   }
 
@@ -120,6 +139,61 @@ class GenreModel extends ChangeNotifier {
       "reportedAt": DateTime.now(),
       "posterId": uid
     });
+    notifyListeners();
+  }
+
+  // Youtubeアプリを開く処理
+  Future launchURL(String url) async {
+    try {
+      if (await canLaunch(url)) {
+        await launch(
+          url,
+          forceSafariVC: false,
+        );
+      }
+    } catch(e) {
+      print(e.toString());
+    }
+  }
+
+  // プレイリストに追加する処理
+  Future addToPlaylist(String playlistId, String artist, String songName, String youtubeLink, String postId)async{
+    final doc = FirebaseFirestore.instance
+        .collection("users").doc(uid).collection("playlists")
+        .doc(playlistId).collection("songs");
+
+    try {
+      await doc.add({
+        "singName": songName,
+        "artist": artist,
+        "youtubeUrl": youtubeLink,
+        "postId": postId,
+        "addAt": DateTime.now(),
+      });
+      print("プレイリストに追加しました");
+    } catch(e) {
+      print(e.toString());
+    }
+    notifyListeners();
+  }
+
+  // 新しいプレイリストの文字列
+  void setNewName( String text) {
+    newPlaylistName = text;
+    notifyListeners();
+  }
+
+  // プレイリストを追加する
+  Future addNewPlaylist()async{
+    newPlaylistName = addPlaylistController.text;
+    final doc = FirebaseFirestore.instance
+        .collection("users").doc(uid)
+        .collection("playlists");
+    await doc.add({
+      "createdAt": DateTime.now(),
+      "playlistName": newPlaylistName,
+    });
+    await getPlayListData();
     notifyListeners();
   }
 }

@@ -29,7 +29,7 @@ class EditPostPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<EditPostModel>(
-      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId, explanation, youtubeLink),
+      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId, explanation, youtubeLink)..getDefaultGenres(),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: mainColor,
@@ -104,11 +104,17 @@ class EditPostPage extends StatelessWidget {
                   SizedBox(
                     width: MediaQuery.of(context).size.width*0.8,
                     child: TextField(
-                      controller: model.postTextController,
+                      controller: model.postLyricsController,
                       maxLines: null,
                       maxLength: 300,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "心に響いた歌詞を入力しましょう(必須)",
+                          suffixIcon: IconButton(
+                              onPressed: (){
+                                model.pasteText(model.postLyricsController); // todo: チェックこれ何
+                              },
+                              icon: const Icon(Icons.paste)
+                          )
                       ),
                       onChanged: (text) {
                         model.setLyrics(text);
@@ -123,8 +129,14 @@ class EditPostPage extends StatelessWidget {
                     child: TextField(
                       controller: model.postSingerController,
                       maxLength: 50,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "歌手名(任意)",
+                          suffixIcon: IconButton(
+                              onPressed: (){
+                                model.pasteText(model.postSingerController);
+                              },
+                              icon: const Icon(Icons.paste)
+                          )
                       ),
                       onChanged: (text) {
                         model.setSinger(text);
@@ -140,8 +152,14 @@ class EditPostPage extends StatelessWidget {
                     child: TextField(
                       controller: model.postSingNameController,
                       maxLength: 50,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "曲名(任意)",
+                          suffixIcon: IconButton(
+                              onPressed: (){
+                                model.pasteText(model.postSingNameController);
+                              },
+                              icon: const Icon(Icons.paste)
+                          )
                       ),
                       onChanged: (text) {
                         model.setSing(text);
@@ -158,9 +176,14 @@ class EditPostPage extends StatelessWidget {
                       controller: model.youtubeLinkController,
                       maxLines: 1,
                       maxLength: 200,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: "Youtubeリンク",
-                        // prefixIcon: Icon(Icons.add)
+                          suffixIcon: IconButton(
+                              onPressed: (){
+                                // model.pasteText(model.youtubeLinkController);
+                              },
+                              icon: const Icon(Icons.paste)
+                          )
                       ),
                       onChanged: (text){
                         model.setYoutubeLink(text);
@@ -170,6 +193,67 @@ class EditPostPage extends StatelessWidget {
                   const SizedBox(height: 15),
 
 
+                  // デフォルトジャンルリスト
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width*0.8,
+                    child: Row(
+                      children: const [
+                        Text("ジャンル(タップで選択)", style: TextStyle( fontSize: 17, color: Colors.black54 ),),
+                        SizedBox( width: 10 ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width*0.8,
+                    child: Row(
+                      children: const [
+                        Text("※最大三つまで", style: TextStyle( fontSize: 12, color: Colors.black54 )),
+                        SizedBox( width: 10 ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox( height: 20 ),
+
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width*0.8,
+                    child: Wrap(
+                      runSpacing: 15,
+                      spacing: 10,
+                      children: [
+                        for(final genre in model.defaultGenresList)
+                          InkWell(
+                            onTap: (){
+                              if(model.selectedGenreList.contains(genre)) {
+                                model.deleteGenre(genre);
+                                return;
+                              }
+                              model.setGenre(genre);
+                            },
+                            child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 15, vertical: 8),
+                                decoration: BoxDecoration(
+                                    borderRadius: const BorderRadius.all(Radius.circular(32)),
+                                    border: Border.all(width: 2, color:
+                                    (model.selectedGenreList.contains(genre)) ? mainColor : Colors.blue),
+                                    color: Colors.white),
+                                child: RichText(
+                                  text: TextSpan(children: [
+                                    TextSpan(
+                                        text: genre,
+                                        style: TextStyle(
+                                            color: model.selectedGenreList.contains(genre) ? mainColor : Colors.blue)
+                                    ),
+                                  ]),
+                                )),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox( height: 30 ),
+
                   // ジャンル追加欄
                   SizedBox(
                     width: MediaQuery.of(context).size.width*0.8,
@@ -178,7 +262,7 @@ class EditPostPage extends StatelessWidget {
                       enabled: model.genreMaxLength,
                       maxLength: 15,
                       decoration: const InputDecoration(
-                        labelText: "ジャンル（最大三つ）",
+                        labelText: "ジャンルを追加する",
                         hintText: "エンターを押すことで追加できます",
                       ),
                       onFieldSubmitted: (text) {
@@ -187,69 +271,6 @@ class EditPostPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
-
-
-                  // 選択されたジャンルを表示
-                  Wrap(
-                    runSpacing: 15,
-                    spacing: 10,
-                    children: model.defaultGenreList.map((genre) {
-                      return InkWell(
-                        borderRadius:
-                        const BorderRadius.all(Radius.circular(32)),
-                        onTap: () {
-                          showCupertinoDialog(
-                              context: context,
-                              builder: (_){
-                                return CupertinoAlertDialog(
-                                  content: Text("「$genre」を削除しますか？"),
-                                  actions: [
-                                    CupertinoDialogAction(
-                                      child: const Text('はい'),
-                                      onPressed: () {
-                                        model.deleteGenre(genre); // タップされたら削除する
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                    CupertinoDialogAction(
-                                      child: const Text('いいえ'),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ],
-                                );
-                              }
-                          );
-                        },
-                        child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 15, vertical: 8),
-                            decoration: BoxDecoration(
-                                borderRadius:
-                                BorderRadius.all(Radius.circular(32)),
-                                border: Border.all(
-                                    width: 2, color: Colors.blue),
-                                color: Colors.white),
-                            child: RichText(
-                              text: TextSpan(children: [
-                                TextSpan(
-                                    text: genre,
-                                    style: const TextStyle(
-                                        color: Colors.blue)),
-                                const WidgetSpan(
-                                    child: SizedBox(width: 10)),
-                                const WidgetSpan(
-                                    child: Icon(
-                                      Icons.clear,
-                                      size: 17,
-                                    )),
-                              ]),
-                            )),
-                      );
-                    }).toList(),
-                  ),
                 ],
               );
             }),
