@@ -8,6 +8,7 @@ import 'package:str_gram_beta/search/search_page.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
