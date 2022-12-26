@@ -10,7 +10,7 @@ class NotificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<NotificationModel>(
-      create: (_) => NotificationModel()..getToken(),
+      create: (_) => NotificationModel()..getToken()..requestReview(),
       child: Scaffold(
         body: Center(
           child: Consumer<NotificationModel>(builder: (context, model, child) {
