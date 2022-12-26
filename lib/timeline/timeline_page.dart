@@ -16,7 +16,7 @@ class TimelinePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<TimelineModel>(
-      create: (_) => TimelineModel()..getFirstPostData()..getPlayListData(),
+      create: (_) => TimelineModel()..getBlockedUsers()..getFirstPostData()..getPlayListData(),
       child: Consumer<TimelineModel>(builder: (context, model, child){
         return Scaffold(
           appBar: AppBar(
@@ -61,23 +61,58 @@ class TimelinePage extends StatelessWidget {
                                 const SizedBox(width: 10),
 
                                 // ユーザー画像
-                                Container(
-                                    width: MediaQuery.of(context).size.width*0.1,
-                                    height: MediaQuery.of(context).size.width*0.1,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey),
-                                      borderRadius: BorderRadius.circular(50),
-                                      color: Colors.grey.shade200,
-                                      image: (post.userImageUrl != "")
-                                          ? DecorationImage(
-                                          image: NetworkImage(
-                                              post.userImageUrl),
-                                          fit: BoxFit.cover)
-                                          : null,
-                                    ),
-                                    child: (post.userImageUrl != "")
-                                        ? null
-                                        : const Icon(Icons.person)
+                                GestureDetector(
+                                  onTap: ()async{
+                                    debugPrint(post.posterId);
+                                    post.posterId != model.uid ?
+                                    showDialog(context: context, builder: (context){
+                                      return CupertinoAlertDialog(
+                                        title: const Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text("このユーザーをブロックしますか？", style: TextStyle( fontWeight: FontWeight.normal),),
+                                        ),
+                                        actions: [
+                                          CupertinoDialogAction(
+                                            child: const Text("はい"),
+                                            onPressed: ()async{
+                                              try{
+                                                await model.blockUser(post.posterId);
+                                                debugPrint("ブロックしました");
+                                              } catch(e) {
+                                                debugPrint(e.toString());
+                                              } finally {
+                                                Navigator.pop(context);
+                                              }
+                                            },
+                                          ),
+                                          CupertinoDialogAction(
+                                            child: const Text("いいえ"),
+                                            onPressed: ()async{
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    }) : null;
+                                  },
+                                  child: Container(
+                                      width: MediaQuery.of(context).size.width*0.1,
+                                      height: MediaQuery.of(context).size.width*0.1,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey),
+                                        borderRadius: BorderRadius.circular(50),
+                                        color: Colors.grey.shade200,
+                                        image: (post.userImageUrl != "")
+                                            ? DecorationImage(
+                                            image: NetworkImage(
+                                                post.userImageUrl),
+                                            fit: BoxFit.cover)
+                                            : null,
+                                      ),
+                                      child: (post.userImageUrl != "")
+                                          ? null
+                                          : const Icon(Icons.person)
+                                  ),
                                 ),
 
                                 Column(

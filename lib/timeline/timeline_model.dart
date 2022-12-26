@@ -15,6 +15,7 @@ class TimelineModel extends ChangeNotifier {
   var uid = FirebaseAuth.instance.currentUser?.uid;
   List<Post> postsList = []; // 投稿全体を格納する
   List playList = [];
+  List blockedUsers = [];
   String? newPlaylistName;
 
   // ユーザー情報を取得する関数
@@ -46,6 +47,7 @@ class TimelineModel extends ChangeNotifier {
   Future getPosts() async {
     final doc = FirebaseFirestore.instance
         .collection("posts")
+        // .where("posterId", whereNotIn: blockedUsers)
         .orderBy("createdAt", descending: true);
     final snapshot = await doc.get();
 
@@ -60,6 +62,7 @@ class TimelineModel extends ChangeNotifier {
     postsList = snapshot.docs.asMap().entries.map((entry) {
       int index = entry.key;
       final doc = entry.value;
+
       return Post(
           doc["artist"],
           doc["singName"],
@@ -76,13 +79,17 @@ class TimelineModel extends ChangeNotifier {
           doc["youtubeLink"] ?? ""
       );
     }).toList();
+    postsList.removeWhere((post) => blockedUsers.contains(post.posterId));
     debugPrint("投稿を読み込みました");
     notifyListeners();
   }
 
+  // 最初に１０件を取得する
   Future getFirstPostData()async{
+    await getBlockedUsers();
     final doc = FirebaseFirestore.instance
         .collection("posts")
+        // .where("posterId", whereNotIn: blockedUsers)
         .orderBy("createdAt", descending: true).limit(10);
 
     final snapshot = await doc.get();
@@ -114,6 +121,8 @@ class TimelineModel extends ChangeNotifier {
           doc["youtubeLink"] ?? ""
       );
     }).toList();
+
+    postsList.removeWhere((post) => blockedUsers.contains(post.posterId));
     debugPrint("投稿を読み込みました");
     notifyListeners();
   }
@@ -135,7 +144,6 @@ class TimelineModel extends ChangeNotifier {
 
      return count;
   }
-
 
   // 投稿を削除する処理
   // todo: 処理後にダイアログを表示する
@@ -215,6 +223,28 @@ class TimelineModel extends ChangeNotifier {
       "playlistName": newPlaylistName,
     });
     await getPlayListData();
+    notifyListeners();
+  }
+
+  // ブロック処理
+  Future blockUser(String posterId) async{
+    final doc = FirebaseFirestore.instance.collection("users").doc(uid).collection("blockList");
+    await doc.add({
+      "id": posterId,
+      "blockedAt": DateTime.now()
+    });
+    print(blockedUsers);
+    notifyListeners();
+  }
+
+  // ブロックされているユーザーの取得
+  Future getBlockedUsers() async{
+    final doc = FirebaseFirestore.instance.collection("users").doc(uid).collection("blockList");
+    final snapshot = await doc.get();
+    blockedUsers = snapshot.docs.asMap().entries.map((blockedUser){
+      return blockedUser.value["id"];
+    }).toList();
+    print(blockedUsers);
     notifyListeners();
   }
 }
