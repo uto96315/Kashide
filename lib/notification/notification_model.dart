@@ -13,15 +13,4 @@ class NotificationModel extends ChangeNotifier {
     token = await FirebaseMessaging.instance.getAPNSToken();
     print(token ?? "取得失敗");
   }
-
-  // レビューを促す処理
-  void requestReview() {
-    AppReview.isRequestReviewAvailable.then((value){
-      print(value);
-      AppReview.requestReview.then((onValue) {
-        print(onValue);
-      });
-    });
-    notifyListeners();
-  }
 }

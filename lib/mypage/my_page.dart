@@ -402,6 +402,14 @@ class MyPage extends StatelessWidget {
                   },
                 ),
 
+                ListTile(
+                  leading: const Icon(Icons.star),
+                  title: const Text("このアプリを評価する"),
+                  onTap: ()async{
+                    model.requestReview();
+                  },
+                ),
+
                 // ログアウト
                 ListTile(
                   leading: const Icon(Icons.logout),

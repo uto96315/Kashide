@@ -1,3 +1,4 @@
+import 'package:app_review/app_review.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -138,6 +139,17 @@ class MyModel extends ChangeNotifier {
       "id": id,
       "reportedAt": DateTime.now(),
       "posterId": uid
+    });
+    notifyListeners();
+  }
+
+  // レビューを促す処理
+  void requestReview() {
+    AppReview.isRequestReviewAvailable.then((value){
+      print(value);
+      AppReview.requestReview.then((onValue) {
+        print(onValue);
+      });
     });
     notifyListeners();
   }
