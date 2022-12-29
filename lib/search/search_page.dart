@@ -16,7 +16,7 @@ class SearchPage extends StatelessWidget {
         FocusScope.of(context).unfocus();
       },
       child: ChangeNotifierProvider<SearchModel>(
-        create: (_) => SearchModel()..getUserData(),
+        create: (_) => SearchModel()..getUserData()..getDefaultGenres(),
         child: Scaffold(
           body: SingleChildScrollView(
             child: Center(
