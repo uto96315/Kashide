@@ -1,3 +1,4 @@
+import 'package:app_review/app_review.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -75,6 +76,17 @@ class SearchModel extends ChangeNotifier {
       final snapshot = await doc.get();
       defaultGenresList = snapshot.data()?["genres"].cast<String>();
       print(defaultGenresList);
+      notifyListeners();
+   }
+
+   // レビューを促す処理
+   void requestReview() {
+      AppReview.isRequestReviewAvailable.then((value){
+         print(value);
+         AppReview.requestReview.then((onValue) {
+            print(onValue);
+         });
+      });
       notifyListeners();
    }
 }

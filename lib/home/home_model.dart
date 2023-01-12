@@ -18,6 +18,7 @@ class HomeModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 最新のバージョンを取得する
   Future getLatestVersions() async {
     final doc = FirebaseFirestore.instance
         .collection("config").doc("latestVersions");

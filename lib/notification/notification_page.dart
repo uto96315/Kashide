@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'notification_model.dart';
 
 
@@ -12,6 +13,10 @@ class NotificationPage extends StatelessWidget {
     return ChangeNotifierProvider<NotificationModel>(
       create: (_) => NotificationModel()..getToken(),
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text("通知"),
+          backgroundColor: mainColor,
+        ),
         body: Center(
           child: Consumer<NotificationModel>(builder: (context, model, child) {
             return const Text("現在通知はありません。");

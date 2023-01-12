@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/howToUse/how_to_use_page.dart';
+import 'package:str_gram_beta/notification/notification_page.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
@@ -19,18 +20,28 @@ class TimelinePage extends StatelessWidget {
       create: (_) => TimelineModel()..getBlockedUsers()..getFirstPostData()..getPlayListData(),
       child: Consumer<TimelineModel>(builder: (context, model, child){
         return Scaffold(
-          appBar: AppBar(
-            title: const Text("Kashide"),
-            automaticallyImplyLeading: false,
-            backgroundColor: mainColor,
-            actions: [
-              IconButton(
-                  onPressed: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context)=>const HowToUsePage()));
-                  },
-                  icon: const Icon(Icons.help_outline)
-              ),
-            ],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(50),
+            child: AppBar(
+              title: const Text("Kashide"),
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              backgroundColor: mainColor,
+              actions: [
+                IconButton(
+                    onPressed: (){
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=>NotificationPage()));
+                    },
+                    icon: Icon(Icons.notifications)
+                ),
+                IconButton(
+                    onPressed: (){
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=>const HowToUsePage()));
+                    },
+                    icon: const Icon(Icons.help_outline)
+                ),
+              ],
+            ),
           ),
 
           body: RefreshIndicator(  // 下にスワイプでリフレッシュ

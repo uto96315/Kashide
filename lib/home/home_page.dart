@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/home/home_model.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
-import 'package:str_gram_beta/notification/notification_page.dart';
+import 'package:str_gram_beta/playlist/playlist_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -63,19 +63,19 @@ class HomePage extends StatelessWidget {
                           Tab(
                               icon: Icon(Icons.home, size: 25),
                               child:
-                                  Text("ホーム", style: TextStyle(fontSize: 10))),
+                                  Text("ホーム", style: TextStyle(fontSize: 8))),
                           Tab(
                               icon: Icon(Icons.search, size: 25),
                               child:
-                                  Text("探す", style: TextStyle(fontSize: 10))),
+                                  Text("探す", style: TextStyle(fontSize: 8))),
                           Tab(
-                              icon: Icon(Icons.notifications, size: 25),
+                              icon: Icon(Icons.list, size: 25),
                               child:
-                                  Text("通知", style: TextStyle(fontSize: 10))),
+                                  Text("プレイリスト", style: TextStyle(fontSize: 8))),
                           Tab(
                               icon: Icon(Icons.person, size: 25),
                               child: Text("アカウント",
-                                  style: TextStyle(fontSize: 10))),
+                                  style: TextStyle(fontSize: 8))),
                         ],
                       ),
                     ),
@@ -86,7 +86,7 @@ class HomePage extends StatelessWidget {
                       children: [
                         TimelinePage(),
                         SearchPage(),
-                        NotificationPage(),
+                        PlaylistPage(),
                         MyPage(),
                       ],
                     ),

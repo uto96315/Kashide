@@ -229,9 +229,13 @@ class TimelineModel extends ChangeNotifier {
   // ブロック処理
   Future blockUser(String posterId) async{
     final doc = FirebaseFirestore.instance.collection("users").doc(uid).collection("blockList");
+    final targetUserDoc = FirebaseFirestore.instance.collection("users").doc(posterId);
+    final blockedUserData = await targetUserDoc.get();
+    
     await doc.add({
       "id": posterId,
-      "blockedAt": DateTime.now()
+      "blockedAt": DateTime.now(),
+      "blockedUserName": blockedUserData["userName"],  // ここでブロックしたユーザーの名前
     });
     print(blockedUsers);
     notifyListeners();
