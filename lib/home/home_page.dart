@@ -63,19 +63,19 @@ class HomePage extends StatelessWidget {
                           Tab(
                               icon: Icon(Icons.home, size: 25),
                               child:
-                                  Text("ホーム", style: TextStyle(fontSize: 10))),
+                                  Text("ホーム", style: TextStyle(fontSize: 8))),
                           Tab(
                               icon: Icon(Icons.search, size: 25),
                               child:
-                                  Text("探す", style: TextStyle(fontSize: 10))),
+                                  Text("探す", style: TextStyle(fontSize: 8))),
                           Tab(
                               icon: Icon(Icons.list, size: 25),
                               child:
-                                  Text("プレイリスト", style: TextStyle(fontSize: 10))),
+                                  Text("プレイリスト", style: TextStyle(fontSize: 8))),
                           Tab(
                               icon: Icon(Icons.person, size: 25),
                               child: Text("アカウント",
-                                  style: TextStyle(fontSize: 10))),
+                                  style: TextStyle(fontSize: 8))),
                         ],
                       ),
                     ),
