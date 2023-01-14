@@ -36,15 +36,17 @@ class HomeModel extends ChangeNotifier {
   }
 
   Future checkNeedToUpdate()async{
+    var intLatestVersion = int.parse(latestVersion?.replaceAll(".", "") ?? "");
+    var intNowVersion = int.parse(nowVersion?.replaceAll(".", "") ?? "");
     debugPrint("現在のバージョンは");
-    debugPrint(nowVersion);
+    debugPrint(intNowVersion.toString());
     debugPrint("最新のバージョンは");
-    debugPrint(latestVersion);
-    if(latestVersion != nowVersion) {
+    debugPrint(intLatestVersion.toString());
+    if(intLatestVersion > intNowVersion) {
       needToUpDate = true;
       debugPrint("アップデートが必要です");
     }
-    debugPrint("現在のバージョンが最新です");
+    debugPrint("アップデートの必要はありません");
     notifyListeners();
   }
 }

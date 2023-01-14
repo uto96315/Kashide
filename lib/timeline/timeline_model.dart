@@ -1,3 +1,4 @@
+import 'package:app_review/app_review.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -231,7 +232,7 @@ class TimelineModel extends ChangeNotifier {
     final doc = FirebaseFirestore.instance.collection("users").doc(uid).collection("blockList");
     final targetUserDoc = FirebaseFirestore.instance.collection("users").doc(posterId);
     final blockedUserData = await targetUserDoc.get();
-    
+
     await doc.add({
       "id": posterId,
       "blockedAt": DateTime.now(),
@@ -249,6 +250,17 @@ class TimelineModel extends ChangeNotifier {
       return blockedUser.value["id"];
     }).toList();
     print(blockedUsers);
+    notifyListeners();
+  }
+
+  // レビューを促す処理
+  void requestReview() {
+    AppReview.isRequestReviewAvailable.then((value){
+      print(value);
+      AppReview.requestReview.then((onValue) {
+        print(onValue);
+      });
+    });
     notifyListeners();
   }
 }

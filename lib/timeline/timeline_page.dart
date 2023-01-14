@@ -49,6 +49,9 @@ class TimelinePage extends StatelessWidget {
             onRefresh: ()async{
               await model.getFirstPostData();
               debugPrint("更新しました");
+
+              // todo: レビューのリクエストが複数回送られてしまわないか実機テストを行う
+              model.requestReview();
             },
             child: SingleChildScrollView(
               child: Center(
@@ -114,10 +117,7 @@ class TimelinePage extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(50),
                                         color: Colors.grey.shade200,
                                         image: (post.userImageUrl != "")
-                                            ? DecorationImage(
-                                            image: NetworkImage(
-                                                post.userImageUrl),
-                                            fit: BoxFit.cover)
+                                            ? DecorationImage(image: NetworkImage(post.userImageUrl), fit: BoxFit.cover)
                                             : null,
                                       ),
                                       child: (post.userImageUrl != "")
