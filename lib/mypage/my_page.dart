@@ -37,14 +37,14 @@ class MyPage extends ConsumerWidget {
           Navigator.popUntil(context, ModalRoute.withName('/'));
         },
       ),
-      body: SafeArea(
-        bottom: false,
-        child: CustomScrollView(
+      body: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Container(
+              child: ColoredBox(
                 color: Colors.white,
-                child: Column(
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
                   children: [
                     SizedBox(
                       height: 44,
@@ -113,6 +113,7 @@ class MyPage extends ConsumerWidget {
                     const SizedBox(height: 20),
                     const Divider(height: 1, thickness: 0.5, color: Color(0xFFEFF3F4)),
                   ],
+                  ),
                 ),
               ),
             ),
@@ -174,7 +175,6 @@ class MyPage extends ConsumerWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),
-      ),
     );
   }
 }
