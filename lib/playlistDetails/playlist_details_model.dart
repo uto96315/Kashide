@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PlaylistDetailsModel extends ChangeNotifier{
@@ -34,9 +35,23 @@ class PlaylistDetailsModel extends ChangeNotifier{
       };
     }).toList();
 
-    playlistSongs = await Future.wait(baseSongs.map(_attachLyricFromPost));
+    final enriched = await Future.wait(baseSongs.map(_attachLyricFromPost));
+    playlistSongs = enriched.where(_isDisplayable).toList();
     ready = true;
     notifyListeners();
+  }
+
+  bool _isDisplayable(Map<String, dynamic> song) {
+    final artist = _nonEmpty(song['artist']);
+    final singName = _nonEmpty(song['singName']);
+    final lyric = _nonEmpty(song['lyricText']);
+    return artist != null && singName != null && lyric != null && lyric.length >= postLyricsMinLength;
+  }
+
+  String? _nonEmpty(dynamic value) {
+    if (value is! String) return null;
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Future<Map<String, dynamic>> _attachLyricFromPost(Map<String, dynamic> song) async {
@@ -46,9 +61,14 @@ class PlaylistDetailsModel extends ChangeNotifier{
       final post = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
       final data = post.data();
       if (data == null) return song;
+      final artist = _nonEmpty(song['artist']) ?? _nonEmpty(data['artist']);
+      final singName = _nonEmpty(song['singName']) ?? _nonEmpty(data['singName']);
+      final lyric = _nonEmpty(data['text']);
       return {
         ...song,
-        'lyricText': data['text'] ?? '',
+        if (artist != null) 'artist': artist,
+        if (singName != null) 'singName': singName,
+        if (lyric != null) 'lyricText': lyric,
       };
     } catch (_) {
       return song;
