@@ -26,7 +26,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: firebase_options.dart
         run: echo "${{ secrets.FIREBASE_OPTIONS_DART_BASE64 }}" | base64 --decode > lib/firebase_options.dart
@@ -38,7 +38,7 @@ jobs:
 
       - run: flutter pub get
 
-      - uses: apple-actions/import-codesign-certs@v3
+      - uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
           p12-password: ${{ secrets.IOS_P12_PASSWORD }}
@@ -51,16 +51,17 @@ jobs:
           cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
 
       - name: Build IPA (Ad Hoc)
+        env:
+          FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
+          FLUTTER_XCODE_DEVELOPMENT_TEAM: WT3NRWGXXY
+          FLUTTER_XCODE_PROVISIONING_PROFILE_SPECIFIER: 778e8dfc-2cac-4f66-badc-41d2dc1309ea
         run: |
           IDENTITY=$(security find-identity -v -p codesigning signing_temp.keychain \
             | grep -E 'Apple (Development|Distribution)' | head -1 \
-            | sed -E 's/^[[:space:]]*[0-9]+) "//; s/"$//')
+            | sed -n 's/.*"\([^"]*\)"/\1/p')
           echo "Using identity: $IDENTITY"
-          flutter build ipa --export-options-plist=ios/ExportOptionsAdHoc.plist -- \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=WT3NRWGXXY \
-            PROVISIONING_PROFILE_SPECIFIER="778e8dfc-2cac-4f66-badc-41d2dc1309ea" \
-            CODE_SIGN_IDENTITY="$IDENTITY"
+          export FLUTTER_XCODE_CODE_SIGN_IDENTITY="$IDENTITY"
+          flutter build ipa --export-options-plist=ios/ExportOptionsAdHoc.plist
 
       - name: Upload to Firebase App Distribution
         env:
