@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
@@ -12,7 +13,8 @@ class LikedPostsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final model = ref.watch(likedPostsProvider);
-    final timeline = ref.watch(timelineProvider);
+    final playlists = ref.watch(playlistProvider).playlists;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -28,15 +30,16 @@ class LikedPostsPage extends ConsumerWidget {
                         children: [
                           PostFeedList(
                             posts: model.posts,
-                            uid: timeline.uid,
-                            playlists: timeline.playList,
+                            uid: uid,
+                            playlists: playlists,
                             onDeletePost: (id) async {
+                              final timeline = ref.read(timelineProvider);
                               await timeline.deletePosts(id);
                               ref.invalidate(likedPostsProvider);
                               await ref.read(myPageProvider).loadLikedCount();
                             },
-                            onReportPost: timeline.reportPosts,
-                            onAddToPlaylist: (playlistId, post) => timeline.addToPlaylist(
+                            onReportPost: (id) => ref.read(timelineProvider).reportPosts(id),
+                            onAddToPlaylist: (playlistId, post) => ref.read(timelineProvider).addToPlaylist(
                               playlistId,
                               post.artist,
                               post.singName,
@@ -44,10 +47,11 @@ class LikedPostsPage extends ConsumerWidget {
                               post.id,
                             ),
                             onCreatePlaylist: (name) async {
+                              final timeline = ref.read(timelineProvider);
                               timeline.addPlaylistController.text = name;
                               timeline.setNewName(name);
                               await timeline.addNewPlaylist();
-                              await timeline.getPlayListData();
+                              await ref.read(playlistProvider).getPlaylists();
                               timeline.addPlaylistController.text = '';
                             },
                           ),
