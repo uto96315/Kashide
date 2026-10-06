@@ -7,7 +7,12 @@
 	<key>teamID</key>
 	<string>WT3NRWGXXY</string>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.example.kashide</key>
+		<string>Kashide Ad Hoc Firebase</string>
+	</dict>
 	<key>compileBitcode</key>
 	<false/>
 </dict>
