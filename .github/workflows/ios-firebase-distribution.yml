@@ -51,16 +51,8 @@ jobs:
           cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
 
       - name: Build IPA (Ad Hoc)
-        env:
-          FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
-          FLUTTER_XCODE_DEVELOPMENT_TEAM: WT3NRWGXXY
-          FLUTTER_XCODE_PROVISIONING_PROFILE_SPECIFIER: 778e8dfc-2cac-4f66-badc-41d2dc1309ea
         run: |
-          IDENTITY=$(security find-identity -v -p codesigning signing_temp.keychain \
-            | grep -E 'Apple (Development|Distribution)' | head -1 \
-            | sed -n 's/.*"\([^"]*\)"/\1/p')
-          echo "Using identity: $IDENTITY"
-          export FLUTTER_XCODE_CODE_SIGN_IDENTITY="$IDENTITY"
+          security find-identity -v -p codesigning signing_temp.keychain
           flutter build ipa --export-options-plist=ios/ExportOptionsAdHoc.plist
 
       - name: Upload to Firebase App Distribution
