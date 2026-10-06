@@ -47,6 +47,7 @@ app.*.map.json
 
 # about Firebase
 /lib/firebase_options.dart
+.xcode-cloud-secrets.txt
 
 # FVM Version Cache
 .fvm/

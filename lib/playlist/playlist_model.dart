@@ -5,8 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 
 class PlaylistModel extends ChangeNotifier {
-
   final addPlaylistController = TextEditingController();
+
+  @override
+  void dispose() {
+    addPlaylistController.dispose();
+    super.dispose();
+  }
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
   List playlists = [];

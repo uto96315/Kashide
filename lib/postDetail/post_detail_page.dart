@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:str_gram_beta/element/comment/comment_area.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/providers.dart';
 import '../element/favorite/favorite_button.dart';
 
@@ -156,18 +157,28 @@ class PostDetailPage extends ConsumerWidget {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      if ((model.youtubeLink ?? '').isNotEmpty)
-                                        IconButton(
-                                          visualDensity: VisualDensity.compact,
-                                          padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                                          onPressed: () {
-                                            final link = model.youtubeLink;
-                                            if (link == null || link.isEmpty) return;
-                                            launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication);
-                                          },
-                                          icon: const Icon(Icons.play_circle_outline_rounded, size: 26, color: mainColor),
-                                        ),
+                                      ListenUrlPlaySlot(
+                                        storedUrl: model.youtubeLink ?? '',
+                                        artist: model.singerName ?? '',
+                                        singName: model.singName ?? '',
+                                        builder: (context, listenUrl) {
+                                          if (listenUrl == null || listenUrl.isEmpty) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return IconButton(
+                                            visualDensity: VisualDensity.compact,
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                                            onPressed: () {
+                                              launchUrl(
+                                                Uri.parse(listenUrl),
+                                                mode: LaunchMode.externalApplication,
+                                              );
+                                            },
+                                            icon: const Icon(Icons.play_circle_outline_rounded, size: 26, color: mainColor),
+                                          );
+                                        },
+                                      ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 4),
                                         child: Row(

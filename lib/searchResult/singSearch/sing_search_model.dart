@@ -10,9 +10,12 @@ class SingSearchModel extends ChangeNotifier {
 
   List<Post> singResultList = []; // ジャンル検索に引っかかった投稿
   int singResultCount = 0; // ジャンル結果の総数
+  var ready = false;
 
   // ジャンルから探す処理=========================
   Future searchFromSing(String searchWord) async {
+    ready = false;
+    notifyListeners();
     final genreCollection = FirebaseFirestore.instance
         .collection("posts")
         .where("singName", isEqualTo: searchWord);
@@ -50,6 +53,7 @@ class SingSearchModel extends ChangeNotifier {
     }).toList();
 
     singResultCount = singResultList.length;
+    ready = true;
     notifyListeners();
   }
 

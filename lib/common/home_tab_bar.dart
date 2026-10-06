@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 
-/// 4タブ。選択位置へピンクの円がスライドする。
+/// 5スロット（中央は投稿）。選択インジケータの円は4タブのみスライドする。
 class HomeTabBar extends StatelessWidget {
-  const HomeTabBar({super.key, required this.index, required this.onChanged});
+  const HomeTabBar({
+    super.key,
+    required this.index,
+    required this.onChanged,
+    required this.onPost,
+  });
 
   final int index;
   final ValueChanged<int> onChanged;
+  final VoidCallback onPost;
+
+  static const _slotCount = 5;
+  static const _postSlot = 2;
 
   static const _icons = [
     Icons.home_rounded,
@@ -16,7 +25,16 @@ class HomeTabBar extends StatelessWidget {
   ];
 
   static const _circleSize = 48.0;
+  static const _postSize = 56.0;
   static const _barHeight = 56.0;
+
+  /// タブ index (0..3) → 画面上のスロット (0,1,3,4)。2 は投稿用。
+  static int _slotForTab(int tabIndex) => tabIndex < 2 ? tabIndex : tabIndex + 1;
+
+  static int? _tabForSlot(int slot) {
+    if (slot == _postSlot) return null;
+    return slot < _postSlot ? slot : slot - 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +49,9 @@ class HomeTabBar extends StatelessWidget {
           height: _barHeight,
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final tabW = constraints.maxWidth / _icons.length;
-              final left = tabW * index + (tabW - _circleSize) / 2;
+              final tabW = constraints.maxWidth / _slotCount;
+              final slot = _slotForTab(index);
+              final left = tabW * slot + (tabW - _circleSize) / 2;
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -58,20 +77,56 @@ class HomeTabBar extends StatelessWidget {
                     ),
                   ),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      for (var i = 0; i < _icons.length; i++)
+                      for (var slot = 0; slot < _slotCount; slot++)
                         Expanded(
-                          child: _TabHit(
-                            icon: _icons[i],
-                            selected: index == i,
-                            onTap: () => onChanged(i),
-                          ),
+                          child: slot == _postSlot
+                              ? _CenterPostButton(onTap: onPost)
+                              : _TabHit(
+                                  icon: _icons[_tabForSlot(slot)!],
+                                  selected: index == _tabForSlot(slot),
+                                  onTap: () => onChanged(_tabForSlot(slot)!),
+                                ),
                         ),
                     ],
                   ),
                 ],
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterPostButton extends StatelessWidget {
+  const _CenterPostButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: HomeTabBar._barHeight,
+      child: Transform.translate(
+        offset: const Offset(0, -4),
+        child: Center(
+          child: Material(
+            color: mainColor,
+            elevation: 6,
+            shadowColor: mainColor.withValues(alpha: 0.45),
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: onTap,
+              customBorder: const CircleBorder(),
+              child: const SizedBox(
+                width: HomeTabBar._postSize,
+                height: HomeTabBar._postSize,
+                child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
+              ),
+            ),
           ),
         ),
       ),

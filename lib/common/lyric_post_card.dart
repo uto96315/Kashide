@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:str_gram_beta/element/favorite/favorite_button.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
+import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 
 /// X（Twitter）タイムライン風：左アバター・右本文・アクションは下段で均等タップ領域。
@@ -42,7 +43,7 @@ class LyricPostCard extends StatelessWidget {
       showAuthor: showAuthor,
       onOpenUser: () => _openUser(context),
       onOpenPost: (comments) => _openPost(context, comments),
-      onOpenYoutube: () => _openYoutube(post.youtubeLink),
+      onOpenListen: _openListen,
     );
 
     return DecoratedBox(
@@ -85,7 +86,7 @@ class LyricPostCard extends StatelessWidget {
     Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailPage(post.id, comments)));
   }
 
-  Future<void> _openYoutube(String url) async {
+  Future<void> _openListen(String url) async {
     final uri = Uri.tryParse(url);
     if (uri != null) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -103,7 +104,7 @@ class _PostCardContent extends StatelessWidget {
     required this.showAuthor,
     required this.onOpenUser,
     required this.onOpenPost,
-    required this.onOpenYoutube,
+    required this.onOpenListen,
   });
 
   final Post post;
@@ -114,7 +115,7 @@ class _PostCardContent extends StatelessWidget {
   final bool showAuthor;
   final VoidCallback onOpenUser;
   final void Function(bool comments) onOpenPost;
-  final VoidCallback onOpenYoutube;
+  final Future<void> Function(String url) onOpenListen;
 
   @override
   Widget build(BuildContext context) {
@@ -254,13 +255,21 @@ class _PostCardContent extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: post.youtubeLink.isNotEmpty
-                  ? _TimelineAction(
-                      icon: Icons.play_circle_outline_rounded,
-                      iconColor: mainColor,
-                      onTap: onOpenYoutube,
-                    )
-                  : const _TimelineActionPlaceholder(),
+              child: ListenUrlPlaySlot(
+                storedUrl: post.youtubeLink,
+                artist: post.artist,
+                singName: post.singName,
+                builder: (context, listenUrl) {
+                  if (listenUrl == null || listenUrl.isEmpty) {
+                    return const _TimelineActionPlaceholder();
+                  }
+                  return _TimelineAction(
+                    icon: Icons.play_circle_outline_rounded,
+                    iconColor: mainColor,
+                    onTap: () => onOpenListen(listenUrl),
+                  );
+                },
+              ),
             ),
             Expanded(
               child: _TimelineAction(

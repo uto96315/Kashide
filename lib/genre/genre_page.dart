@@ -3,14 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/common/genre_browse_header.dart';
 import 'package:str_gram_beta/common/genre_empty_message.dart';
 import 'package:str_gram_beta/common/empty_state.dart';
-import 'package:str_gram_beta/common/lyric_post_card.dart';
-import 'package:str_gram_beta/common/playlist_picker_sheet.dart';
+import 'package:str_gram_beta/common/post_feed_list.dart';
 import 'package:str_gram_beta/common/post_fab.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
-import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/genre/genre_model.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/providers.dart';
@@ -25,70 +23,28 @@ class GenrePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final model = ref.watch(genreProvider((genre: genre, condition: condition)));
     final isPoster = condition == 'poster';
-    final pageTitle = title ?? (condition == 'genre' ? '「$genre」' : genre);
-    final topTitle = isPoster ? 'プロフィール' : pageTitle;
+    final isGenre = condition == 'genre';
+    final pageTitle = title ?? (isGenre ? genre : genre);
+    final navTitle = isPoster ? 'プロフィール' : (isGenre ? '' : pageTitle);
 
     return Scaffold(
-      backgroundColor: isPoster ? const Color(0xFFF2F2F7) : Colors.white,
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          ScreenTop(title: topTitle),
+          ScreenTop(title: navTitle.isEmpty ? null : navTitle),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (isPoster) _PosterProfileHeader(model: model, fallbackName: pageTitle),
-                  if (model.postCount == null)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 48),
-                      child: Center(child: CircularProgressIndicator(color: mainColor)),
-                    )
-                  else if (model.postCount == 0)
-                    EmptyState(message: genreEmptyMessage(condition))
-                  else ...[
-                    if (!isPoster) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        '全部で${model.postCount}件の投稿が見つかりました。',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF536471)),
-                      ),
-                      const SizedBox(height: 8),
-                    ] else ...[
-                      const SizedBox(height: 4),
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text('投稿', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF3A3A3C))),
-                        ),
-                      ),
-                    ],
-                    for (final post in model.genrePostsList)
-                      LyricPostCard(
-                        post: post,
-                        showAuthor: !isPoster,
-                        onPlaylist: () => _pickPlaylist(context, model, post),
-                        menuItems: post.posterId == model.uid
-                            ? const [
-                                PopupMenuItem(value: 'edit', child: Text('編集する')),
-                                PopupMenuItem(value: 'delete', child: Text('削除する')),
-                              ]
-                            : const [
-                                PopupMenuItem(value: 'report', child: Text('報告する')),
-                              ],
-                        onMenu: (value) => _onPostMenu(context, model, post, value),
-                      ),
-                  ],
-                  const SizedBox(height: 24),
-                ],
-              ),
+            child: _GenreBody(
+              model: model,
+              genre: genre,
+              condition: condition,
+              isPoster: isPoster,
+              isGenre: isGenre,
+              pageTitle: pageTitle,
             ),
           ),
         ],
       ),
-      floatingActionButton: condition == 'genre'
+      floatingActionButton: isGenre
           ? PostFab(
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => PostPage(genre)));
@@ -97,62 +53,93 @@ class GenrePage extends ConsumerWidget {
           : null,
     );
   }
+}
 
-  Future<void> _pickPlaylist(BuildContext context, GenreModel model, dynamic post) async {
-    await showPlaylistPickerSheet(
-      context,
-      playlists: model.playList,
-      onSelect: (playlistId) async {
-        await model.addToPlaylist(playlistId, post.artist, post.singName, post.youtubeLink, post.id);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストに追加しました')));
-        }
-      },
-      onCreate: (name) async {
-        model.addPlaylistController.text = name;
-        model.setNewName(name);
-        await model.addNewPlaylist();
-        await model.getPlayListData();
-        model.addPlaylistController.text = '';
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストを作成しました')));
-        }
-      },
-    );
-  }
+class _GenreBody extends StatelessWidget {
+  const _GenreBody({
+    required this.model,
+    required this.genre,
+    required this.condition,
+    required this.isPoster,
+    required this.isGenre,
+    required this.pageTitle,
+  });
 
-  Future<void> _onPostMenu(BuildContext context, GenreModel model, dynamic post, String value) async {
-    if (value == 'delete') {
-      final ok = await showAppConfirm(
-        context,
-        title: '投稿を削除',
-        message: 'この投稿を削除しますか？',
-        confirm: '削除する',
-        destructive: true,
-      );
-      if (ok) await model.deletePosts(post.id);
-    } else if (value == 'report') {
-      await model.reportPosts(post.id);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('報告しました')));
-      }
-    } else if (value == 'edit') {
-      if (!context.mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EditPostPage(
-            post.id,
-            post.text,
-            post.artist,
-            post.singName,
-            post.genres,
-            post.explanation,
-            post.youtubeLink,
-          ),
-        ),
-      );
+  final GenreModel model;
+  final String genre;
+  final String condition;
+  final bool isPoster;
+  final bool isGenre;
+  final String pageTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (model.postCount == null) {
+      return const Center(child: CircularProgressIndicator(color: mainColor));
     }
+    if (model.postCount == 0) {
+      return EmptyState(message: genreEmptyMessage(condition));
+    }
+
+    return RefreshIndicator(
+      color: mainColor,
+      onRefresh: () => model.getGenrePosts(genre),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isPoster) _PosterProfileHeader(model: model, fallbackName: pageTitle),
+                if (isGenre)
+                  GenreBrowseHeader(genre: genre, postCount: model.postCount!)
+                else if (!isPoster)
+                  QueryResultHeader(
+                    title: pageTitle,
+                    subtitle: '${model.postCount}件の投稿',
+                  )
+                else ...[
+                  const SizedBox(height: 4),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('投稿', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF3A3A3C))),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: PostFeedList(
+              posts: model.genrePostsList,
+              uid: model.uid,
+              playlists: model.playList,
+              showAuthor: !isPoster,
+              onDeletePost: model.deletePosts,
+              onReportPost: model.reportPosts,
+              onAddToPlaylist: (playlistId, post) => model.addToPlaylist(
+                playlistId,
+                post.artist,
+                post.singName,
+                post.youtubeLink,
+                post.id,
+              ),
+              onCreatePlaylist: (name) async {
+                model.addPlaylistController.text = name;
+                model.setNewName(name);
+                await model.addNewPlaylist();
+                await model.getPlayListData();
+                model.addPlaylistController.text = '';
+              },
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
+    );
   }
 }
 

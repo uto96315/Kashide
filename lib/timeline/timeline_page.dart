@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
-import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
 import '../common/app_dialog.dart';
 import '../common/empty_state.dart';
 import '../common/playlist_picker_sheet.dart';
-import '../common/post_fab.dart';
 import '../common/screen_top.dart';
 import '../common/lyric_post_card.dart';
 import '../providers.dart';
@@ -48,7 +46,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                       context,
                       initial: model.filter,
                       availableGenres: model.availableFilterGenres,
-                      loadedPostCount: model.postsList.length,
                     );
                     if (next != null) await model.setFilter(next);
                   },
@@ -89,7 +86,13 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     onOpenUser: (post) {
                       openUserProfile(context, posterId: post.posterId, userName: post.userName);
                     },
-                    onPlay: (post) => model.launchURL(post.youtubeLink),
+                    onPlay: (post) async {
+                      final url = await ref.read(listenUrlResolverProvider).resolvePost(post);
+                      if (url != null && url.isNotEmpty) {
+                        await model.launchURL(url);
+                      }
+                    },
+                    onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
                     onNeedMore: model.loadMorePosts,
                   )
                 : NotificationListener<ScrollNotification>(
@@ -153,13 +156,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
           ),
         ],
       ),
-      floatingActionButton: _deck
-          ? null
-          : PostFab(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PostPage(null)));
-              },
-            ),
     );
   }
 
@@ -190,9 +186,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       playlists: model.playList,
       onSelect: (playlistId) async {
         await model.addToPlaylist(playlistId, post.artist, post.singName, post.youtubeLink, post.id);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストに追加しました')));
-        }
       },
       onCreate: (name) async {
         model.addPlaylistController.text = name;
@@ -200,9 +193,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
         await model.addNewPlaylist();
         await model.getPlayListData();
         model.addPlaylistController.text = '';
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストを作成しました')));
-        }
       },
     );
   }

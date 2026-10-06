@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 
 class EditPostModel extends ChangeNotifier {
@@ -86,16 +87,28 @@ class EditPostModel extends ChangeNotifier {
     postSingNameController.text = quote.title;
     postLyricsController.text = quote.lyrics;
     youtubeLinkController.text = quote.listenUrl;
-    canPush = quote.lyrics.trim().isNotEmpty && quote.lyrics.length <= 300;
+    _refreshCanPush();
     notifyListeners();
+  }
+
+  String? validationMessage() {
+    return validatePostForm(
+      singerName: defaultSingerName ?? postSingerController.text,
+      singName: defaultSingName ?? postSingNameController.text,
+      lyrics: defaultLyrics ?? postLyricsController.text,
+      explanationLength: explanationController.text.length,
+      lyricsMinLength: 0,
+    );
+  }
+
+  void _refreshCanPush() {
+    canPush = validationMessage() == null;
   }
 
   // 歌詞をセットする処理
   void setLyrics(String text) {
-    if(text.isNotEmpty) {
-      defaultLyrics = text;
-      canPush = true;
-    }
+    defaultLyrics = text;
+    _refreshCanPush();
     notifyListeners();
   }
 
@@ -185,8 +198,9 @@ class EditPostModel extends ChangeNotifier {
   void pasteText(controller) async{
     var data = await Clipboard.getData(Clipboard.kTextPlain);
     controller.text = data?.text.toString() ?? "";
-    if(data != null) {
-      canPush = true;
+    if (data != null) {
+      defaultLyrics = controller.text;
+      _refreshCanPush();
     }
     notifyListeners();
   }

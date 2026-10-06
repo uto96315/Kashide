@@ -98,48 +98,89 @@ class PlaylistPage extends ConsumerWidget {
   }
 
   Future<void> _create(BuildContext context, dynamic model) async {
-    final name = TextEditingController();
-    final ok = await showDialog<bool>(
+    final trimmed = await showDialog<String>(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('プレイリストを作る', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 12),
-              TextField(
-                controller: name,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: 'お気に入りの曲',
-                  filled: true,
-                  fillColor: const Color(0xFFFFF7F8),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル', style: TextStyle(color: Color(0xFF8E8E93))))),
-                  Expanded(child: TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('作る', style: TextStyle(color: mainColor, fontWeight: FontWeight.w700)))),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => const _CreatePlaylistDialog(),
     );
-    final trimmed = name.text.trim();
-    name.dispose();
-    if (ok != true || trimmed.isEmpty) return;
+    if (trimmed == null || trimmed.isEmpty) return;
     model.addPlaylistController.text = trimmed;
     model.setNewName(trimmed);
     await model.addNewPlaylist();
     await model.getPlaylists();
     model.addPlaylistController.text = '';
+  }
+}
+
+class _CreatePlaylistDialog extends StatefulWidget {
+  const _CreatePlaylistDialog();
+
+  @override
+  State<_CreatePlaylistDialog> createState() => _CreatePlaylistDialogState();
+}
+
+class _CreatePlaylistDialogState extends State<_CreatePlaylistDialog> {
+  late final TextEditingController _name;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.pop(context, _name.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('プレイリストを作る', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _name,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                hintText: 'お気に入りの曲',
+                filled: true,
+                fillColor: const Color(0xFFFFF7F8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('キャンセル', style: TextStyle(color: Color(0xFF8E8E93))),
+                  ),
+                ),
+                Expanded(
+                  child: TextButton(
+                    onPressed: _submit,
+                    child: const Text('作る', style: TextStyle(color: mainColor, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
