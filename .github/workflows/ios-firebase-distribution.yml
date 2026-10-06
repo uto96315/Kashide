@@ -1,0 +1,66 @@
+# iOS → Firebase App Distribution（手動 or main push）
+# Secrets: FIREBASE_OPTIONS_DART_BASE64, FIREBASE_TOKEN, IOS_P12_BASE64, IOS_P12_PASSWORD, IOS_PROFILE_BASE64
+name: iOS Firebase Distribution
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: Release notes
+        required: false
+        default: CI build
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'ios/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/ios-firebase-distribution.yml'
+
+concurrency:
+  group: ios-firebase-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  distribute:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: firebase_options.dart
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART_BASE64 }}" | base64 --decode > lib/firebase_options.dart
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          cache: true
+
+      - run: flutter pub get
+
+      - uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-base64: ${{ secrets.IOS_P12_BASE64 }}
+          p12-password: ${{ secrets.IOS_P12_PASSWORD }}
+
+      - name: Install Ad Hoc provisioning profile
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "${{ secrets.IOS_PROFILE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' /dev/stdin <<< "$(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision")")
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
+
+      - name: Build IPA (Ad Hoc)
+        run: flutter build ipa --export-options-plist=ios/ExportOptionsAdHoc.plist
+
+      - name: Upload to Firebase App Distribution
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          npm install -g firebase-tools
+          IPA=$(ls build/ios/ipa/*.ipa | head -1)
+          firebase appdistribution:distribute "$IPA" \
+            --app "1:685958858748:ios:bcfe4828b6d6f3f3ee1479" \
+            --groups "testers" \
+            --release-notes "${{ inputs.release_notes || format('GitHub {0}', github.sha) }}" \
+            --token "$FIREBASE_TOKEN"

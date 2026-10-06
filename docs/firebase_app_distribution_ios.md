@@ -26,7 +26,7 @@ firebase login:ci
 
 1. **Product → Xcode Cloud → Manage Workflows**
 2. iOS **Archive** アクション（TestFlight 自動配布は **オフ** にして Distribution だけ使う場合）
-3. リポジトリに `ci_scripts/ci_post_clone.sh` / `ci_scripts/ci_post_xcodebuild.sh` があると自動実行される
+3. リポジトリに `ios/ci_scripts/ci_post_clone.sh` / `ios/ci_scripts/ci_post_xcodebuild.sh` があると自動実行される（workspace と同階層）
 4. ブランチは配布したいコード（`main` 推奨）を選択して **Start Build**
 
 ## 4. 必須: `firebase_options.dart`

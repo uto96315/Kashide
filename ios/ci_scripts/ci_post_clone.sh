@@ -1,5 +1,6 @@
 #!/bin/sh
 # Xcode Cloud: Flutter 依存の準備（Archive 前）
+# ci_scripts は Runner.xcworkspace と同階層（ios/）に置く
 set -e
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 
@@ -24,5 +25,4 @@ if [ ! -f lib/firebase_options.dart ]; then
   fi
 fi
 
-# Xcode が署名・ビルド設定を Flutter 側と揃える
 flutter build ios --config-only --release
