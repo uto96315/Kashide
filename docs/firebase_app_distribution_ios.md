@@ -4,7 +4,7 @@
 
 1. **Release & Monitor → App Distribution** を有効化
 2. **テスターグループ**（例: `testers`）とメール招待
-3. iOS アプリ ID: `1:685958858748:ios:bcfe4828b6d6f3f3ee1479`（`ios/firebase_app_id_file.json`）
+3. iOS アプリ ID: `1:685958858748:ios:ae5d8a6400ffee58ee1479`（`ios/firebase_app_id_file.json`）
 
 ## 2. トークン（1回）
 
@@ -46,7 +46,7 @@ Firebase の端末登録フローを使う場合は、プロファイル更新�
 ```bash
 ./scripts/build_ipa_adhoc.sh
 firebase appdistribution:distribute build/ios/ipa/*.ipa \
-  --app 1:685958858748:ios:bcfe4828b6d6f3f3ee1479 \
+  --app 1:685958858748:ios:ae5d8a6400ffee58ee1479 \
   --groups testers \
   --release-notes "..."
 ```
