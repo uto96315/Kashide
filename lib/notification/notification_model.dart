@@ -1,16 +1,21 @@
-import 'package:app_review/app_review.dart';
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationModel extends ChangeNotifier {
-  // todo: 消す
   String? token;
 
-  // 通知のための設定
-  // todo: nullになる
   Future getToken() async {
-    // FirebaseMessaging.instance.requestPermission();
-    token = await FirebaseMessaging.instance.getAPNSToken();
-    print(token ?? "取得失敗");
+    try {
+      await FirebaseMessaging.instance.requestPermission();
+      if (Platform.isIOS) {
+        token = await FirebaseMessaging.instance.getAPNSToken();
+      } else {
+        token = await FirebaseMessaging.instance.getToken();
+      }
+    } catch (e) {
+      debugPrint('通知トークンを取得できませんでした: $e');
+    }
   }
 }

@@ -5,6 +5,7 @@ import 'package:str_gram_beta/searchResult/lyricsSearch/lyrics_search_page.dart'
 import 'package:str_gram_beta/searchResult/singSearch/sing_search_page.dart';
 import 'package:str_gram_beta/searchResult/singerSearch/singer_result_page.dart';
 import '../common/ThemeColor.dart';
+import '../common/screen_top.dart';
 
 class SearchResultPage extends StatelessWidget {
   SearchResultPage(this.searchWord, this.themeColor, {super.key});
@@ -16,26 +17,22 @@ class SearchResultPage extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(searchWord, style: const TextStyle(color: Colors.black)),
-          iconTheme: const IconThemeData(color: Colors.black),
-          backgroundColor: Colors.white,
-          bottom: const TabBar(
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: mainColor,
-            labelColor: mainColor,
-            tabs: [
-              Tab(text: "歌詞"),
-              Tab(text: "歌手名"),
-              Tab(text: "曲名"),
-              Tab(text: "ジャンル"),
-            ],
-          ),
-        ),
-
-
-        body: Center(
-          child: TabBarView(
+        body: Column(
+          children: [
+            ScreenTop(title: searchWord),
+            const TabBar(
+              unselectedLabelColor: Colors.grey,
+              indicatorColor: mainColor,
+              labelColor: mainColor,
+              tabs: [
+                Tab(text: "歌詞"),
+                Tab(text: "歌手名"),
+                Tab(text: "曲名"),
+                Tab(text: "ジャンル"),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
             physics: const NeverScrollableScrollPhysics(),
             children: [
               LyricsSearchPage(searchWord),
@@ -44,6 +41,8 @@ class SearchResultPage extends StatelessWidget {
               GenreSearchPage(searchWord),
             ],
           ),
+            ),
+          ],
         ),
       ),
     );

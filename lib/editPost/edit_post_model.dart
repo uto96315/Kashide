@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/song/song_quote.dart';
 
 class EditPostModel extends ChangeNotifier {
   EditPostModel(
@@ -73,6 +74,19 @@ class EditPostModel extends ChangeNotifier {
   // 理由をセット
   void setExplanation(String explanationText) {
     defaultExplanation = explanationText;
+    notifyListeners();
+  }
+
+  void applyQuote(SongQuote quote) {
+    defaultSingerName = quote.artist;
+    defaultSingName = quote.title;
+    defaultLyrics = quote.lyrics;
+    youtubeLink = quote.listenUrl;
+    postSingerController.text = quote.artist;
+    postSingNameController.text = quote.title;
+    postLyricsController.text = quote.lyrics;
+    youtubeLinkController.text = quote.listenUrl;
+    canPush = quote.lyrics.trim().isNotEmpty && quote.lyrics.length <= 300;
     notifyListeners();
   }
 

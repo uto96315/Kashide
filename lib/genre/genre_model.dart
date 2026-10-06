@@ -20,6 +20,33 @@ class GenreModel extends ChangeNotifier {
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
+  String? profileUserName;
+  String? profileImageUrl;
+  String? profileIntroduction;
+
+  Future<void> loadPosterProfile(String posterId) async {
+    if (condition != 'poster') return;
+    final snapshot = await FirebaseFirestore.instance.collection('users').doc(posterId).get();
+    final data = snapshot.data();
+    profileUserName = data?['userName'] as String?;
+    profileImageUrl = data?['iconUrl'] as String?;
+    profileIntroduction = data?['introduction'] as String?;
+    notifyListeners();
+  }
+
+  /// users ドキュメントに icon が無い場合、投稿から拾う。
+  String? get displayProfileImageUrl {
+    if (profileImageUrl != null && profileImageUrl!.isNotEmpty && profileImageUrl != 'null') {
+      return profileImageUrl;
+    }
+    for (final post in genrePostsList) {
+      if (post.userImageUrl.isNotEmpty && post.userImageUrl != 'null') {
+        return post.userImageUrl;
+      }
+    }
+    return null;
+  }
+
   // 投稿を取得する処理
   Future getGenrePosts(String genre) async{
 
@@ -34,6 +61,9 @@ class GenreModel extends ChangeNotifier {
     } else if( condition == "singName") {
       doc = FirebaseFirestore.instance.collection("posts")
           .where("singName", isEqualTo: genre);
+    } else if (condition == "poster") {
+      doc = FirebaseFirestore.instance.collection("posts")
+          .where("posterId", isEqualTo: genre);
     } else { return; }
 
     final snapshot = await doc.get();
@@ -145,13 +175,11 @@ class GenreModel extends ChangeNotifier {
   // Youtubeアプリを開く処理
   Future launchURL(String url) async {
     try {
-      if (await canLaunch(url)) {
-        await launch(
-          url,
-          forceSafariVC: false,
-        );
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    } catch(e) {
+    } catch (e) {
       print(e.toString());
     }
   }

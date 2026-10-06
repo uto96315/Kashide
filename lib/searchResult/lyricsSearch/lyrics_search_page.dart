@@ -1,32 +1,34 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../element/favorite/favorite_button.dart';
 import '../../postDetail/post_detail_page.dart';
-import 'lyrics_search_model.dart';
 
-
-
-class LyricsSearchPage extends StatelessWidget {
-  LyricsSearchPage(this.searchWord, {super.key});
-  String searchWord;
+class LyricsSearchPage extends ConsumerWidget {
+  const LyricsSearchPage(this.searchWord, {super.key});
+  final String searchWord;
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LyricsSearchModel>(
-      create: (_) => LyricsSearchModel(searchWord)..searchFromLyrics(searchWord),
-      child: Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(lyricsSearchProvider(searchWord));
+    return Scaffold(
         body: SingleChildScrollView(
           child: Center(
-            child: Consumer<LyricsSearchModel>(builder: (context, model, child) {
-              return Column(
+            child: Column(
                 children: [
                   const SizedBox( height: 30 ),
+                  if (model.isLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    )
+                  else ...[
                   Text(model.lyricsResultCount > 0
-                      ? "全部で${model.lyricsResultCount}件の投稿が見つかりました。"
-                      : "投稿が見つかりませんでした。"
+                      ? "最近の投稿から${model.lyricsResultCount}件見つかりました。"
+                      : "最近の投稿には見つかりませんでした。"
                   ),
                   const SizedBox(height: 10),
                   const Divider( color: Colors.grey ),
@@ -245,12 +247,11 @@ class LyricsSearchPage extends StatelessWidget {
                       );
                     }).toList(),
                   ),
+                  ],
                 ],
-              );
-            }),
+              ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

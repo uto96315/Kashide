@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
+import 'package:str_gram_beta/song/song_quote.dart';
 
 
 class PostModel extends ChangeNotifier {
@@ -28,9 +30,12 @@ class PostModel extends ChangeNotifier {
   bool canPush = false;
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
   String? youtubeLink;
+  String? artworkUrl;
+  bool posting = false;
   bool genreAddFlag = false;  // その他が選択された場合にテキストフィールドを出すかのフラグ
 
-  final clipBoardText = Clipboard.getData(Clipboard.kTextPlain);  // ペーストする時用
+  static const lyricsLimit = postLyricsLimit;
+  static const explanationLimit = postExplanationLimit;
 
   List<String> defaultGenresList = [
     "恋愛ソング",
@@ -67,14 +72,33 @@ class PostModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void applyQuote(SongQuote quote) {
+    singerName = quote.artist;
+    singName = quote.title;
+    lyrics = quote.lyrics;
+    youtubeLink = quote.listenUrl;
+    artworkUrl = quote.artworkUrl;
+    singerNameController.text = quote.artist;
+    singNameController.text = quote.title;
+    lyricsController.text = quote.lyrics;
+    youtubeLinkController.text = quote.listenUrl;
+    canPush = validationMessage() == null;
+    notifyListeners();
+  }
+
+  String? validationMessage() {
+    return validatePostForm(
+      singerName: singerName ?? '',
+      singName: singName ?? '',
+      lyrics: lyrics ?? '',
+      explanationLength: explanationController.text.length,
+    );
+  }
+
   // 歌詞をセットする処理
   void setLyrics(String lyrics) {
     this.lyrics = lyrics;
-    if(lyrics.isNotEmpty) {
-      canPush = true;
-    } else {
-      canPush = false;
-    }
+    canPush = validationMessage() == null;
     notifyListeners();
   }
 
@@ -138,27 +162,35 @@ class PostModel extends ChangeNotifier {
   }
 
   // 投稿する処理
-  Future post() async{
-    var uid = user?.uid;
-    final doc = FirebaseFirestore.instance.collection("posts");
+  Future post() async {
+    if (posting) return;
+    posting = true;
+    notifyListeners();
+    try {
+      var uid = user?.uid;
+      final doc = FirebaseFirestore.instance.collection("posts");
 
-    explanation = explanationController.text;
-    lyrics = lyricsController.text;
-    singerName = singerNameController.text;
-    singName = singNameController.text;
-    youtubeLink = youtubeLinkController.text;
+      explanation = explanationController.text;
+      lyrics = lyricsController.text;
+      singerName = singerNameController.text;
+      singName = singNameController.text;
+      youtubeLink = youtubeLinkController.text;
 
-    await doc.add({
-      "explanation": explanation ?? "",
-      "artist": singerName ?? "不明",
-      "likedCount": 0,
-      "posterId": uid,
-      "genres": genres,  // todo: ここは後から変更する
-      "text": lyrics,
-      "singName": singName ?? "不明",
-      "createdAt": DateTime.now(),
-      "youtubeLink": youtubeLink ?? "",
-    });
+      await doc.add({
+        "explanation": explanation ?? "",
+        "artist": singerName ?? "不明",
+        "likedCount": 0,
+        "posterId": uid,
+        "genres": genres,
+        "text": lyrics,
+        "singName": singName ?? "不明",
+        "createdAt": DateTime.now(),
+        "youtubeLink": youtubeLink ?? "",
+      });
+    } finally {
+      posting = false;
+      notifyListeners();
+    }
   }
 
   // その他が選択された際にジャンルを追加する

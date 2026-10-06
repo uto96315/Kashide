@@ -11,6 +11,7 @@ class PlaylistDetailsModel extends ChangeNotifier{
   var uid = FirebaseAuth.instance.currentUser?.uid;
   String playlistId;
   List playlistSongs = [];
+  bool ready = false;
 
   Future getPlaylistDetail()async{
     final doc = FirebaseFirestore.instance
@@ -28,7 +29,7 @@ class PlaylistDetailsModel extends ChangeNotifier{
         "addAt": song.value["addAt"],
       };
     }).toList();
-
+    ready = true;
     notifyListeners();
   }
 
@@ -47,13 +48,11 @@ class PlaylistDetailsModel extends ChangeNotifier{
   // Youtubeアプリを開く処理
   Future launchURL(String url) async {
     try {
-      if (await canLaunch(url)) {
-        await launch(
-          url,
-          forceSafariVC: false,
-        );
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-    } catch(e) {
+    } catch (e) {
       print(e.toString());
     }
   }

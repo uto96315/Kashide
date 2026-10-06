@@ -1,77 +1,64 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'edit_user_details_model.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/providers.dart';
 
-class EditUserDetailsPage extends StatelessWidget {
-  EditUserDetailsPage(this.userName, this.userAge, this.userIntroduction,
+class EditUserDetailsPage extends ConsumerWidget {
+  const EditUserDetailsPage(this.userName, this.userAge, this.userIntroduction,
       this.userGender, this.userFavorite, this.userImageUrl,
       {super.key});
 
-  String userName;
-  String userAge;
-  String userIntroduction;
-  String userGender;
-  List<dynamic> userFavorite;
-  String userImageUrl;
+  final String userName;
+  final String userAge;
+  final String userIntroduction;
+  final String userGender;
+  final List<dynamic> userFavorite;
+  final String userImageUrl;
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<EditUserDetailsModel>(
-      create: (_) => EditUserDetailsModel(userName, userIntroduction, userGender, userAge, userFavorite, userImageUrl),
-      child: GestureDetector(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(editUserDetailsProvider(EditUserArgs(
+      userName: userName,
+      userIntroduction: userIntroduction,
+      userGender: userGender,
+      userAge: userAge,
+      userFavorite: userFavorite,
+      userImageUrl: userImageUrl,
+    )));
+    return GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();
         },
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text("アカウント編集", style: TextStyle( fontSize: 17)),
-            backgroundColor: mainColor,
-            actions: [
-              Consumer<EditUserDetailsModel>(builder: (context, model, child) {
-                return // 投稿ボタン
-                    Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: MaterialButton(
-                    color: (model.canPush) ? Colors.white : null,
-                    onPressed: (model.canPush)
-                        ? () async {
-                            model.startLoading();
-                            try {
-                              await model.updateUserData();
-                              Navigator.pushNamed(context, "/home");
-                            } catch (e) {
-                              final snackBar = SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text(e.toString()),
-                              );
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(snackBar);
-                            } finally {
-                              model.endLoading();
-                            }
+          body: Column(
+            children: [
+              ScreenTop(
+                title: 'アカウント編集',
+                trailing: TextButton(
+                  onPressed: model.canPush
+                      ? () async {
+                          model.startLoading();
+                          try {
+                            await model.updateUserData();
+                            if (context.mounted) Navigator.pushNamed(context, "/home");
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          } finally {
+                            model.endLoading();
                           }
-                        : null,
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 15, left: 15),
-                      child: Text(
-                        "編集完了",
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: mainColor),
-                      ),
-                    ),
-                  ),
-                );
-              })
-            ],
-          ),
-          body: Center(
-            child: Consumer<EditUserDetailsModel>(
-                builder: (context, model, child) {
-              return SizedBox(
+                        }
+                      : null,
+                  child: const Text('編集完了'),
+                ),
+              ),
+              Expanded(
+                child: Center(
+            child: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.8,
                 child: SingleChildScrollView(
                   child: Column(
@@ -290,7 +277,7 @@ class EditUserDetailsPage extends StatelessWidget {
                                 }
                             );
                           },
-                          style: ElevatedButton.styleFrom(primary: Colors.red),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                           child: const Text("アカウントを削除する"),
                         ),
                       ),
@@ -298,11 +285,12 @@ class EditUserDetailsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-              );
-            }),
+            ),
+              ),
+              ),
+            ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

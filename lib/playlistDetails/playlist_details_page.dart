@@ -1,106 +1,72 @@
-
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'package:str_gram_beta/playlistDetails/playlist_details_model.dart';
+import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/common/empty_state.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/providers.dart';
 
-class PlaylistDetailsPage extends StatelessWidget {
-  PlaylistDetailsPage(this.playlistId, this.playlistName, {super.key});
-  String playlistId;
-  String playlistName;
+class PlaylistDetailsPage extends ConsumerWidget {
+  const PlaylistDetailsPage(this.playlistId, this.playlistName, {super.key});
+  final String playlistId;
+  final String playlistName;
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<PlaylistDetailsModel>(
-      create: (_) => PlaylistDetailsModel(playlistId)..getPlaylistDetail(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(playlistName, style: TextStyle( fontSize: 16 )),
-          backgroundColor: mainColor,
-        ),
-        body: Center(
-          child: Consumer<PlaylistDetailsModel>(builder: (context, model, child) {
-            return Center(
-              child: Column(
-                children: [
-                  for(final song in model.playlistSongs)
-                    Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide( color: Colors.grey.shade300 )
-                          )
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.only( top: 10, bottom: 10 ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(playlistDetailsProvider(playlistId));
+    return Scaffold(
+      body: Column(
+        children: [
+          ScreenTop(title: playlistName),
+          Expanded(
+            child: !model.ready
+                ? const Center(child: CircularProgressIndicator(color: mainColor))
+                : model.playlistSongs.isEmpty
+                    ? const EmptyState(icon: Icons.queue_music, message: 'まだ曲が入っていません')
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        itemCount: model.playlistSongs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFFFE4EC)),
+                        itemBuilder: (context, index) {
+                          final song = model.playlistSongs[index];
+                          final stored = (song['youtubeUrl'] as String?) ?? '';
+                          final url = stored.isNotEmpty
+                              ? stored
+                              : 'https://www.youtube.com/results?search_query=${Uri.encodeComponent('${song['artist']} ${song['singName']}')}';
+                          return Row(
                             children: [
-                              Row(
-                                children: [
-                                  const SizedBox( width: 20 ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(song["singName"], style: const TextStyle( fontSize: 17, fontWeight: FontWeight.bold )),
-                                      Text(song["artist"]),
-                                    ],
-                                  ),
-                                ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('${song['singName']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                                    Text('${song['artist']}', style: const TextStyle(color: Color(0xFF8E8E93))),
+                                  ],
+                                ),
                               ),
-
-
-                              Row(
-                                children: [
-
-                                  // youtubeへのリンクボタン
-                                  song["youtubeUrl"] != "" ?
-                                  IconButton(
-                                    icon: const Icon(Icons.play_circle, color: Colors.red, size: 30 ),
-                                    onPressed: ()async{
-                                      await model.launchURL(song["youtubeUrl"]);
-                                    },
-                                  ) : const Text(""),
-
-                                  // 削除ボタン
-                                  IconButton(
-                                      onPressed: ()async{
-                                        showDialog(context: context, builder: (_){
-                                          return CupertinoAlertDialog(
-                                            title: const Text("プレイリストから削除"),
-                                            content: Text("「${song["singName"]}」をこのプレイリストから削除しますか？"),
-                                            actions: [
-                                              CupertinoDialogAction(
-                                                  child: const Text("はい"),
-                                                  onPressed: ()async{
-                                                    await model.deleteFromPlaylist(song["id"]);
-                                                    Navigator.pop(context);
-                                                  },
-                                              ),
-                                              CupertinoDialogAction(
-                                                  child: const Text("いいえ"),
-                                                  onPressed: (){
-                                                    Navigator.pop(context);
-                                                  },
-                                              ),
-                                            ],
-                                          );
-                                        });
-                                      },
-                                      icon: const Icon(Icons.delete, color: Colors.grey )
-                                  ),
-                                ],
+                              IconButton(
+                                icon: const Icon(Icons.play_circle, color: mainColor, size: 30),
+                                onPressed: () => model.launchURL(url),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Color(0xFF8E8E93)),
+                                onPressed: () async {
+                                  final ok = await showAppConfirm(
+                                    context,
+                                    title: '曲を外す',
+                                    message: '「${song['singName']}」をこのプレイリストから外しますか？',
+                                    confirm: '外す',
+                                    destructive: true,
+                                  );
+                                  if (ok) await model.deleteFromPlaylist(song['id']);
+                                },
                               ),
                             ],
-                          ),
-                        )
-                    ),
-                ],
-              ),
-            );
-          }),
-        ),
+                          );
+                        },
+                      ),
+          ),
+        ],
       ),
     );
   }

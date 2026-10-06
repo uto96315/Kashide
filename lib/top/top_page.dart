@@ -1,58 +1,48 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'package:str_gram_beta/login/login_page.dart';
-import 'package:str_gram_beta/top/top_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/common/primary_button.dart';
+import 'package:str_gram_beta/providers.dart';
 
-
-class TopPage extends StatelessWidget {
+class TopPage extends ConsumerWidget {
   const TopPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<TopModel>(
-      create: (_) => TopModel(),
-      child: Scaffold(
-        body: Center(
-          child: Consumer<TopModel>(builder: (context, model, child) {
-            return Container(
-              decoration: const BoxDecoration(
-                  color: Colors.white60
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(topProvider);
+    return Scaffold(
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, Color(0xFFFFF3F6)],
+          ),
+        ),
+        child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+          child: Column(
+            children: [
+              const Spacer(),
+              SizedBox(
+                width: MediaQuery.sizeOf(context).width * 0.52,
+                child: Image.asset('images/splash_new.png', fit: BoxFit.contain),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(height: 100),
-                    SizedBox(
-                        width: MediaQuery.of(context).size.width*0.6,
-                        height: MediaQuery.of(context).size.width*0.6,
-                        child: Image.asset("images/splash_new.png", fit: BoxFit.contain)
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, "/login");
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: mainColor,
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.only(top: 20, bottom: 20, right: 50, left: 50),
-                        child: Text("はじめる", style: TextStyle( fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white )),
-                      ),
-                    ),
-                    const SizedBox(height: 100),
-                  ],
-                ),
+              const SizedBox(height: 20),
+              const Text(
+                '気に入った歌詞から、曲に出会う',
+                style: TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
               ),
-            );;
-          }),
+              const Spacer(),
+              PrimaryButton(
+                label: 'はじめる',
+                onPressed: () => Navigator.pushNamed(context, '/login'),
+              ),
+            ],
+          ),
+        ),
         ),
       ),
     );
   }
 }
-
-
-

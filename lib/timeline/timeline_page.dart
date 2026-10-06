@@ -1,572 +1,272 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
-import 'package:str_gram_beta/genre/genre_page.dart';
-import 'package:str_gram_beta/howToUse/how_to_use_page.dart';
+import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
 import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
-import '../element/favorite/favorite_button.dart';
-import 'timeline_model.dart';
+import '../common/app_dialog.dart';
+import '../common/empty_state.dart';
+import '../common/playlist_picker_sheet.dart';
+import '../common/post_fab.dart';
+import '../common/screen_top.dart';
+import '../common/lyric_post_card.dart';
+import '../providers.dart';
+import 'swipe_deck.dart';
+import 'timeline_filter_sheet.dart';
 
-class TimelinePage extends StatelessWidget {
+class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
 
   @override
+  ConsumerState<TimelinePage> createState() => _TimelinePageState();
+}
+
+class _TimelinePageState extends ConsumerState<TimelinePage> {
+  /// デフォルトはカード（スワイプ）表示。
+  var _deck = true;
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<TimelineModel>(
-      create: (_) => TimelineModel()..getBlockedUsers()..getFirstPostData()..getPlayListData(),
-      child: Consumer<TimelineModel>(builder: (context, model, child){
-        return Scaffold(
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(50),
-            child: AppBar(
-              title: const Text("Kashide"),
-              centerTitle: true,
-              automaticallyImplyLeading: false,
-              backgroundColor: mainColor,
-              actions: [
-                IconButton(
-                    onPressed: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>NotificationPage()));
-                    },
-                    icon: Icon(Icons.notifications)
+    final model = ref.watch(timelineProvider);
+    final posts = model.visiblePosts;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          ScreenTop(
+            showBack: false,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _FilterButton(
+                  active: model.filter.isActive,
+                  onPressed: () async {
+                    final next = await showTimelineFilterSheet(
+                      context,
+                      initial: model.filter,
+                      availableGenres: model.availableFilterGenres,
+                      loadedPostCount: model.postsList.length,
+                    );
+                    if (next != null) await model.setFilter(next);
+                  },
+                ),
+                _ViewToggle(
+                  deck: _deck,
+                  onChanged: (deck) => setState(() => _deck = deck),
                 ),
                 IconButton(
-                    onPressed: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>const HowToUsePage()));
-                    },
-                    icon: const Icon(Icons.help_outline)
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationPage()));
+                  },
+                  icon: const Icon(Icons.notifications_none),
                 ),
               ],
             ),
           ),
-
-          body: RefreshIndicator(  // 下にスワイプでリフレッシュ
-            color: mainColor,
-            onRefresh: ()async{
-              await model.getFirstPostData();
-              debugPrint("更新しました");
-
-              // todo: レビューのリクエストが複数回送られてしまわないか実機テストを行う
-              model.requestReview();
-            },
-            child: SingleChildScrollView(
-              child: Center(
-                child: Consumer<TimelineModel>(builder: (context, model, child) {
-                  return Column(children: [
-                    const SizedBox(height: 10),
-                    Column(
-                      children: model.postsList
-                          .map((post)  {
-                        return Container(
-                          width: MediaQuery.of(context).size.width,
-                          decoration: const BoxDecoration(
-                              border: Border(
-                                  bottom: BorderSide(color: Colors.grey))),
-                          child: Padding(
-                            padding:
-                            const EdgeInsets.only(top: 20, bottom: 10),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(width: 10),
-
-                                // ユーザー画像
-                                GestureDetector(
-                                  onTap: ()async{
-                                    debugPrint(post.posterId);
-                                    post.posterId != model.uid ?
-                                    showDialog(context: context, builder: (context){
-                                      return CupertinoAlertDialog(
-                                        title: const Padding(
-                                          padding: EdgeInsets.all(8.0),
-                                          child: Text("このユーザーをブロックしますか？", style: TextStyle( fontWeight: FontWeight.normal),),
-                                        ),
-                                        actions: [
-                                          CupertinoDialogAction(
-                                            child: const Text("はい"),
-                                            onPressed: ()async{
-                                              try{
-                                                await model.blockUser(post.posterId);
-                                                debugPrint("ブロックしました");
-                                              } catch(e) {
-                                                debugPrint(e.toString());
-                                              } finally {
-                                                Navigator.pop(context);
-                                              }
-                                            },
-                                          ),
-                                          CupertinoDialogAction(
-                                            child: const Text("いいえ"),
-                                            onPressed: ()async{
-                                              Navigator.pop(context);
-                                            },
-                                          ),
-                                        ],
-                                      );
-                                    }) : null;
-                                  },
-                                  child: Container(
-                                      width: MediaQuery.of(context).size.width*0.1,
-                                      height: MediaQuery.of(context).size.width*0.1,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(50),
-                                        color: Colors.grey.shade200,
-                                        image: (post.userImageUrl != "")
-                                            ? DecorationImage(image: NetworkImage(post.userImageUrl), fit: BoxFit.cover)
-                                            : null,
-                                      ),
-                                      child: (post.userImageUrl != "")
-                                          ? null
-                                          : const Icon(Icons.person)
-                                  ),
-                                ),
-
-                                Column(
-                                  children: [
-                                    // ユーザーネーム
-                                    SizedBox(
-                                      width:
-                                      MediaQuery.of(context).size.width * 0.8,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              const SizedBox(width: 15),
-                                              Text(post.userName),
-                                            ],
-                                          ),
-                                          const SizedBox( width: 10 ),
-                                          Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
-
-                                          // 報告、編集及び削除ボタン
-                                          PopupMenuButton(
-                                              icon: const Icon(Icons.more_horiz),
-                                              onSelected: (value)async{
-                                                if(value == "delete") {
-                                                  // 削除のアラート表示
-                                                  showCupertinoDialog(
-                                                      context: context,
-                                                      builder: (_){
-                                                        return CupertinoAlertDialog(
-                                                          content: const Text("削除しますか？"),
-                                                          actions: [
-                                                            CupertinoDialogAction(
-                                                              child: const Text('はい'),
-                                                              onPressed: () async{
-                                                                await model.deletePosts(post.id);
-                                                                Navigator.pop(context);
-                                                              },
-                                                            ),
-                                                            CupertinoDialogAction(
-                                                              child: const Text('いいえ'),
-                                                              onPressed: () {
-                                                                Navigator.pop(context);
-                                                              },
-                                                            ),
-                                                          ],
-                                                        );
-                                                      }
-                                                  );
-                                                } else if (value == "report") {
-                                                  showCupertinoDialog(
-                                                      context: context,
-                                                      builder: (_){
-                                                        return CupertinoAlertDialog(
-                                                          content: const Text("報告しますか？"),
-                                                          actions: [
-                                                            CupertinoDialogAction(
-                                                              child: const Text('はい'),
-                                                              onPressed: () async{
-                                                                await model.reportPosts(post.id);
-                                                                Navigator.pop(context);
-                                                              },
-                                                            ),
-                                                            CupertinoDialogAction(
-                                                              child: const Text('いいえ'),
-                                                              onPressed: () {
-                                                                Navigator.pop(context);
-                                                              },
-                                                            ),
-                                                          ],
-                                                        );
-                                                      }
-                                                  );
-                                                } else if(value == "edit") {
-                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation, post.youtubeLink)));
-                                                }
-                                              },
-                                              itemBuilder: (BuildContext context) =>  [
-                                                (post.posterId == model.uid)
-                                                    ? const PopupMenuItem(value: "edit", child: Text("編集する"))
-                                                    : const PopupMenuItem(value: "report", child: Text("報告する")),
-                                                (post.posterId == model.uid)
-                                                    ? const PopupMenuItem(value: "delete", child: Text("削除する"))
-                                                    : const PopupMenuItem(value: "", child: Text("")), // todo: 何も表示しないようにしたい(null的な)
-                                              ]
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-
-                                    // 歌詞と理由
-                                    GestureDetector(
-                                      onTap: (){
-                                        Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, false)));
-                                      },
-                                      child: SizedBox(
-                                        width:
-                                        MediaQuery.of(context).size.width *
-                                            0.8,
-                                        child: Container(
-                                          alignment: Alignment.centerLeft,
-                                          child: Padding(
-                                            padding:
-                                            const EdgeInsets.only(left: 20),
-                                            child: Column(
-                                              children: [
-                                                // 説明
-                                                SizedBox(
-                                                  width: MediaQuery.of(context).size.width,
-                                                  child: Text(
-                                                      post.explanation,
-                                                      textAlign: TextAlign.left,
-                                                      style: const TextStyle( fontSize: 15, height: 1.5)
-                                                  ),
-                                                ),
-
-                                                const SizedBox( height: 10 ),
-
-                                                // 歌詞
-                                                Container(
-                                                  width: MediaQuery.of(context).size.width,
-                                                  decoration: BoxDecoration(
-                                                      color: Colors.grey.shade200
-                                                  ),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.all(8.0),
-                                                    child: Text('---\n${post.text}\n---',
-                                                        textAlign: TextAlign.left,
-                                                        style: const TextStyle(fontSize: 16, height: 1.5)),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-
-
-                                    // ジャンル一覧
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width*0.8,
-                                      child: Wrap(
-                                        alignment: WrapAlignment.center,
-                                        runSpacing: 15,
-                                        spacing: 10,
-                                        children: post.genres.map((genre) =>
-                                            GestureDetector(
-                                              onTap: (){
-                                                Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(genre, "genre")));
-                                              },
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border.all( color: Colors.blue ),
-                                                  borderRadius: BorderRadius.circular(100),
-                                                ),
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(10.0),
-                                                  child: Text(genre, style: const TextStyle( color: Colors.blue ),),
-                                                ),
-                                              ),
-                                            )
-                                        ).toList(),
-                                      ),
-                                    ),
-                                    const SizedBox( height: 15 ),
-
-                                    // 曲名などのデータ
-                                    // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width * 0.8,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          Column(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              // 歌手名
-                                              GestureDetector(
-                                                onTap: (){
-                                                  Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.artist, "artist")));
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                                    SizedBox(
-                                                      width: 100,
-                                                      child: Text(
-                                                          post.artist,
-                                                          style: const TextStyle( fontSize: 11 ),
-                                                          overflow: TextOverflow.ellipsis
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-
-                                              const SizedBox(height: 5),
-
-                                              // 曲名
-                                              GestureDetector(
-                                                onTap: (){
-                                                  Navigator.push(context, MaterialPageRoute(builder:(context) => GenrePage(post.singName, "singName")));
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    const Text("曲名：", style: TextStyle( fontSize: 11)),
-                                                    SizedBox(
-                                                      width: 100,
-                                                      child: Text(
-                                                        post.singName,
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: const TextStyle( fontSize: 11 ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              const SizedBox(width: 15),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox( height: 15 ),
-
-                                    // いいね、コメントボタン
-                                    SizedBox(
-                                        width: MediaQuery.of(context).size.width*0.7,
-                                        height: 30,
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
-                                          children: [
-                                            // youtubeリンク
-                                            Container(
-                                              child: post.youtubeLink != ""
-                                                  ? CupertinoButton(
-                                                  minSize: double.minPositive,
-                                                  padding: EdgeInsets.zero,
-                                                  onPressed: ()async{
-                                                    try {
-                                                      await model.launchURL(post.youtubeLink);
-                                                    } catch(e) {
-                                                      print(e.toString());
-                                                    }
-                                                  },
-                                                  child: Container(
-                                                      decoration:  BoxDecoration(
-                                                        color: Colors.red,
-                                                        borderRadius: BorderRadius.circular(100),
-                                                      ),
-                                                      child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
-                                                  )
-                                              )
-                                                  : null,
-                                            ),
-                                            const SizedBox( width: 40 ),
-
-                                            // コメントボタン
-                                            GestureDetector(
-                                                onTap: (){
-                                                  Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(post.id, true)));
-                                                },
-                                                child: Row(
-                                                  children: [
-                                                    const Icon(Icons.comment, color: Colors.grey ),
-                                                    const SizedBox( width: 5 ),
-                                                    Text(post.commentCount.toString(), style: const TextStyle( fontSize: 17 )),
-                                                  ],
-                                                )
-                                            ),
-                                            const SizedBox( width: 10 ),
-
-                                            // いいねボタン
-                                            SizedBox(
-                                                width: 60,
-                                                height: 30,
-                                                child: FavoriteButton(post.id, post.likedCount)
-                                            ),
-                                            const SizedBox( width: 30 ),
-
-                                            // プレイリストボタン
-                                            GestureDetector(
-                                                onTap: ()async{
-                                                  await showDialog(
-                                                      context: context,
-                                                      builder: (_){
-                                                        return SimpleDialog(
-                                                          title: const Text('この曲をプレイリストに追加する', style: TextStyle( fontSize: 15, fontWeight: FontWeight.bold, color: mainColor )),
-                                                          children: [
-                                                            for(final playlist in model.playList)
-                                                              Padding(
-                                                                padding: const EdgeInsets.only( top: 5, bottom: 0),
-                                                                child: Container(
-                                                                  decoration: BoxDecoration(
-                                                                    border: Border(
-                                                                      top: BorderSide( color: Colors.grey.shade200 ),
-                                                                    )
-                                                                  ),
-                                                                  child: SimpleDialogOption(
-                                                                    child: Padding(
-                                                                      padding: const EdgeInsets.only( top: 5 ),
-                                                                      child: Center(child: Text(playlist["playlistName"])),
-                                                                    ),
-                                                                    onPressed: ()async{
-                                                                      await model.addToPlaylist(playlist["id"], post.artist, post.singName, post.youtubeLink, post.id);
-                                                                      Navigator.pop(context);
-                                                                      showDialog(
-                                                                          context: context,
-                                                                          builder: (_){
-                                                                            return CupertinoAlertDialog(
-                                                                              title: const Text("プレイリストに追加しました"),
-                                                                              actions: [
-                                                                                CupertinoDialogAction(
-                                                                                    child: const Text("OK"),
-                                                                                  onPressed: (){
-                                                                                      Navigator.pop(context);
-                                                                                  },
-                                                                                )
-                                                                              ],
-                                                                            );
-                                                                          }
-                                                                      );
-                                                                    }
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              const SizedBox( height: 5 ),
-                                                              Container(
-                                                                decoration: BoxDecoration(
-                                                                  // color: Colors.grey.shade200,
-                                                                    border: Border(
-                                                                      top: BorderSide( color: Colors.grey.shade200 ),
-                                                                    )
-                                                                ),
-                                                                child: Padding(
-                                                                  padding: const EdgeInsets.only( top: 10 ),
-                                                                  child: SimpleDialogOption(
-                                                                    child: Row(
-                                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                                      children: const [
-                                                                        Icon(Icons.add, color: Colors.blue),
-                                                                        Text("プレイリストを新規作成", style: TextStyle( color: Colors.blue )),
-                                                                      ],
-                                                                    ),
-                                                                    onPressed: ()async{
-                                                                      await showDialog(context: context, builder: (_){
-                                                                        return SimpleDialog(
-                                                                          insetPadding: const EdgeInsets.all(10),
-                                                                          title: const Text("プレイリストを追加する"),
-                                                                          children: [
-                                                                            SimpleDialogOption(
-                                                                              child: SizedBox(
-                                                                                width: MediaQuery.of(context).size.width*0.8,
-                                                                                child: TextField(
-                                                                                  autofocus: true,
-                                                                                  controller: model.addPlaylistController,
-                                                                                  decoration: const InputDecoration(
-                                                                                      hintText: "例）お気に入りの曲"
-                                                                                  ),
-                                                                                  onChanged: (text){
-                                                                                    model.setNewName(text);
-                                                                                  },
-                                                                                ),
-                                                                              ),
-                                                                              // onPressed: () => Navigator.pop(context),
-                                                                            ),
-                                                                            SimpleDialogOption(
-                                                                              child: ElevatedButton(
-                                                                                // 新規追加
-                                                                                onPressed: ()async{
-                                                                                  if(model.addPlaylistController.text.isEmpty){
-                                                                                    return;
-                                                                                  }
-                                                                                  try{
-                                                                                    await model.addNewPlaylist();
-                                                                                  } catch(e) {
-                                                                                    print(e.toString());
-                                                                                  }
-                                                                                  await model.getPlayListData();
-                                                                                  model.addPlaylistController.text = "";
-                                                                                  Navigator.pop(context);
-                                                                                },
-                                                                                style: ElevatedButton.styleFrom(
-                                                                                    backgroundColor: mainColor
-                                                                                ),
-                                                                                child: const Text("追加する"),
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        );
-                                                                      });
-                                                                      Navigator.pop(context);
-                                                                    },
-                                                            ),
-                                                                ),
-                                                              ),
-                                                          ]
-                                                        );
-                                                      }
-                                                  );
-                                                },
-                                                child: const Icon(Icons.playlist_add, color: Colors.grey, size: 30,)
-                                            ),
-                                          ],
-                                        )
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                      )
-                          .toList(),
-                    ),
-
-                    const SizedBox( height: 10 ),
-                    TextButton(
-                        onPressed: ()async{
-                          await model.getPosts();
-                        },
-                        child: const Text("投稿をさらに読み込む")
-                    ),
-                  ]);
-                }),
-              ),
+          if (model.filter.isActive && model.filterApplying)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: LinearProgressIndicator(color: mainColor, minHeight: 2),
             ),
+          Expanded(
+            child: _deck
+                ? SwipeDeck(
+                    posts: [
+                      for (final post in posts)
+                        if (model.isVisibleInSwipeDeck(post)) post,
+                    ],
+                    likedIds: model.likedPostIds,
+                    loadingMore: model.loadingMore,
+                    hasMore: model.hasMorePosts,
+                    onLike: (post) => model.likePost(post.id),
+                    onDismiss: model.markSwipeSeen,
+                    onOpen: (post) {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailPage(post.id, false)));
+                    },
+                    onOpenUser: (post) {
+                      openUserProfile(context, posterId: post.posterId, userName: post.userName);
+                    },
+                    onPlay: (post) => model.launchURL(post.youtubeLink),
+                    onNeedMore: model.loadMorePosts,
+                  )
+                : NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      final metrics = notification.metrics;
+                      if (metrics.pixels > metrics.maxScrollExtent - 480) {
+                        model.loadMorePosts();
+                      }
+                      return false;
+                    },
+                    child: RefreshIndicator(
+                      color: mainColor,
+                      onRefresh: () async {
+                        await model.getFirstPostData();
+                      },
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            if (!model.postsReady)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 80),
+                                child: CircularProgressIndicator(color: mainColor),
+                              )
+                            else if (posts.isEmpty)
+                              EmptyState(
+                                message: model.filter.isActive
+                                    ? '条件に合う投稿がありません'
+                                    : 'まだ歌詞の投稿がありません',
+                              )
+                            else
+                              Column(
+                                children: [
+                                  for (final post in posts)
+                                    LyricPostCard(
+                                      post: post,
+                                      onPlaylist: () => _pickPlaylist(context, model, post),
+                                      menuItems: post.posterId == model.uid
+                                          ? const [
+                                              PopupMenuItem(value: 'edit', child: Text('編集する')),
+                                              PopupMenuItem(value: 'delete', child: Text('削除する')),
+                                            ]
+                                          : const [
+                                              PopupMenuItem(value: 'report', child: Text('報告する')),
+                                              PopupMenuItem(value: 'block', child: Text('ブロックする')),
+                                            ],
+                                      onMenu: (value) => _onPostMenu(context, model, post, value),
+                                    ),
+                                ],
+                              ),
+                            if (model.loadingMore)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: CircularProgressIndicator(color: mainColor),
+                              ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context)=>PostPage(null)));
-            },
-            backgroundColor: mainColor,
-            child: const Icon(Icons.add),
-          ),
-        );
-      })
+        ],
+      ),
+      floatingActionButton: _deck
+          ? null
+          : PostFab(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => PostPage(null)));
+              },
+            ),
+    );
+  }
+
+  Future<void> _onPostMenu(BuildContext context, dynamic model, dynamic post, String value) async {
+    if (value == 'delete') {
+      final ok = await showAppConfirm(context, title: '投稿を削除', message: 'この投稿を削除しますか？', confirm: '削除する', destructive: true);
+      if (ok) await model.deletePosts(post.id);
+    } else if (value == 'block') {
+      final ok = await showAppConfirm(context, title: 'ブロック', message: 'このユーザーをブロックしますか？', confirm: 'ブロックする', destructive: true);
+      if (!ok || !context.mounted) return;
+      await model.blockUser(post.posterId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ブロックしました')));
+    } else if (value == 'report') {
+      final ok = await showAppConfirm(context, title: '報告', message: 'この投稿を報告しますか？', confirm: '報告する', destructive: true);
+      if (!ok || !context.mounted) return;
+      await model.reportPosts(post.id);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('報告しました')));
+    } else if (value == 'edit') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation, post.youtubeLink)));
+    }
+  }
+
+  Future<void> _pickPlaylist(BuildContext context, dynamic model, dynamic post) async {
+    await showPlaylistPickerSheet(
+      context,
+      playlists: model.playList,
+      onSelect: (playlistId) async {
+        await model.addToPlaylist(playlistId, post.artist, post.singName, post.youtubeLink, post.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストに追加しました')));
+        }
+      },
+      onCreate: (name) async {
+        model.addPlaylistController.text = name;
+        model.setNewName(name);
+        await model.addNewPlaylist();
+        await model.getPlayListData();
+        model.addPlaylistController.text = '';
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストを作成しました')));
+        }
+      },
+    );
+  }
+}
+
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({required this.active, required this.onPressed});
+
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      icon: Badge(
+        isLabelVisible: active,
+        smallSize: 8,
+        backgroundColor: mainColor,
+        child: Icon(Icons.tune_rounded, color: active ? mainColor : const Color(0xFF1C1C1E)),
+      ),
+    );
+  }
+}
+
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.deck, required this.onChanged});
+
+  final bool deck;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 32,
+      margin: const EdgeInsets.only(right: 4),
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE5E5EA),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _item(Icons.view_agenda_outlined, !deck, () => onChanged(false)),
+          _item(Icons.style_outlined, deck, () => onChanged(true)),
+        ],
+      ),
+    );
+  }
+
+  Widget _item(IconData icon, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 36,
+        height: 28,
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, size: 18, color: selected ? mainColor : const Color(0xFF536471)),
+      ),
     );
   }
 }

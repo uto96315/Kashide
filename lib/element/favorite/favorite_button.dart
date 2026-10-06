@@ -1,47 +1,46 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/providers.dart';
 
-import '../../element/favorite/favorite_model.dart';
+class FavoriteButton extends ConsumerWidget {
+  const FavoriteButton(this.postId, this.likedCount, {super.key, this.compact = false});
 
-class FavoriteButton extends StatelessWidget {
-  FavoriteButton(this.postId, this.likedCount);
-  String postId;
-  int? likedCount;
-  var uid = FirebaseAuth.instance.currentUser?.uid;
+  final String postId;
+  final int? likedCount;
+  final bool compact;
+
+  static const _muted = Color(0xFF536471);
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<FavoriteModel>(
-      create: (_) => FavoriteModel(postId, likedCount)..checkLiked(),
-      child: Scaffold(
-        body: Center(
-          child: Consumer<FavoriteModel>(builder: (context, model, child) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(width: 10),
-                CupertinoButton(
-                  minSize: double.minPositive,
-                  padding: EdgeInsets.zero,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(favoriteProvider(FavoriteArgs(postId, likedCount)));
+    final liked = model.isLiked;
+    final color = liked ? mainColor : _muted;
+    final icon = liked ? Icons.favorite_rounded : Icons.favorite_border_rounded;
 
-                  onPressed: ()async{
-                    await model.doLike(postId, likedCount!);
-                    await model.checkLiked();
-                  },
-                    child: Row(
-                      children: [
-                        Icon(Icons.favorite, color: model.isLiked ? mainColor : Colors.grey),
-                        const SizedBox( width: 5 ),
-                        Text(model.likedCount.toString(), style: const TextStyle(fontSize: 17, color: Colors.black)),
-                      ],
-                    ),
-                ),
-              ],
-            );
-          }),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          await model.doLike(postId, likedCount ?? model.likedCount ?? 0);
+          await model.checkLiked();
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 6, vertical: compact ? 10 : 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: compact ? 20 : 22),
+              const SizedBox(width: 6),
+              Text(
+                '${model.likedCount}',
+                style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
         ),
       ),
     );

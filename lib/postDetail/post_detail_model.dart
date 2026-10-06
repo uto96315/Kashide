@@ -22,6 +22,7 @@ class PostDetailModel extends ChangeNotifier {
   List genreList = [];
   int? likedCount;
   String? explanation;
+  String? youtubeLink;
 
   // 投稿者関係
   String? posterName;
@@ -53,6 +54,7 @@ class PostDetailModel extends ChangeNotifier {
     genreList = data?["genres"];
     likedCount = data?["likedCount"];
     explanation = data?["explanation"];
+    youtubeLink = data?["youtubeLink"] ?? "";
 
     await getPosterData(posterId ?? "");
 

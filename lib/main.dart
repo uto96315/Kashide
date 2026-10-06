@@ -1,8 +1,11 @@
-import 'package:fcm_config/fcm_config.dart';
+import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:str_gram_beta/home/home_page.dart';
 import 'package:str_gram_beta/login/login_page.dart';
@@ -15,14 +18,15 @@ import 'package:str_gram_beta/top/top_page.dart';
 import 'registerUserDetails/register_user_details_page.dart';
 import 'firebase_options.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
-import 'package:flutter_app_badger/flutter_app_badger.dart';
 
 
 
-// 通知
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Handling a background message: ${message.messageId}");
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  debugPrint("Handling a background message: ${message.messageId}");
 }
 
 
@@ -61,18 +65,23 @@ void main() async {
     }
   });
   debugPrint('通知可否：User granted permission: ${settings.authorizationStatus}');
-  final token = await messaging.getToken();
+  String? token;
+  try {
+    token = await messaging.getToken();
+  } catch (e) {
+    debugPrint('FCM token を取得できませんでした: $e');
+  }
   debugPrint("Token : $token");
 
   // 開いた時に通知のバッジを削除する
   try{
-    FlutterAppBadger.removeBadge();
+    await AppBadgePlus.updateBadge(0);
   } catch(e) {
     debugPrint(e.toString());
   }
 
   // run App
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 
@@ -83,16 +92,41 @@ class MyApp extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kashide',
+      title: '',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: mainColor),
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: mainColor,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            minimumSize: const Size.fromHeight(56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ),
       ),
 
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox();
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator(color: mainColor)),
+            );
           }
           if (snapshot.hasData) {
             return HomePage();

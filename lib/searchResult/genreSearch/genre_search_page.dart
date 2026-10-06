@@ -2,26 +2,24 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../element/favorite/favorite_button.dart';
 import '../../postDetail/post_detail_page.dart';
-import 'genre_search_model.dart';
 
-class GenreSearchPage extends StatelessWidget {
-  GenreSearchPage(this.searchWord, {super.key});
-  String searchWord;
+class GenreSearchPage extends ConsumerWidget {
+  const GenreSearchPage(this.searchWord, {super.key});
+  final String searchWord;
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<GenreSearchModel>(
-      create: (_) => GenreSearchModel(searchWord)..searchFromGenre(searchWord),
-      child: Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(genreSearchProvider(searchWord));
+    return Scaffold(
         body: SingleChildScrollView(
           child: Center(
-            child: Consumer<GenreSearchModel>(builder: (context, model, child) {
-              return Column(
+            child: Column(
                 children: [
                   const SizedBox( height: 30 ),
                   Text(model.genreResultCount > 0
@@ -246,11 +244,9 @@ class GenreSearchPage extends StatelessWidget {
                       }).toList(),
                     ),
                 ],
-              );
-            }),
+              ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

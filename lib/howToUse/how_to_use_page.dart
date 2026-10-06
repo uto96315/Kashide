@@ -1,29 +1,24 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/howToUse/how_to_use_model.dart';
+import 'package:str_gram_beta/providers.dart';
 
-class HowToUsePage extends StatelessWidget {
+class HowToUsePage extends ConsumerWidget {
   const HowToUsePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<HowToUseModel>(
-      create: (_) => HowToUseModel()..getQuestions(),
-      child: Scaffold(
-        body: Center(
-          child: Consumer<HowToUseModel>(builder: (context, model, child) {
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text("よくある質問", style: TextStyle( fontSize: 17 )),
-                backgroundColor: mainColor,
-              ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(howToUseProvider);
+    return Scaffold(
               body: SingleChildScrollView(
                 child: Center(
                   child: Column(
                     children: [
+                      const ScreenTop(),
                       for(final question in model.questions)
                         Column(
                           children: [
@@ -94,9 +89,5 @@ class HowToUsePage extends StatelessWidget {
                 ),
               ),
             );
-          }),
-        ),
-      ),
-    );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:app_review/app_review.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -39,6 +39,7 @@ class SearchModel extends ChangeNotifier {
       "青春",
       "勇気",
       "その他",
+      "ペット",
    ];
 
 
@@ -50,6 +51,11 @@ class SearchModel extends ChangeNotifier {
          return;
       }
       searchText = text;
+      notifyListeners();
+   }
+
+   void onSearchFieldChanged(String text) {
+      searchText = text.isEmpty ? null : text;
       notifyListeners();
    }
 
@@ -81,11 +87,11 @@ class SearchModel extends ChangeNotifier {
 
    // レビューを促す処理
    void requestReview() {
-      AppReview.isRequestReviewAvailable.then((value){
-         print(value);
-         AppReview.requestReview.then((onValue) {
-            print(onValue);
-         });
+      final review = InAppReview.instance;
+      review.isAvailable().then((available) {
+         if (available) {
+            review.requestReview();
+         }
       });
       notifyListeners();
    }

@@ -1,124 +1,84 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:str_gram_beta/postDetail/post_detail_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/providers.dart';
 import '../../domain/comment_domain.dart';
-import 'comment_model.dart';
 
+class CommentArea extends ConsumerWidget {
+  const CommentArea(this.id, this.commentsList, {super.key});
 
-
-class CommentArea extends StatelessWidget {
-  CommentArea(this.id,this.commentsList, {super.key});
-  
-  String id;
-  List<CommentDomain> commentsList;
-  // Future(String, String, String) reportComment; // todo: ここをコールバックに変更する
+  final String id;
+  final List<CommentDomain> commentsList;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-        child: Consumer<PostDetailModel>(builder: (context, model, child) {
-          return Column(
-            children: commentsList.map((comment){
-              return Column(
-                mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(postDetailProvider(id));
+    if (commentsList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Text('まだコメントはありません', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF8E8E93))),
+      );
+    }
+    return Column(
+      children: commentsList.map((comment) {
+        final hasImage = comment.commenterImageUrl.isNotEmpty && comment.commenterImageUrl != 'null';
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E5EA)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 20, left: 20, top: 10, bottom: 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: const Color(0xFFE5E5EA),
+                    backgroundImage: hasImage ? NetworkImage(comment.commenterImageUrl) : null,
+                    child: hasImage ? null : const Icon(Icons.person, size: 16, color: Color(0xFF8E8E93)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width*0.8,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // ユーザー画像
-                              Row(
-                                children: [
-                                  Container(
-                                      width: MediaQuery.of(context).size.width*0.1,
-                                      height: MediaQuery.of(context).size.width*0.1,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(50),
-                                        color: Colors.grey.shade200,
-                                        image: (comment.commenterImageUrl != "" || comment.commenterImageUrl.isNotEmpty)
-                                            ? DecorationImage(
-                                            image: NetworkImage(comment.commenterImageUrl), fit: BoxFit.cover)
-                                            : null,
-                                      ),
-                                      child: (comment.commenterImageUrl != "")
-                                          ? null
-                                          : const Icon(Icons.person)
-                                  ),
-                                  const SizedBox( width: 10 ),
-
-                                  // ユーザーネーム
-                                  Text(comment.commenterName, style: const TextStyle( fontSize: 15, fontWeight: FontWeight.bold )),
-                                ],
-                              ),
-
-                              Text(comment.commentedAt, style: const TextStyle( color: Colors.grey )),
-                            ],
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(comment.commenterName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                            ),
+                            Text(comment.commentedAt, style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
+                          ],
                         ),
-
-                        // 報告及び削除ボタン
-                        SizedBox(
-                          width: 20,
-                          child: PopupMenuButton(
-                              icon: const Icon(Icons.more_horiz),
-                              onSelected: (value)async{
-                                //　削除処理
-                                if(value == "delete"){
-                                  try{
-                                    await model.deleteComment(id, comment.id);
-                                  } catch(e) {
-                                    debugPrint(e.toString());
-                                  }
-                                }
-                                //　報告処理
-                                if(value == "report") {
-                                  try{
-                                    await model.reportComment(id, comment.id, comment.comment);
-                                  } catch(e) {
-                                    debugPrint(e.toString());
-                                  }
-                                }
-                              },
-                              itemBuilder: (BuildContext context) => [
-                                (comment.commenterId == model.uid )
-                                    ? const PopupMenuItem(
-                                  value: "delete",
-                                  child: Text("削除"),
-                                )
-                                    : const PopupMenuItem(
-                                  value: "report",
-                                  child: Text("報告"),
-                                ),
-                              ]
-                          ),
-                        )
+                        const SizedBox(height: 4),
+                        Text(comment.comment, style: const TextStyle(fontSize: 14, height: 1.45, color: Color(0xFF3A3A3C))),
                       ],
                     ),
                   ),
-
-                  const SizedBox( height: 10 ),
-
-                  // コメント本文
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width*0.8,
-                      child: Text(comment.comment, textAlign: TextAlign.left, style: const TextStyle(fontSize: 16, height: 1.5),)
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    icon: const Icon(Icons.more_horiz, size: 18, color: Color(0xFF8E8E93)),
+                    onSelected: (value) async {
+                      if (value == 'delete') {
+                        await model.deleteComment(id, comment.id);
+                      } else if (value == 'report') {
+                        await model.reportComment(id, comment.id, comment.comment);
+                      }
+                    },
+                    itemBuilder: (_) => comment.commenterId == model.uid
+                        ? const [PopupMenuItem(value: 'delete', child: Text('削除する'))]
+                        : const [PopupMenuItem(value: 'report', child: Text('報告する'))],
                   ),
-
-                  const SizedBox( height: 5 ),
-
-                  const Divider( color: Colors.black54 )
                 ],
-              );
-            }).toList(),
-          );
-        }),
-      );
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 }

@@ -1,178 +1,145 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:str_gram_beta/editPost/edit_post_page.dart';
-import 'package:str_gram_beta/genre/genre_page.dart';
-import 'package:str_gram_beta/playlist/playlist_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/common/empty_state.dart';
+import 'package:str_gram_beta/common/primary_button.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/playlistDetails/playlist_details_page.dart';
-import 'package:str_gram_beta/post/post_page.dart';
-import 'package:str_gram_beta/postDetail/post_detail_page.dart';
-import '../common/ThemeColor.dart';
-import '../element/favorite/favorite_button.dart';
+import 'package:str_gram_beta/providers.dart';
 
-class PlaylistPage extends StatelessWidget {
+class PlaylistPage extends ConsumerWidget {
   const PlaylistPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<PlaylistModel>(
-        create: (_) => PlaylistModel()..getPlaylists(), // todo: ここでuserDataを取得してからじゃないとプレイリストが描画されない理由がわからない
-        child: Consumer<PlaylistModel>(builder: (context, model, child){
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text("プレイリスト"),
-              backgroundColor: mainColor,
-            ),
-
-            body: RefreshIndicator(  // 下にスワイプでリフレッシュ
-              color: mainColor,
-              onRefresh: ()async{
-                await model.getPlaylists();
-                debugPrint("更新しました");
-              },
-              child: SingleChildScrollView(
-                child: SizedBox(
-                  height: MediaQuery.of(context).size.height,
-                  child: Consumer<PlaylistModel>(builder: (context, model, child) {
-                    return Column(children: [
-                      const SizedBox(height: 10),
-                      Column(
-                        children: [
-                          for(final playlist in model.playlists)
-                            GestureDetector(
-                              onTap: (){
-                                Navigator.push(context, MaterialPageRoute(builder: (context)=>PlaylistDetailsPage(playlist["id"], playlist["playlistName"])));
-                              },
-                              child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide( color: Colors.grey.shade300 ),
-                                  )
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.only( top: 20, bottom: 20 ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(playlistProvider);
+    return Scaffold(
+      body: Column(
+        children: [
+          const ScreenTop(showBack: false),
+          Expanded(
+            child: !model.ready
+                ? const Center(child: CircularProgressIndicator(color: mainColor))
+                : model.playlists.isEmpty
+                    ? const EmptyState(icon: Icons.queue_music, message: 'プレイリストはまだありません')
+                    : RefreshIndicator(
+                        color: mainColor,
+                        onRefresh: model.getPlaylists,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                          itemCount: model.playlists.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final playlist = model.playlists[index];
+                            return Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PlaylistDetailsPage(playlist['id'], playlist['playlistName']),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFFFFD6E4)),
+                                  ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        children: [
-                                          const SizedBox( width: 30 ),
-                                          const Icon( Icons.list, color: Colors.grey ),
-                                          const SizedBox( width: 15 ),
-                                          Text(playlist["playlistName"], style: const TextStyle( fontSize: 15 )),
-                                        ],
+                                      const Icon(Icons.queue_music, color: mainColor),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          playlist['playlistName'],
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                        ),
                                       ),
-
                                       IconButton(
-                                          onPressed: ()async{
-                                            showDialog(context: context, builder: (_){
-                                              return CupertinoAlertDialog(
-                                                title: const Text("プレイリストの削除"),
-                                                content: Text("「${playlist["playlistName"]}」\nを削除しますか？"),
-                                                actions: [
-                                                  CupertinoDialogAction(
-                                                    child: const Text("はい"),
-                                                    onPressed: ()async{
-                                                      await model.deletePlaylist(playlist["id"]);
-                                                      Navigator.pop(context);
-                                                    }
-                                                  ),
-                                                  CupertinoDialogAction(
-                                                    child: const Text("いいえ"),
-                                                    onPressed: (){
-                                                      Navigator.pop(context);
-                                                    }
-                                                  ),
-                                                ],
-                                              );
-                                            });
-                                          },
-                                          icon: const Icon(Icons.delete, color: Colors.grey)
+                                        onPressed: () async {
+                                          final ok = await showAppConfirm(
+                                            context,
+                                            title: 'プレイリストを削除',
+                                            message: '「${playlist['playlistName']}」を削除しますか？',
+                                            confirm: '削除する',
+                                            destructive: true,
+                                          );
+                                          if (ok) await model.deletePlaylist(playlist['id']);
+                                        },
+                                        icon: const Icon(Icons.delete_outline, color: Color(0xFF8E8E93)),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
-                            ),
-
-                           const SizedBox( height: 20 ),
-
-
-                          TextButton(
-                              onPressed: (){
-                                 model.showAddPlaylistTextFiled();
-                                 showDialog(context: context, builder: (_){
-                                   return SimpleDialog(
-                                     insetPadding: const EdgeInsets.all(10),
-                                     title: const Text("プレイリストを追加する"),
-                                     children: [
-                                       SimpleDialogOption(
-                                         child: SizedBox(
-                                             width: MediaQuery.of(context).size.width*0.8,
-                                             child: TextField(
-                                               autofocus: true,
-                                               controller: model.addPlaylistController,
-                                               decoration: const InputDecoration(
-                                                 hintText: "例）お気に入りの曲"
-                                               ),
-                                               onChanged: (text){
-                                                 model.setNewName(text);
-                                               },
-                                             ),
-                                         ),
-                                         // onPressed: () => Navigator.pop(context),
-                                       ),
-                                       SimpleDialogOption(
-                                         child: ElevatedButton(
-                                           // 新規追加
-                                           onPressed: ()async{
-                                             if(model.addPlaylistController.text.isEmpty){
-                                               return;
-                                             }
-                                             try{
-                                               await model.addNewPlaylist();
-                                             } catch(e) {
-                                               print(e.toString());
-                                             }
-                                             await model.getPlaylists();
-                                             model.addPlaylistController.text = "";
-                                             Navigator.pop(context);
-                                           },
-                                           style: ElevatedButton.styleFrom(
-                                             backgroundColor: mainColor
-                                           ),
-                                           child: const Text("追加する"),
-                                         ),
-                                         onPressed: () => Navigator.pop(context),
-                                       ),
-                                     ],
-                                   );
-                                 });
-                               },
-                               child: Row(
-                                 mainAxisAlignment: MainAxisAlignment.center,
-                                 children: const [
-                                   Icon( Icons.add,color: Colors.blue ),
-                                   Text(
-                                     "プレイリストを新規作成",
-                                     style: TextStyle(
-                                       color: Colors.blue,
-                                       fontSize: 17,
-                                     ),
-                                   ),
-                                 ],
-                               )
-                           ),
-                        ],
+                            );
+                          },
+                        ),
                       ),
-                    ]);
-                  }),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: PrimaryButton(
+            label: 'プレイリストを作る',
+            onPressed: () => _create(context, model),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _create(BuildContext context, dynamic model) async {
+    final name = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('プレイリストを作る', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: name,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: 'お気に入りの曲',
+                  filled: true,
+                  fillColor: const Color(0xFFFFF7F8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 ),
               ),
-            ),
-          );
-        })
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('キャンセル', style: TextStyle(color: Color(0xFF8E8E93))))),
+                  Expanded(child: TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('作る', style: TextStyle(color: mainColor, fontWeight: FontWeight.w700)))),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
+    final trimmed = name.text.trim();
+    name.dispose();
+    if (ok != true || trimmed.isEmpty) return;
+    model.addPlaylistController.text = trimmed;
+    model.setNewName(trimmed);
+    await model.addNewPlaylist();
+    await model.getPlaylists();
+    model.addPlaylistController.text = '';
   }
 }

@@ -1,373 +1,202 @@
 
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/common/genre_empty_message.dart';
+import 'package:str_gram_beta/common/empty_state.dart';
+import 'package:str_gram_beta/common/lyric_post_card.dart';
+import 'package:str_gram_beta/common/playlist_picker_sheet.dart';
+import 'package:str_gram_beta/common/post_fab.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/editPost/edit_post_page.dart';
+import 'package:str_gram_beta/genre/genre_model.dart';
 import 'package:str_gram_beta/post/post_page.dart';
-import '../element/favorite/favorite_button.dart';
-import 'genre_model.dart';
+import 'package:str_gram_beta/providers.dart';
 
-class GenrePage extends StatelessWidget {
-  GenrePage(this.genre,this.condition, {super.key});
-  String genre;
-  String condition;
+class GenrePage extends ConsumerWidget {
+  const GenrePage(this.genre, this.condition, {this.title, super.key});
+  final String genre;
+  final String condition;
+  final String? title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(genreProvider((genre: genre, condition: condition)));
+    final isPoster = condition == 'poster';
+    final pageTitle = title ?? (condition == 'genre' ? '「$genre」' : genre);
+    final topTitle = isPoster ? 'プロフィール' : pageTitle;
+
+    return Scaffold(
+      backgroundColor: isPoster ? const Color(0xFFF2F2F7) : Colors.white,
+      body: Column(
+        children: [
+          ScreenTop(title: topTitle),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (isPoster) _PosterProfileHeader(model: model, fallbackName: pageTitle),
+                  if (model.postCount == null)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 48),
+                      child: Center(child: CircularProgressIndicator(color: mainColor)),
+                    )
+                  else if (model.postCount == 0)
+                    EmptyState(message: genreEmptyMessage(condition))
+                  else ...[
+                    if (!isPoster) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        '全部で${model.postCount}件の投稿が見つかりました。',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF536471)),
+                      ),
+                      const SizedBox(height: 8),
+                    ] else ...[
+                      const SizedBox(height: 4),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text('投稿', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF3A3A3C))),
+                        ),
+                      ),
+                    ],
+                    for (final post in model.genrePostsList)
+                      LyricPostCard(
+                        post: post,
+                        showAuthor: !isPoster,
+                        onPlaylist: () => _pickPlaylist(context, model, post),
+                        menuItems: post.posterId == model.uid
+                            ? const [
+                                PopupMenuItem(value: 'edit', child: Text('編集する')),
+                                PopupMenuItem(value: 'delete', child: Text('削除する')),
+                              ]
+                            : const [
+                                PopupMenuItem(value: 'report', child: Text('報告する')),
+                              ],
+                        onMenu: (value) => _onPostMenu(context, model, post, value),
+                      ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: condition == 'genre'
+          ? PostFab(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => PostPage(genre)));
+              },
+            )
+          : null,
+    );
+  }
+
+  Future<void> _pickPlaylist(BuildContext context, GenreModel model, dynamic post) async {
+    await showPlaylistPickerSheet(
+      context,
+      playlists: model.playList,
+      onSelect: (playlistId) async {
+        await model.addToPlaylist(playlistId, post.artist, post.singName, post.youtubeLink, post.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストに追加しました')));
+        }
+      },
+      onCreate: (name) async {
+        model.addPlaylistController.text = name;
+        model.setNewName(name);
+        await model.addNewPlaylist();
+        await model.getPlayListData();
+        model.addPlaylistController.text = '';
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('プレイリストを作成しました')));
+        }
+      },
+    );
+  }
+
+  Future<void> _onPostMenu(BuildContext context, GenreModel model, dynamic post, String value) async {
+    if (value == 'delete') {
+      final ok = await showAppConfirm(
+        context,
+        title: '投稿を削除',
+        message: 'この投稿を削除しますか？',
+        confirm: '削除する',
+        destructive: true,
+      );
+      if (ok) await model.deletePosts(post.id);
+    } else if (value == 'report') {
+      await model.reportPosts(post.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('報告しました')));
+      }
+    } else if (value == 'edit') {
+      if (!context.mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditPostPage(
+            post.id,
+            post.text,
+            post.artist,
+            post.singName,
+            post.genres,
+            post.explanation,
+            post.youtubeLink,
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class _PosterProfileHeader extends StatelessWidget {
+  const _PosterProfileHeader({required this.model, required this.fallbackName});
+
+  final GenreModel model;
+  final String fallbackName;
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<GenreModel>(
-      create: (_) => GenreModel(genre, condition)..getGenrePosts(genre)..getPlayListData(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(condition == "genre" ?"「$genre」の一覧" : genre, style: const TextStyle( fontSize: 16 ),),
-          centerTitle: true,
-          backgroundColor: mainColor,
-        ),
-        body: SingleChildScrollView(
-          child: Center(
-            child: Consumer<GenreModel>(builder: (context, model, child) {
-              return Column(
-                children: [
-                  const SizedBox( height: 20 ),
+    final image = model.displayProfileImageUrl;
+    final hasImage = image != null && image.isNotEmpty;
+    final name = model.profileUserName ?? fallbackName;
+    final intro = model.profileIntroduction?.trim() ?? '';
 
-                  Text( model.postCount != 0
-                      ? "全部で${model.postCount.toString()}件の投稿が見つかりました。"
-                      : "このジャンルの投稿はまだありません。"
-                  ),
-
-                  const SizedBox( height: 20 ),
-
-                  Column(
-                    // ここからmap処理---------------------------
-                    children: model.genrePostsList.map((post){
-                      return Container(
-                        width: MediaQuery.of(context).size.width,
-                        decoration: const BoxDecoration(
-                            border: Border(
-                                bottom: BorderSide(color: Colors.grey))),
-                        child: Padding(
-                          padding:
-                          const EdgeInsets.only(top: 20, bottom: 10),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(width: 10),
-
-                              // ユーザー画像
-                              Container(
-                                  width: MediaQuery.of(context).size.width*0.1,
-                                  height: MediaQuery.of(context).size.width*0.1,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey),
-                                    borderRadius: BorderRadius.circular(50),
-                                    color: Colors.grey.shade200,
-                                    image: (post.userImageUrl != "")
-                                        ? DecorationImage(
-                                        image: NetworkImage(
-                                            post.userImageUrl),
-                                        fit: BoxFit.cover)
-                                        : null,
-                                  ),
-                                  child: (post.userImageUrl != "")
-                                      ? null
-                                      : const Icon(Icons.person)
-                              ),
-
-                              Column(
-                                children: [
-                                  // ユーザーネーム
-                                  SizedBox(
-                                    width:
-                                    MediaQuery.of(context).size.width * 0.8,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const SizedBox(width: 15),
-                                            Text(post.userName),
-                                          ],
-                                        ),
-                                        const SizedBox( width: 10 ),
-                                        Text(post.createdAt, style: const TextStyle( color: Colors.grey )),
-
-                                        // 報告及び削除ボタン
-                                        PopupMenuButton(
-                                            icon: const Icon(Icons.more_horiz),
-                                            onSelected: (value)async{
-                                              if(value == "delete") {
-                                                await model.deletePosts(post.id);
-                                              } else if (value == "report") {
-                                                await model.reportPosts(post.id);
-                                              }
-                                            },
-                                            itemBuilder: (BuildContext context) =>  [
-                                              (post.posterId == model.uid)
-                                                  ? const PopupMenuItem(
-                                                value: "delete",
-                                                child: Text("削除する"),
-                                              )
-                                                  : const PopupMenuItem(
-                                                value: "report",
-                                                child: Text("報告する"),
-                                              )
-                                            ]
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-
-                                  // 歌詞
-                                  SizedBox(
-                                    width:
-                                    MediaQuery.of(context).size.width *
-                                        0.8,
-                                    child: Container(
-                                      alignment: Alignment.centerLeft,
-                                      child: Padding(
-                                        padding:
-                                        const EdgeInsets.only(left: 20),
-                                        child: Text(post.text,
-                                            textAlign: TextAlign.left,
-                                            style: const TextStyle(
-                                                fontSize: 16, height: 1.5)),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-
-
-                                  // ジャンル一覧
-                                  SizedBox(
-                                    width: MediaQuery.of(context).size.width*0.8,
-                                    child: Wrap(
-                                      runSpacing: 15,
-                                      spacing: 10,
-                                      children: post.genres.map((genre) =>
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              border: Border.all( color: this.genre != genre ? Colors.blue : Colors.red ),
-                                              borderRadius: BorderRadius.circular(100),
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(10.0),
-                                              child: Text(genre, style: TextStyle( color: this.genre != genre ? Colors.blue : Colors.red ),),
-                                            ),
-                                          )
-                                      ).toList(),
-                                    ),
-                                  ),
-                                  const SizedBox( height: 15 ),
-
-                                  // 曲名などのデータ
-                                  // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
-                                  SizedBox(
-                                    width:
-                                    MediaQuery.of(context).size.width *
-                                        0.8,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.end,
-                                      children: [
-                                        const Text("歌手：", style: TextStyle( fontSize: 11)),
-                                        Text(post.artist, style: TextStyle( fontSize: 11, color: condition == "artist" ? Colors.red : Colors.black )),
-                                        const SizedBox(width: 20),
-                                        const Text("曲名：", style: TextStyle( fontSize: 11)),
-                                        Text(post.singName, style: TextStyle( fontSize: 11, color: condition == "singName" ? Colors.red : Colors.black)),
-                                        const SizedBox(width: 15),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox( height: 15 ),
-
-                                  // いいねボタン
-                                  SizedBox(
-                                    width: MediaQuery.of(context).size.width*0.7,
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        // youtubeリンク
-                                        Container(
-                                          child: post.youtubeLink != ""
-                                              ? CupertinoButton(
-                                              minSize: double.minPositive,
-                                              padding: EdgeInsets.zero,
-                                              onPressed: ()async{
-                                                try {
-                                                  await model.launchURL(post.youtubeLink);
-                                                } catch(e) {
-                                                  print(e.toString());
-                                                }
-                                              },
-                                              child: Container(
-                                                  decoration:  BoxDecoration(
-                                                    color: Colors.red,
-                                                    borderRadius: BorderRadius.circular(100),
-                                                  ),
-                                                  child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
-                                              )
-                                          )
-                                              : null,
-                                        ),
-                                        const SizedBox( width: 30 ),
-
-                                        // いいねボタン
-                                        SizedBox(
-                                            width: 60,
-                                            height: 30,
-                                            child: FavoriteButton(post.id, post.likedCount)
-                                        ),
-                                        const SizedBox( width: 40 ),
-
-                                        // プレイリストボタン
-                                        GestureDetector(
-                                            onTap: ()async{
-                                              await showDialog(
-                                                  context: context,
-                                                  builder: (_){
-                                                    return SimpleDialog(
-                                                        title: const Text('この曲をプレイリストに追加する', style: TextStyle( fontSize: 15, fontWeight: FontWeight.bold, color: mainColor )),
-                                                        children: [
-                                                          for(final playlist in model.playList)
-                                                            Padding(
-                                                              padding: const EdgeInsets.only( top: 5, bottom: 0),
-                                                              child: Container(
-                                                                decoration: BoxDecoration(
-                                                                    border: Border(
-                                                                      top: BorderSide( color: Colors.grey.shade200 ),
-                                                                    )
-                                                                ),
-                                                                child: SimpleDialogOption(
-                                                                    child: Padding(
-                                                                      padding: const EdgeInsets.only( top: 5 ),
-                                                                      child: Center(child: Text(playlist["playlistName"])),
-                                                                    ),
-                                                                    onPressed: ()async{
-                                                                      await model.addToPlaylist(playlist["id"], post.artist, post.singName, post.youtubeLink, post.id);
-                                                                      Navigator.pop(context);
-                                                                      showDialog(
-                                                                          context: context,
-                                                                          builder: (_){
-                                                                            return CupertinoAlertDialog(
-                                                                              title: const Text("プレイリストに追加しました"),
-                                                                              actions: [
-                                                                                CupertinoDialogAction(
-                                                                                  child: const Text("OK"),
-                                                                                  onPressed: (){
-                                                                                    Navigator.pop(context);
-                                                                                  },
-                                                                                )
-                                                                              ],
-                                                                            );
-                                                                          }
-                                                                      );
-                                                                    }
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          const SizedBox( height: 5 ),
-                                                          Container(
-                                                            decoration: BoxDecoration(
-                                                              // color: Colors.grey.shade200,
-                                                                border: Border(
-                                                                  top: BorderSide( color: Colors.grey.shade200 ),
-                                                                )
-                                                            ),
-                                                            child: Padding(
-                                                              padding: const EdgeInsets.only( top: 10 ),
-                                                              child: SimpleDialogOption(
-                                                                child: Row(
-                                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                                  children: const [
-                                                                    Icon(Icons.add, color: Colors.blue),
-                                                                    Text("プレイリストを新規作成", style: TextStyle( color: Colors.blue )),
-                                                                  ],
-                                                                ),
-                                                                onPressed: ()async{
-                                                                  await showDialog(context: context, builder: (_){
-                                                                    return SimpleDialog(
-                                                                      insetPadding: const EdgeInsets.all(10),
-                                                                      title: const Text("プレイリストを追加する"),
-                                                                      children: [
-                                                                        SimpleDialogOption(
-                                                                          child: SizedBox(
-                                                                            width: MediaQuery.of(context).size.width*0.8,
-                                                                            child: TextField(
-                                                                              autofocus: true,
-                                                                              controller: model.addPlaylistController,
-                                                                              decoration: const InputDecoration(
-                                                                                  hintText: "例）お気に入りの曲"
-                                                                              ),
-                                                                              onChanged: (text){
-                                                                                model.setNewName(text);
-                                                                              },
-                                                                            ),
-                                                                          ),
-                                                                          // onPressed: () => Navigator.pop(context),
-                                                                        ),
-                                                                        SimpleDialogOption(
-                                                                          child: ElevatedButton(
-                                                                            // 新規追加
-                                                                            onPressed: ()async{
-                                                                              if(model.addPlaylistController.text.isEmpty){
-                                                                                return;
-                                                                              }
-                                                                              try{
-                                                                                await model.addNewPlaylist();
-                                                                              } catch(e) {
-                                                                                print(e.toString());
-                                                                              }
-                                                                              await model.getPlayListData();
-                                                                              model.addPlaylistController.text = "";
-                                                                              Navigator.pop(context);
-                                                                            },
-                                                                            style: ElevatedButton.styleFrom(
-                                                                                backgroundColor: mainColor
-                                                                            ),
-                                                                            child: const Text("追加する"),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  });
-                                                                  Navigator.pop(context);
-                                                                },
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ]
-                                                    );
-                                                  }
-                                              );
-                                            },
-                                            child: const Icon(Icons.playlist_add, color: Colors.grey, size: 30,)
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 50)
-                ],
-              );
-            }),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 44,
+            backgroundColor: const Color(0xFFE5E5EA),
+            backgroundImage: hasImage ? NetworkImage(image) : null,
+            child: hasImage ? null : const Icon(Icons.person, size: 44, color: Color(0xFF8E8E93)),
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(context,MaterialPageRoute(builder: (context)=>PostPage(genre)));
-          },
-          backgroundColor: mainColor,
-          child: const Icon(Icons.add),
-        ),
+          const SizedBox(height: 12),
+          Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Color(0xFF0F0F0F))),
+          if (intro.isNotEmpty && intro != '未設定') ...[
+            const SizedBox(height: 8),
+            Text(
+              intro,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15, height: 1.45, color: Color(0xFF3A3A3C)),
+            ),
+          ],
+          if (model.postCount != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              '${model.postCount}件の投稿',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF536471)),
+            ),
+          ],
+        ],
       ),
     );
   }

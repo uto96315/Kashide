@@ -7,6 +7,7 @@ class HomeModel extends ChangeNotifier {
 
   String? os; // iOSかandroidか
   bool needToUpDate = false;
+  bool versionChecked = false;
   String? nowVersion;
   String? latestVersion;
   String? updateUrl;
@@ -20,33 +21,41 @@ class HomeModel extends ChangeNotifier {
 
   // 最新のバージョンを取得する
   Future getLatestVersions() async {
-    final doc = FirebaseFirestore.instance
-        .collection("config").doc("latestVersions");
-    final snapshot = await doc.get();
-    if(Platform.isAndroid) {
-      latestVersion = snapshot["android"];
-      updateUrl = "https://play.google.com/store/apps/details?id=com.yuto.mabe.kashide";
-    } else {
-      latestVersion = snapshot["ios"];
-      updateUrl = "https://apps.apple.com/jp/app/kashide/id6444030139";
+    try {
+      if (nowVersion == null) await getNowVersions();
+      final doc = FirebaseFirestore.instance
+          .collection("config").doc("latestVersions");
+      final snapshot = await doc.get();
+      if(Platform.isAndroid) {
+        latestVersion = snapshot["android"];
+        updateUrl = "https://play.google.com/store/apps/details?id=com.yuto.mabe.kashide";
+      } else {
+        latestVersion = snapshot["ios"];
+        updateUrl = "https://apps.apple.com/jp/app/kashide/id6444030139";
+      }
+      needToUpDate = _isNewer(latestVersion, nowVersion);
+    } catch (e) {
+      debugPrint(e.toString());
+      needToUpDate = false;
     }
-
-    await checkNeedToUpdate();
+    versionChecked = true;
     notifyListeners();
   }
 
-  Future checkNeedToUpdate()async{
-    var intLatestVersion = int.parse(latestVersion?.replaceAll(".", "") ?? "");
-    var intNowVersion = int.parse(nowVersion?.replaceAll(".", "") ?? "");
-    debugPrint("現在のバージョンは");
-    debugPrint(intNowVersion.toString());
-    debugPrint("最新のバージョンは");
-    debugPrint(intLatestVersion.toString());
-    if(intLatestVersion > intNowVersion) {
-      needToUpDate = true;
-      debugPrint("アップデートが必要です");
+  bool _isNewer(String? latest, String? current) {
+    if (latest == null || latest.isEmpty || current == null || current.isEmpty) {
+      return false;
     }
-    debugPrint("アップデートの必要はありません");
-    notifyListeners();
+    final latestParts = latest.split('.');
+    final currentParts = current.split('.');
+    final length = latestParts.length > currentParts.length
+        ? latestParts.length
+        : currentParts.length;
+    for (var i = 0; i < length; i++) {
+      final latestValue = i < latestParts.length ? int.tryParse(latestParts[i]) ?? 0 : 0;
+      final currentValue = i < currentParts.length ? int.tryParse(currentParts[i]) ?? 0 : 0;
+      if (latestValue != currentValue) return latestValue > currentValue;
+    }
+    return false;
   }
 }

@@ -11,14 +11,16 @@ class LyricsSearchModel extends ChangeNotifier {
   List<Post> resultList = []; // 一旦全部取得する
   List<Post> lyricsResultList = []; // ジャンル検索に引っかかった投稿
   int lyricsResultCount = 0; // ジャンル結果の総数
+  bool isLoading = true;
 
   // ジャンルから探す処理=========================
   Future searchFromLyrics(String searchWord) async {
-    final genreCollection = FirebaseFirestore.instance
-        .collection("posts");
-        // .where("artist", isEqualTo: searchWord);
-
-    final snapshot = await genreCollection.get();
+    try {
+    final snapshot = await FirebaseFirestore.instance
+        .collection("posts")
+        .orderBy("createdAt", descending: true)
+        .limit(100)
+        .get();
 
     // ユーザー情報の取得
     final userInfo = await Future.wait(
@@ -54,7 +56,10 @@ class LyricsSearchModel extends ChangeNotifier {
       ((element) => element.text.contains(searchWord)).toList();
     
     lyricsResultCount = lyricsResultList.length;
-    notifyListeners();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
 // ジャンルから探す処理=========================

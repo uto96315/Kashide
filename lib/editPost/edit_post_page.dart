@@ -2,13 +2,16 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/primary_button.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/providers.dart';
+import 'package:str_gram_beta/song/song_pick_page.dart';
+import 'package:str_gram_beta/song/song_quote.dart';
 
-import 'edit_post_model.dart';
-
-class EditPostPage extends StatelessWidget {
-  EditPostPage(
+class EditPostPage extends ConsumerWidget {
+  const EditPostPage(
       this.postId,
       this.defaultText,
       this.defaultSingerName,
@@ -18,70 +21,51 @@ class EditPostPage extends StatelessWidget {
       this.youtubeLink,
       {super.key});
 
-  String postId; // 投稿のid
-  String explanation;
-  String defaultText;
-  String defaultSingerName;
-  String defaultSingName;
-  String youtubeLink;
-  List defaultGenreList;
+  final String postId;
+  final String explanation;
+  final String defaultText;
+  final String defaultSingerName;
+  final String defaultSingName;
+  final String youtubeLink;
+  final List defaultGenreList;
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<EditPostModel>(
-      create: (_) => EditPostModel(defaultText, defaultSingerName,defaultSingName, defaultGenreList, postId, explanation, youtubeLink)..getDefaultGenres(),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: mainColor,
-          actions: [
-            Consumer<EditPostModel>(builder: (context, model, child) {
-              return // 投稿ボタン
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: MaterialButton(
-                    color: (model.canPush) ? Colors.white : null,
-                    onPressed: (model.canPush)
-                        ? () async {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(editPostProvider(EditPostArgs(
+      postId: postId,
+      defaultText: defaultText,
+      defaultSingerName: defaultSingerName,
+      defaultSingName: defaultSingName,
+      defaultGenreList: defaultGenreList,
+      explanation: explanation,
+      youtubeLink: youtubeLink,
+    )));
+    return Scaffold(
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            child: PrimaryButton(
+              label: '編集完了',
+              onPressed: model.canPush
+                  ? () async {
                       await model.updatePost();
-                      showCupertinoDialog(
-                          context: context,
-                          builder: (_){
-                            return CupertinoAlertDialog(
-                              content: const Text("投稿しました"),
-                              actions: [
-                                CupertinoDialogAction(
-                                  child: const Text('OK'),
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, "/home");
-                                  },
-                                ),
-                              ],
-                            );
-                          }
-                      );
+                      if (!context.mounted) return;
+                      await ref.read(timelineProvider).getFirstPostData();
+                      ref.invalidate(myPageProvider);
+                      if (!context.mounted) return;
+                      final messenger = ScaffoldMessenger.of(context);
+                      Navigator.pop(context);
+                      messenger.showSnackBar(const SnackBar(content: Text('更新しました')));
                     }
-                        : null,
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 15, left: 15),
-                      child: Text(
-                        "編集完了",
-                        style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: mainColor),
-                      ),
-                    ),
-                  ),
-                );
-            })
-          ],
+                  : null,
+            ),
+          ),
         ),
         body: SingleChildScrollView(
           child: Center(
-            child: Consumer<EditPostModel>(builder: (context, model, child) {
-              return Column(
+            child: Column(
                 children: [
-                  const SizedBox( height: 50 ),
+                  const ScreenTop(),
 
                   // 好きな理由記入欄
                   SizedBox(
@@ -98,7 +82,19 @@ class EditPostPage extends StatelessWidget {
                       },
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final quote = await Navigator.push<SongQuote>(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SongPickPage()),
+                      );
+                      if (quote != null) model.applyQuote(quote);
+                    },
+                    icon: const Icon(Icons.library_music),
+                    label: const Text('曲と歌詞の範囲を選び直す'),
+                  ),
+                  const SizedBox(height: 8),
 
                   // 歌詞
                   SizedBox(
@@ -272,11 +268,9 @@ class EditPostPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 15),
                 ],
-              );
-            }),
+              ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

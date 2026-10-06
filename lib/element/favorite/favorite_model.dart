@@ -13,6 +13,7 @@ class FavoriteModel extends ChangeNotifier {
   String? postId;
   int? likedCount;
   int? likedNumber;
+  var _busy = false;
 
   // ユーザーが既にその投稿に対していいねしているのか判定する処理
   Future checkLiked() async {
@@ -34,43 +35,39 @@ class FavoriteModel extends ChangeNotifier {
 
   // いいね処理
   Future doLike(String id, int likeCount) async {
-    // todo: もし既にいいねしているなら削除する
-    if (isLiked) {
-      await removeLike(id);
+    if (_busy || uid == null) return;
+    _busy = true;
+    try {
+      if (isLiked) {
+        await removeLike(id);
+        likedCount = await getLikedCount(id);
+        isLiked = false;
+        notifyListeners();
+        return;
+      }
+
+      final likePost = FirebaseFirestore.instance.collection("users").doc(uid).collection("likePost").doc(id);
+      final postDoc = FirebaseFirestore.instance.collection("posts").doc(id);
+      final whoDoc = FirebaseFirestore.instance.collection("posts").doc(id).collection("likedUsers").doc(uid);
+      if ((await whoDoc.get()).exists) {
+        isLiked = true;
+        likedCount = await getLikedCount(id);
+        notifyListeners();
+        return;
+      }
+
       likedNumber = await getLikedCount(id);
-      likedCount = likedNumber;
+      await Future.wait([
+        likePost.set({"postId": id, "likedAt": DateTime.now()}),
+        postDoc.update({"likedCount": likedNumber! + 1}),
+        whoDoc.set({"likedAt": DateTime.now(), "likedUser": uid}),
+      ]);
+      isLiked = true;
+      likedCount = await getLikedCount(id);
       notifyListeners();
-      return;
+    } finally {
+      _busy = false;
     }
-
-
-    // ユーザーにセットする
-    // todo: collectionをlikePostsに変更する
-    final likePost = FirebaseFirestore.instance
-        .collection("users")
-        .doc(uid)
-        .collection("likePost")
-        .doc(id);
-    final postDoc = FirebaseFirestore.instance.collection("posts").doc(id);
-    final whoDoc = FirebaseFirestore.instance
-        .collection("posts")
-        .doc(id)
-        .collection("likedUsers")
-        .doc(uid);
-
-    likedNumber = await getLikedCount(id);
-
-    await Future.wait([
-      likePost.set({"postId": id, "likedAt": DateTime.now()}),
-      // 投稿にいいねを反映する
-      postDoc.update({"likedCount": likedNumber! + 1}),
-      // 誰がいいねしたのかを反映する
-      whoDoc.set({"likedAt": DateTime.now(), "likedUser": uid}),
-    ]);
-
-    likedNumber = await getLikedCount(id);
-    likedCount =  likedNumber;
-    notifyListeners();
   }
 
 

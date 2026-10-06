@@ -1,4 +1,4 @@
-import 'package:app_review/app_review.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,7 +23,8 @@ class MyModel extends ChangeNotifier {
   String? userGender;
   String? userImageURL;
   List<dynamic>? userFavorite;
-  List<Post> userPostsList = []; // 投稿全体を格納する
+  List<Post> userPostsList = [];
+  bool postsReady = false;
   String? iosVersion;// 現在のiosバージョン
   String? androidVersion; // 現在のandroidバージョン
   String? latestIosVersion; // 最新のiosバージョン
@@ -79,8 +80,12 @@ class MyModel extends ChangeNotifier {
         .orderBy("createdAt", descending: true);
 
     final snapshot = await doc.get();
-    userPostsList = snapshot.docs.map((doc) =>
-        Post(
+    final commentCounts = await Future.wait(
+      snapshot.docs.map((doc) => getCommentCount(doc.id)),
+    );
+    userPostsList = snapshot.docs.asMap().entries.map((entry) {
+      final doc = entry.value;
+      return Post(
             doc["artist"],
             doc["singName"],
             doc["text"],
@@ -91,11 +96,12 @@ class MyModel extends ChangeNotifier {
             userImageURL ?? "",
             createTimeMessage(doc["createdAt"].toDate()),
             doc.id,
-            0,
+            commentCounts[entry.key],
             doc["explanation"],
             doc["youtubeLink"],
-        )
-    ).toList();
+        );
+    }).toList();
+    postsReady = true;
     notifyListeners();
   }
 
@@ -145,11 +151,11 @@ class MyModel extends ChangeNotifier {
 
   // レビューを促す処理
   void requestReview() {
-    AppReview.isRequestReviewAvailable.then((value){
-      print(value);
-      AppReview.requestReview.then((onValue) {
-        print(onValue);
-      });
+    final review = InAppReview.instance;
+    review.isAvailable().then((available) {
+      if (available) {
+        review.requestReview();
+      }
     });
     notifyListeners();
   }

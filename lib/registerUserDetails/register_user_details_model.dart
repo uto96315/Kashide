@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fcm_config/fcm_config.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -46,12 +46,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   // ユーザーネームのセット
   void setUserName(String name) {
     userName = name;
-    if(name.isNotEmpty) {
-      canPush = true;
-    }
-    if(name.isEmpty) {
-      canPush = false;
-    }
+    canPush = name.trim().isNotEmpty;
     notifyListeners();
   }
 
@@ -87,7 +82,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   Future registerUserData() async{
     var uid = user?.uid;
     var email = user?.email;
-    userName = userNameController.text;
+    userName = userNameController.text.trim();
     userIntroduction = userIntroductionController.text;
 
     // トークンの取得
@@ -150,8 +145,11 @@ class RegisterUserDetailsModel extends ChangeNotifier {
   // 通知のための設定
   // todo: nullになる
   Future getToken() async{
-    FirebaseMessaging.instance.requestPermission();
-    token = await FirebaseMessaging.instance.getAPNSToken();
-    print(token ?? "取得失敗です");
+    try {
+      await FirebaseMessaging.instance.requestPermission();
+      token = await FirebaseMessaging.instance.getAPNSToken();
+    } catch (e) {
+      debugPrint('通知トークンを取得できませんでした: $e');
+    }
   }
 }

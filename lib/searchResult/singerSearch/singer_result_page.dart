@@ -1,27 +1,23 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:str_gram_beta/searchResult/singerSearch/singer_result_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../element/favorite/favorite_button.dart';
 import '../../postDetail/post_detail_page.dart';
 
-
-
-class SingerSearchPage extends StatelessWidget {
-  SingerSearchPage(this.searchWord, {super.key});
-  String searchWord;
+class SingerSearchPage extends ConsumerWidget {
+  const SingerSearchPage(this.searchWord, {super.key});
+  final String searchWord;
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<SingerSearchModel>(
-      create: (_) => SingerSearchModel(searchWord)..searchFromSinger(searchWord),
-      child: Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(singerSearchProvider(searchWord));
+    return Scaffold(
         body: SingleChildScrollView(
           child: Center(
-            child: Consumer<SingerSearchModel>(builder: (context, model, child) {
-              return Column(
+            child: Column(
                 children: [
                   const SizedBox( height: 30 ),
                   Text(model.singerResultCount > 0
@@ -246,11 +242,9 @@ class SingerSearchPage extends StatelessWidget {
                     }).toList(),
                   ),
                 ],
-              );
-            }),
+              ),
           ),
         ),
-      ),
-    );
+      );
   }
 }

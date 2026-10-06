@@ -1,192 +1,138 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'package:str_gram_beta/top/top_page.dart';
-import 'register_user_details_model.dart';
+import 'dart:io';
 
-class RegisterUserDetailsPage extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/primary_button.dart';
+import 'package:str_gram_beta/providers.dart';
+
+class RegisterUserDetailsPage extends ConsumerWidget {
   const RegisterUserDetailsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<RegisterUserDetailsModel>(
-      create: (_) => RegisterUserDetailsModel(),
-      child: GestureDetector(
-        onTap: (){FocusScope.of(context).unfocus();}, // キーボード以外をタップで閉じる
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text("アカウント情報"),
-            automaticallyImplyLeading: false,
-            backgroundColor: mainColor,
-          ),
-          body: SingleChildScrollView(
-            child: Center(
-              child: Consumer<RegisterUserDetailsModel>(
-                  builder: (context, model, child) {
-                return SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 50),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(registerUserDetailsProvider);
+    final name = model.userNameController.text.trim();
 
-                      GestureDetector(
-                        onTap: ()async{
-                          await model.pickImage();
-                        },
-
-                        // 画像
-                        child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              border: Border.all( color: Colors.grey ),
-                              borderRadius: BorderRadius.circular(100),
-                              color: Colors.grey.shade200,
-                              image: (model.imageFile != null)
-                                  ? DecorationImage(image: FileImage(model.imageFile!), fit: BoxFit.cover)
-                                  : null,
-                            ),
-                            child: (model.imageFile != null)
-                                ? null
-                                : const Icon(Icons.person)
-                        ),
-                      ),
-                      const SizedBox( height: 10 ),
-                      TextButton(
-                          onPressed: ()async{
-                            await model.pickImage();
-                          },
-                          child: const Text("タップで画像を変更", style: TextStyle( color: Colors.grey)),
-                      ),
-                      const SizedBox( height: 60 ),
-
-                      // ユーザーネーム入力欄
-                      TextField(
-                        maxLength: 50,
-                        autofocus: true,
-                        controller: model.userNameController,
-                        decoration:
-                            const InputDecoration(labelText: "ユーザーネーム(必須)"),
-                        onChanged: (text) {
-                          model.setUserName(text);
-                        },
-                      ),
-                      const SizedBox(height: 15),
-
-                      // 年代選択欄
-                      Row(
-                        children: const [
-                          Text("年代",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.black54)),
-                          SizedBox(width: 10),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 50,
-                        child: DropdownButton(
-                            isExpanded: true,
-                            value: model.userAge,
-                            hint: const Text("選択してください(任意)",
-                                style: TextStyle(fontSize: 15)),
-                            items: [
-                              for (int i = 1; i < 10; i++) ...{
-                                DropdownMenuItem(
-                                  value: "${i}0代",
-                                  child: Text("${i}0代"),
-                                )
-                              },
-                              const DropdownMenuItem(
-                                  value: "99以上", child: Text("それ以上"))
-                            ],
-                            onChanged: (select) {
-                              model.setUserAge(select ?? "error");
-                            }),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // 性別入力欄
-                      Row(
-                        children: const [
-                          Text("性別",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.black54)),
-                          SizedBox(width: 10),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 50,
-                        child: DropdownButton(
-                            isExpanded: true,
-                            value: model.userGender,
-                            hint: const Text("選択してください(任意)",
-                                style: TextStyle(fontSize: 15)),
-                            items: model.genderList
-                                .map((String gender) => DropdownMenuItem(
-                                    value: gender, child: Text(gender ?? "")))
-                                .toList(),
-                            onChanged: (select) {
-                              model.setUserGender(select ?? "error");
-                            }),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // 自己紹介入力欄
-                      TextField(
-                        controller: model.userIntroductionController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(labelText: "自己紹介(任意)"),
-                        onChanged: (text) {
-                          model.setUserName(text);
-                        },
-                      ),
-                      const SizedBox(height: 100),
-
-                      // 登録ボタン
-                      ElevatedButton(
-                          onPressed: (model.canPush)
-                          ? () async {
-                            model.startLoading();
-
-                            try {
-                              await model.registerUserData();
-                              Navigator.pushNamed(context, "/home");
-                            } catch (e) {
-                              final snackBar = SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text(e.toString()),
-                              );
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(snackBar);
-                            } finally {
-                              model.endLoading();
-                            }
-                          }
-
-                          // canPushがfalseの場合には押下できないようにする
-                          : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: mainColor,
-                        ),
-
-                          child: const Padding(
-                            padding: EdgeInsets.only(
-                                top: 10, bottom: 10, left: 50, right: 50),
-                            child: Text(
-                              "登録する",
-                              style: TextStyle(
-                                  fontSize: 17, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                      ),
-                    ],
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFF7F8),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            child: Column(
+              children: [
+                const Spacer(),
+                _AvatarPicker(image: model.imageFile, onTap: model.pickImage),
+                const SizedBox(height: 28),
+                TextField(
+                  controller: model.userNameController,
+                  maxLength: 50,
+                  textAlign: TextAlign.center,
+                  autofocus: true,
+                  onChanged: model.setUserName,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                  cursorColor: mainColor,
+                  decoration: const InputDecoration(
+                    hintText: 'ユーザー名',
+                    hintStyle: TextStyle(color: Color(0xFF8E8E93), fontSize: 18, fontWeight: FontWeight.w600),
+                    counterText: '',
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
-                );
-              }),
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1, thickness: 1, color: Color(0xFFFFD6E4)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: model.userIntroductionController,
+                  maxLength: 160,
+                  maxLines: 4,
+                  minLines: 3,
+                  onChanged: model.setUserIntroduction,
+                  style: const TextStyle(fontSize: 17, height: 1.45, color: Color(0xFF1C1C1E)),
+                  cursorColor: mainColor,
+                  decoration: const InputDecoration(
+                    hintText: '自己紹介を追加（任意）',
+                    hintStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: Color(0xFF8E8E93)),
+                    counterText: '',
+                    isDense: true,
+                    contentPadding: EdgeInsets.fromLTRB(8, 4, 8, 8),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                ),
+                const Spacer(),
+                PrimaryButton(
+                  label: 'Kashideの世界に入る',
+                  loading: model.isLoading,
+                  onPressed: name.isEmpty
+                      ? null
+                      : () async {
+                          model.startLoading();
+                          try {
+                            await model.registerUserData();
+                            if (!context.mounted) return;
+                            Navigator.pushNamed(context, '/home');
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          } finally {
+                            model.endLoading();
+                          }
+                        },
+                ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AvatarPicker extends StatelessWidget {
+  const _AvatarPicker({required this.onTap, this.image});
+
+  final File? image;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 148,
+            height: 148,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFFFD0E0), width: 3),
+              image: image == null ? null : DecorationImage(image: FileImage(image!), fit: BoxFit.cover),
+            ),
+            child: image == null ? const Icon(Icons.person, size: 72, color: Color(0xFFFFB3C7)) : null,
+          ),
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: onTap,
+          child: Text(
+            image == null ? '画像を追加（任意）' : '画像を変更',
+            style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+          ),
+        ),
+      ],
     );
   }
 }

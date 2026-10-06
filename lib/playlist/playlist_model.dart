@@ -10,6 +10,7 @@ class PlaylistModel extends ChangeNotifier {
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
   List playlists = [];
+  bool ready = false;
   List options = ["あああ", "いいい"];
   bool showAddPlaylistTextField = false;
   String? newPlaylistName;
@@ -37,7 +38,7 @@ class PlaylistModel extends ChangeNotifier {
         "playlistName": playlist.value["playlistName"],
       };
     }).toList();
-
+    ready = true;
     notifyListeners();
 
     print(playlists);

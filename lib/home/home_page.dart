@@ -1,99 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'package:str_gram_beta/home/home_model.dart';
+import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
 import 'package:str_gram_beta/playlist/playlist_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
+import 'package:str_gram_beta/common/home_tab_bar.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _index = 0;
+
+  static const _pages = [
+    TimelinePage(),
+    SearchPage(),
+    PlaylistPage(),
+    MyPage(),
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<HomeModel>(
-      create: (_) => HomeModel()..getNowVersions()..getLatestVersions(),
-      child: Consumer<HomeModel>(builder: (context, model, child) {
-        return model.needToUpDate
-            ? Scaffold(
-            body: Center(
-                child: Column(
-                  children: [
-                    const SizedBox( height: 300 ),
-                    const Text(
-                        "新しいバージョンがリリースされました。\nアップデートをお願い致します。",
-                        style: TextStyle(
-                            fontSize: 16,
-                            height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                    ),
-                    const SizedBox( height: 100 ),
-                    ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: mainColor,
-                        ),
-                        onPressed: ()async{
-                          await launch(model.updateUrl ?? "");
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.only( top: 15, bottom: 15, right: 10, left: 10),
-                          child: Text("Storeからアップデートする"),
-                        )
-                    )
-                  ],
-                )
-            ))
-            : DefaultTabController(
-                length: 4,
-                child: Scaffold(
-                  bottomNavigationBar: Container(
-                    color: Colors.white,
-                    height: 80,
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 20, left: 20),
-                      child: TabBar(
-                        labelColor: mainColor,
-                        indicatorColor: mainColor,
-                        unselectedLabelColor: Colors.blueGrey,
-                        tabs: [
-                          Tab(
-                              icon: Icon(Icons.home, size: 25),
-                              child:
-                                  Text("ホーム", style: TextStyle(fontSize: 8))),
-                          Tab(
-                              icon: Icon(Icons.search, size: 25),
-                              child:
-                                  Text("探す", style: TextStyle(fontSize: 8))),
-                          Tab(
-                              icon: Icon(Icons.list, size: 25),
-                              child:
-                                  Text("プレイリスト", style: TextStyle(fontSize: 8))),
-                          Tab(
-                              icon: Icon(Icons.person, size: 25),
-                              child: Text("アカウント",
-                                  style: TextStyle(fontSize: 8))),
-                        ],
-                      ),
-                    ),
-                  ),
-                  body: const Center(
-                    child: TabBarView(
-                      physics: NeverScrollableScrollPhysics(),
-                      children: [
-                        TimelinePage(),
-                        SearchPage(),
-                        PlaylistPage(),
-                        MyPage(),
-                      ],
-                    ),
-                  ),
+    final model = ref.watch(homeProvider);
+    if (!model.versionChecked) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: mainColor)),
+      );
+    }
+    if (model.needToUpDate) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  '新しいバージョンがリリースされました。\nアップデートをお願いします。',
+                  style: TextStyle(fontSize: 16, height: 1.5),
+                  textAlign: TextAlign.center,
                 ),
-              );
-      }),
+                const SizedBox(height: 32),
+                FilledButton(
+                  onPressed: () async {
+                    final url = model.updateUrl;
+                    if (url != null && url.isNotEmpty) {
+                      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  child: const Text('Storeからアップデートする'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return Scaffold(
+      body: IndexedStack(index: _index, children: _pages),
+      bottomNavigationBar: HomeTabBar(
+        index: _index,
+        onChanged: (index) => setState(() => _index = index),
+      ),
     );
   }
 }
