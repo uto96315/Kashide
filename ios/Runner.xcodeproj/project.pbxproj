@@ -360,7 +360,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
 				CURRENT_PROJECT_VERSION = 1.0.2;
 				DEVELOPMENT_TEAM = WT3NRWGXXY;
-				PROVISIONING_PROFILE_SPECIFIER = "778e8dfc-2cac-4f66-badc-41d2dc1309ea";
+				PROVISIONING_PROFILE_SPECIFIER = "Kashide Ad Hoc Firebase";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = " Kahide";
@@ -531,7 +531,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
 				CURRENT_PROJECT_VERSION = 1.0.2;
 				DEVELOPMENT_TEAM = WT3NRWGXXY;
-				PROVISIONING_PROFILE_SPECIFIER = "778e8dfc-2cac-4f66-badc-41d2dc1309ea";
+				PROVISIONING_PROFILE_SPECIFIER = "Kashide Ad Hoc Firebase";
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = " Kahide";
