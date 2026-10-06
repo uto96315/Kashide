@@ -25,6 +25,8 @@ class MyModel extends ChangeNotifier {
   List<dynamic>? userFavorite;
   List<Post> userPostsList = [];
   bool postsReady = false;
+  int likedPostsCount = 0;
+  bool likedCountReady = false;
   String? iosVersion;// 現在のiosバージョン
   String? androidVersion; // 現在のandroidバージョン
   String? latestIosVersion; // 最新のiosバージョン
@@ -67,6 +69,20 @@ class MyModel extends ChangeNotifier {
       print("OSはiOSでバージョンは${version}です");
       iosVersion = version;
     }
+  }
+
+  Future<void> loadLikedCount() async {
+    final uid = user?.uid;
+    if (uid == null) {
+      likedPostsCount = 0;
+      likedCountReady = true;
+      notifyListeners();
+      return;
+    }
+    final snap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('likePost').get();
+    likedPostsCount = snap.docs.length;
+    likedCountReady = true;
+    notifyListeners();
   }
 
   // ユーザーの投稿を取得する処理

@@ -6,7 +6,6 @@ Future<TimelineFilterState?> showTimelineFilterSheet(
   BuildContext context, {
   required TimelineFilterState initial,
   required Set<String> availableGenres,
-  required int loadedPostCount,
 }) {
   return showModalBottomSheet<TimelineFilterState>(
     context: context,
@@ -18,7 +17,6 @@ Future<TimelineFilterState?> showTimelineFilterSheet(
     builder: (context) => _TimelineFilterSheet(
           initial: initial,
           availableGenres: availableGenres,
-          loadedPostCount: loadedPostCount,
         ),
   );
 }
@@ -27,12 +25,10 @@ class _TimelineFilterSheet extends StatefulWidget {
   const _TimelineFilterSheet({
     required this.initial,
     required this.availableGenres,
-    required this.loadedPostCount,
   });
 
   final TimelineFilterState initial;
   final Set<String> availableGenres;
-  final int loadedPostCount;
 
   @override
   State<_TimelineFilterSheet> createState() => _TimelineFilterSheetState();
@@ -43,6 +39,10 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
   late TimelineCommentFilter _comments = widget.initial.commentFilter;
   late TimelineTriFilter _youtube = widget.initial.youtubeFilter;
   late TimelineTriFilter _explanation = widget.initial.explanationFilter;
+  var _showAllGenres = false;
+
+  /// 折りたたみ時に見せる件数（だいたい2行）。
+  static const _collapsedGenreVisibleCount = 6;
 
   TimelineFilterState get _draft => TimelineFilterState(
         genres: _genres,
@@ -51,44 +51,96 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
         explanationFilter: _explanation,
       );
 
+  List<String> get _orderedGenres {
+    final sorted = widget.availableGenres.toList()..sort();
+    return [
+      for (final g in sorted)
+        if (_genres.contains(g)) g,
+      for (final g in sorted)
+        if (!_genres.contains(g)) g,
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.85;
+    final genres = _orderedGenres;
+    final canCollapseGenres = genres.length > _collapsedGenreVisibleCount;
+    final visibleGenres = _showAllGenres || !canCollapseGenres
+        ? genres
+        : genres.take(_collapsedGenreVisibleCount).toList();
     return SafeArea(
       top: false,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxHeight),
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 16 + bottom),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(color: const Color(0xFFE5E5EA), borderRadius: BorderRadius.circular(2)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(color: const Color(0xFFE5E5EA), borderRadius: BorderRadius.circular(2)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('絞り込み', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                            side: const BorderSide(color: Color(0xFFE5E5EA)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () => Navigator.pop(context, TimelineFilterState.empty),
+                          child: const Text(
+                            'クリア',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF536471)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: mainColor,
+                            minimumSize: const Size(0, 48),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () => Navigator.pop(context, _draft),
+                          child: const Text('適用', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          const Text('絞り込み', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text(
-            'ジャンルを1つだけ選ぶと、投稿全体から新着順で探します（探すタブと同様）。'
-            'コメント有無などを組み合わせる場合は、読み込み済み投稿に追加で絞り込み、'
-            '必要に応じて自動で追加読み込みします（現在 ${widget.loadedPostCount} 件読み込み済み）。',
-            style: const TextStyle(fontSize: 13, height: 1.35, color: Color(0xFF536471)),
-          ),
-          const SizedBox(height: 16),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 16 + bottom),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
           const _SectionTitle('ジャンル'),
           const SizedBox(height: 8),
-          Wrap(
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            alignment: Alignment.topCenter,
+            child: Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final genre in (widget.availableGenres.toList()..sort()))
+                for (final genre in visibleGenres)
                   FilterChip(
                     label: Text(genre),
                     selected: _genres.contains(genre),
@@ -106,6 +158,33 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                   ),
               ],
             ),
+          ),
+          if (canCollapseGenres)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => setState(() => _showAllGenres = !_showAllGenres),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _showAllGenres ? '閉じる' : '残りを表示',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: mainColor),
+                    ),
+                    Icon(
+                      _showAllGenres ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      size: 20,
+                      color: mainColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           const SizedBox(height: 20),
           const _SectionTitle('コメント'),
           const SizedBox(height: 8),
@@ -120,7 +199,7 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
             onChanged: (v) => setState(() => _comments = v),
           ),
           const SizedBox(height: 16),
-          const _SectionTitle('YouTubeリンク'),
+          const _SectionTitle('再生リンク'),
           const SizedBox(height: 8),
           _SegmentRow<TimelineTriFilter>(
             values: TimelineTriFilter.values,
@@ -145,26 +224,11 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
             },
             onChanged: (v) => setState(() => _explanation = v),
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, TimelineFilterState.empty),
-                child: const Text('クリア'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: mainColor,
-                  minimumSize: const Size(96, 44),
+                  ],
                 ),
-                onPressed: () => Navigator.pop(context, _draft),
-                child: const Text('適用'),
               ),
-            ],
-          ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

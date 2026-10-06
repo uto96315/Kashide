@@ -6,6 +6,7 @@ import 'package:str_gram_beta/mypage/my_page.dart';
 import 'package:str_gram_beta/playlist/playlist_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
 import 'package:str_gram_beta/common/home_tab_bar.dart';
+import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,8 +18,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  int _index = 0;
-
   static const _pages = [
     TimelinePage(),
     SearchPage(),
@@ -63,11 +62,15 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       );
     }
+    final tabIndex = ref.watch(homeTabIndexProvider);
     return Scaffold(
-      body: IndexedStack(index: _index, children: _pages),
+      body: IndexedStack(index: tabIndex, children: _pages),
       bottomNavigationBar: HomeTabBar(
-        index: _index,
-        onChanged: (index) => setState(() => _index = index),
+        index: tabIndex,
+        onChanged: (index) => ref.read(homeTabIndexProvider.notifier).setTab(index),
+        onPost: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(null)));
+        },
       ),
     );
   }

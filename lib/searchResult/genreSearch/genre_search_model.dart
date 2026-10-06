@@ -10,9 +10,12 @@ class GenreSearchModel extends ChangeNotifier {
 
   List<Post> genreResultList = []; // ジャンル検索に引っかかった投稿
   int genreResultCount = 0; // ジャンル結果の総数
+  var ready = false;
 
   // ジャンルから探す処理=========================
   Future searchFromGenre(String searchWord) async {
+    ready = false;
+    notifyListeners();
     final genreCollection = FirebaseFirestore.instance
         .collection("posts")
         .where("genres", arrayContains: searchWord);
@@ -49,6 +52,7 @@ class GenreSearchModel extends ChangeNotifier {
       );
     }).toList();
     genreResultCount = genreResultList.length;
+    ready = true;
     notifyListeners();
   }
 

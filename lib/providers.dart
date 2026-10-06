@@ -25,12 +25,32 @@ import 'searchResult/genreSearch/genre_search_model.dart';
 import 'searchResult/lyricsSearch/lyrics_search_model.dart';
 import 'searchResult/singSearch/sing_search_model.dart';
 import 'searchResult/singerSearch/singer_result_model.dart';
+import 'song/listen_url_resolver.dart';
+import 'song/song_search_service.dart';
 import 'timeline/timeline_model.dart';
 import 'top/top_model.dart';
+
+final songSearchServiceProvider = Provider<SongSearchService>((ref) {
+  return SongSearchService();
+});
+
+final listenUrlResolverProvider = Provider<ListenUrlResolver>((ref) {
+  return ListenUrlResolver(ref.watch(songSearchServiceProvider));
+});
 
 final homeProvider = ChangeNotifierProvider.autoDispose<HomeModel>((ref) {
   return HomeModel()..getLatestVersions();
 });
+
+/// ボトムタブ（0=ホーム）。詳細画面などからホームへ戻すときに使う。
+class HomeTabIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void setTab(int index) => state = index;
+}
+
+final homeTabIndexProvider = NotifierProvider<HomeTabIndexNotifier, int>(HomeTabIndexNotifier.new);
 
 final timelineProvider = ChangeNotifierProvider.autoDispose<TimelineModel>((ref) {
   return TimelineModel()
@@ -51,7 +71,11 @@ final playlistProvider = ChangeNotifierProvider.autoDispose<PlaylistModel>((ref)
 });
 
 final myPageProvider = ChangeNotifierProvider.autoDispose<MyModel>((ref) {
-  return MyModel()..getUserData()..getUserPosts()..getVersions();
+  return MyModel()
+    ..getUserData()
+    ..getUserPosts()
+    ..loadLikedCount()
+    ..getVersions();
 });
 
 final loginProvider = ChangeNotifierProvider.autoDispose<LoginModel>((ref) {

@@ -22,7 +22,16 @@ class PlaylistDetailsPage extends ConsumerWidget {
             child: !model.ready
                 ? const Center(child: CircularProgressIndicator(color: mainColor))
                 : model.playlistSongs.isEmpty
-                    ? const EmptyState(icon: Icons.queue_music, message: 'まだ曲が入っていません')
+                    ? EmptyState(
+                        icon: Icons.queue_music,
+                        message: 'まだ曲が入っていません',
+                        detail: 'ホームの歌詞カードでプレイリストボタンを押し、「$playlistName」を選んで追加できます。',
+                        actionLabel: 'ホームで探す',
+                        onAction: () {
+                          ref.read(homeTabIndexProvider.notifier).setTab(0);
+                          Navigator.of(context).pop();
+                        },
+                      )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                         itemCount: model.playlistSongs.length,

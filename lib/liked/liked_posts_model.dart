@@ -7,31 +7,48 @@ import 'package:timeago/timeago.dart' as timeAgo;
 class LikedPostsModel extends ChangeNotifier {
   List<Post> posts = [];
   var loading = true;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
 
   Future<void> load() async {
     loading = true;
-    notifyListeners();
+    _notify();
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
       posts = [];
       loading = false;
-      notifyListeners();
+      _notify();
       return;
     }
 
     final likes = await FirebaseFirestore.instance.collection('users').doc(uid).collection('likePost').get();
+    if (_disposed) return;
+
     final ordered = likes.docs.toList()
       ..sort((a, b) => _millis(b.data()['likedAt']).compareTo(_millis(a.data()['likedAt'])));
 
     final loaded = <Post>[];
     for (final like in ordered) {
+      if (_disposed) return;
       final postDoc = await FirebaseFirestore.instance.collection('posts').doc(like.id).get();
       final data = postDoc.data();
       if (data == null) continue;
       final posterId = data['posterId'] as String? ?? '';
       final user = await FirebaseFirestore.instance.collection('users').doc(posterId).get();
+      if (_disposed) return;
       final userData = user.data();
       final created = data['createdAt'];
+      final commentCount = await getCommentCount(postDoc.id);
+      if (_disposed) return;
       loaded.add(Post(
         data['artist'] ?? '',
         data['singName'] ?? '',
@@ -43,14 +60,20 @@ class LikedPostsModel extends ChangeNotifier {
         '${userData?['iconUrl'] ?? ''}',
         created is Timestamp ? timeAgo.format(created.toDate(), locale: 'ja') : '',
         postDoc.id,
-        0,
+        commentCount,
         data['explanation'] ?? '',
         data['youtubeLink'] ?? '',
       ));
     }
     posts = loaded;
     loading = false;
-    notifyListeners();
+    _notify();
+  }
+
+  Future<int> getCommentCount(String id) async {
+    final doc = FirebaseFirestore.instance.collection('posts').doc(id).collection('comments');
+    final snapshot = await doc.get();
+    return snapshot.docs.length;
   }
 
   int _millis(dynamic value) => value is Timestamp ? value.millisecondsSinceEpoch : 0;

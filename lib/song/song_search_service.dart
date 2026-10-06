@@ -24,10 +24,42 @@ class SongSearchService {
   Future<List<SongHit>> searchSongs(String query) async {
     final term = query.trim();
     if (term.isEmpty) return [];
+    return _fetchSongHits(term: term, limit: 25);
+  }
+
+  /// Firestore に再生 URL が無い投稿向けに Apple Music（iTunes）の曲ページ URL を探す。
+  Future<String?> lookupTrackUrl({
+    required String artist,
+    required String title,
+  }) async {
+    final a = artist.trim();
+    final t = title.trim();
+    if (a.isEmpty || t.isEmpty || a == '不明' || t == '不明') return null;
+
+    final hits = await _fetchSongHits(term: '$a $t', limit: 8);
+    if (hits.isEmpty) return null;
+
+    for (final hit in hits) {
+      if (_namesMatch(hit.artist, a) && _namesMatch(hit.title, t)) {
+        return _nonEmptyUrl(hit.listenUrl);
+      }
+    }
+    for (final hit in hits) {
+      if (_namesMatch(hit.artist, a)) {
+        return _nonEmptyUrl(hit.listenUrl);
+      }
+    }
+    return _nonEmptyUrl(hits.first.listenUrl);
+  }
+
+  Future<List<SongHit>> _fetchSongHits({
+    required String term,
+    required int limit,
+  }) async {
     final uri = Uri.https('itunes.apple.com', '/search', {
       'term': term,
       'entity': 'song',
-      'limit': '25',
+      'limit': '$limit',
       'country': 'JP',
       'lang': 'ja_jp',
     });
@@ -46,6 +78,17 @@ class SongSearchService {
         artworkUrl: item['artworkUrl100'] as String?,
       );
     }).where((song) => song.artist.isNotEmpty && song.title.isNotEmpty).toList();
+  }
+
+  static String _normalizeName(String value) =>
+      value.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+
+  static bool _namesMatch(String a, String b) =>
+      _normalizeName(a) == _normalizeName(b);
+
+  static String? _nonEmptyUrl(String url) {
+    final trimmed = url.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Future<String?> fetchLyrics(String artist, String title) async {

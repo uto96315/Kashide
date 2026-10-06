@@ -7,6 +7,7 @@ import 'package:str_gram_beta/common/default_genres.dart';
 import 'package:str_gram_beta/domain/user_domain.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../domain/post_domain.dart';
+import '../post/post_validation.dart';
 import 'swipe_seen_state.dart';
 import 'timeline_filter.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
@@ -32,7 +33,11 @@ class TimelineModel extends ChangeNotifier {
   String? _serverGenreFilter;
   bool filterApplying = false;
 
-  List<Post> get visiblePosts => applyTimelineFilter(postsList, filter);
+  List<Post> get visiblePosts {
+    final eligible =
+        postsList.where((p) => shouldShowPostInFeed(p, uid)).toList();
+    return applyTimelineFilter(eligible, filter);
+  }
 
   bool get filterUsesServerGenre => _serverGenreFilter != null;
 
@@ -110,7 +115,7 @@ class TimelineModel extends ChangeNotifier {
     var pages = 0;
     var lastVisible = -1;
     while (pages < maxPages && hasMorePosts) {
-      final visible = applyTimelineFilter(postsList, filter).length;
+      final visible = visiblePosts.length;
       if (visible == lastVisible && visible >= 15) break;
       lastVisible = visible;
       await loadMorePosts();

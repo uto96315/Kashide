@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/swipe_card_scene.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 
 class SwipeDeck extends StatefulWidget {
@@ -15,6 +16,7 @@ class SwipeDeck extends StatefulWidget {
     required this.onOpen,
     required this.onOpenUser,
     required this.onPlay,
+    required this.onAddToPlaylist,
     required this.onNeedMore,
     required this.loadingMore,
     required this.hasMore,
@@ -27,6 +29,7 @@ class SwipeDeck extends StatefulWidget {
   final void Function(Post post) onOpen;
   final void Function(Post post) onOpenUser;
   final void Function(Post post) onPlay;
+  final void Function(Post post) onAddToPlaylist;
   final VoidCallback onNeedMore;
   final bool loadingMore;
   final bool hasMore;
@@ -90,7 +93,6 @@ class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMix
       );
     }
 
-    final width = MediaQuery.sizeOf(context).width;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Column(
@@ -141,18 +143,19 @@ class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMix
                 color: const Color(0xFF8E8E93),
                 onTap: () => _settle(false),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 16),
+              _RoundAction(
+                icon: Icons.playlist_add_rounded,
+                color: mainColor,
+                onTap: () => widget.onAddToPlaylist(post),
+              ),
+              const SizedBox(width: 16),
               _RoundAction(
                 icon: widget.likedIds.contains(post.id) ? Icons.favorite : Icons.favorite_border,
                 color: mainColor,
                 onTap: () => _settle(true),
               ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            width > 0 ? '左で次へ、右で好き' : '',
-            style: const TextStyle(fontSize: 11, color: Color(0xFF8E8E93)),
           ),
           const SizedBox(height: 4),
         ],
@@ -313,18 +316,27 @@ class _LyricCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (post.youtubeLink.isNotEmpty)
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onPlay,
-                          customBorder: const CircleBorder(),
-                          child: const Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(Icons.play_circle_outline_rounded, color: mainColor, size: 28),
+                    ListenUrlPlaySlot(
+                      storedUrl: post.youtubeLink,
+                      artist: post.artist,
+                      singName: post.singName,
+                      builder: (context, listenUrl) {
+                        if (listenUrl == null || listenUrl.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onPlay,
+                            customBorder: const CircleBorder(),
+                            child: const Padding(
+                              padding: EdgeInsets.all(6),
+                              child: Icon(Icons.play_circle_outline_rounded, color: mainColor, size: 28),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
+                    ),
                     if (liked)
                       Row(
                         mainAxisSize: MainAxisSize.min,
