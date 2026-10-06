@@ -14,23 +14,45 @@ class PlaylistDetailsModel extends ChangeNotifier{
   bool ready = false;
 
   Future getPlaylistDetail()async{
+    ready = false;
+    notifyListeners();
+
     final doc = FirebaseFirestore.instance
         .collection("users").doc(uid)
         .collection("playlists").doc(playlistId)
         .collection("songs").orderBy("addAt");
     final snapshot = await doc.get();
-    playlistSongs = snapshot.docs.asMap().entries.map((song) {
+    final baseSongs = snapshot.docs.map((song) {
       return {
-        "id": song.value.id,
-        "artist": song.value["artist"],
-        "postId": song.value["postId"],
-        "singName": song.value["singName"],
-        "youtubeUrl": song.value["youtubeUrl"],
-        "addAt": song.value["addAt"],
+        "id": song.id,
+        "artist": song["artist"],
+        "postId": song["postId"],
+        "singName": song["singName"],
+        "youtubeUrl": song["youtubeUrl"],
+        "addAt": song["addAt"],
+        "lyricText": "",
       };
     }).toList();
+
+    playlistSongs = await Future.wait(baseSongs.map(_attachLyricFromPost));
     ready = true;
     notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> _attachLyricFromPost(Map<String, dynamic> song) async {
+    final postId = song['postId'] as String?;
+    if (postId == null || postId.isEmpty) return song;
+    try {
+      final post = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
+      final data = post.data();
+      if (data == null) return song;
+      return {
+        ...song,
+        'lyricText': data['text'] ?? '',
+      };
+    } catch (_) {
+      return song;
+    }
   }
 
   // プレイリストから削除する処理
