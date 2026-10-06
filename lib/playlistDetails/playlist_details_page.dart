@@ -78,14 +78,6 @@ class PlaylistDetailsPage extends ConsumerWidget {
                                             style: const TextStyle(fontSize: 14, height: 1.35, color: Color(0xFF3C3C43)),
                                           ),
                                         ],
-                                        if (postId != null && postId.isNotEmpty)
-                                          const Padding(
-                                            padding: EdgeInsets.only(top: 6),
-                                            child: Text(
-                                              'タップで歌詞投稿を開く',
-                                              style: TextStyle(fontSize: 12, color: mainColor, fontWeight: FontWeight.w600),
-                                            ),
-                                          ),
                                       ],
                                     ),
                                   ),
