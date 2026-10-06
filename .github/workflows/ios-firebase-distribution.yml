@@ -38,6 +38,9 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Select Xcode (device_info_plus needs iOS 26.1 SDK)
+        run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+
       - uses: apple-actions/import-codesign-certs@v7
         with:
           p12-file-base64: ${{ secrets.IOS_P12_BASE64 }}
