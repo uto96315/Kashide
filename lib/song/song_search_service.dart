@@ -9,12 +9,14 @@ class SongHit {
     required this.artist,
     required this.title,
     required this.listenUrl,
+    this.previewUrl,
     this.artworkUrl,
   });
 
   final String artist;
   final String title;
   final String listenUrl;
+  final String? previewUrl;
   final String? artworkUrl;
 }
 
@@ -32,6 +34,24 @@ class SongSearchService {
     required String artist,
     required String title,
   }) async {
+    final hit = await _lookupBestHit(artist: artist, title: title);
+    return hit == null ? null : _nonEmptyUrl(hit.listenUrl);
+  }
+
+  /// アプリ内再生用（iTunes の約30秒プレビュー URL）。
+  Future<String?> lookupTrackPreviewUrl({
+    required String artist,
+    required String title,
+  }) async {
+    final hit = await _lookupBestHit(artist: artist, title: title);
+    if (hit == null) return null;
+    return _nonEmptyUrl(hit.previewUrl ?? '');
+  }
+
+  Future<SongHit?> _lookupBestHit({
+    required String artist,
+    required String title,
+  }) async {
     final a = artist.trim();
     final t = title.trim();
     if (a.isEmpty || t.isEmpty || a == '不明' || t == '不明') return null;
@@ -41,15 +61,15 @@ class SongSearchService {
 
     for (final hit in hits) {
       if (_namesMatch(hit.artist, a) && _namesMatch(hit.title, t)) {
-        return _nonEmptyUrl(hit.listenUrl);
+        return hit;
       }
     }
     for (final hit in hits) {
       if (_namesMatch(hit.artist, a)) {
-        return _nonEmptyUrl(hit.listenUrl);
+        return hit;
       }
     }
-    return _nonEmptyUrl(hits.first.listenUrl);
+    return hits.first;
   }
 
   Future<List<SongHit>> _fetchSongHits({
@@ -75,6 +95,7 @@ class SongSearchService {
         artist: (item['artistName'] as String?) ?? '',
         title: (item['trackName'] as String?) ?? '',
         listenUrl: (item['trackViewUrl'] as String?) ?? '',
+        previewUrl: item['previewUrl'] as String?,
         artworkUrl: item['artworkUrl100'] as String?,
       );
     }).where((song) => song.artist.isNotEmpty && song.title.isNotEmpty).toList();

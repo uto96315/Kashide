@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/liked/liked_posts_page.dart';
 import 'package:str_gram_beta/mypage/my_model.dart';
@@ -10,7 +12,7 @@ import 'package:str_gram_beta/playlist/playlist_page.dart';
 import 'package:str_gram_beta/user/blocked_users_page.dart';
 
 /// マイページ用・iOS 設定風の右ドロワー。
-class ProfileMenuDrawer extends StatelessWidget {
+class ProfileMenuDrawer extends ConsumerWidget {
   const ProfileMenuDrawer({
     super.key,
     required this.model,
@@ -26,7 +28,8 @@ class ProfileMenuDrawer extends StatelessWidget {
   static const _separator = Color(0xFFE5E5EA);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final autoplay = ref.watch(cardAutoplaySettingsProvider);
     final version = Platform.isIOS ? model.iosVersion : model.androidVersion;
     final hasAvatar =
         model.userImageURL != null && model.userImageURL!.isNotEmpty && model.userImageURL != 'null';
@@ -120,6 +123,21 @@ class ProfileMenuDrawer extends StatelessWidget {
             const SizedBox(height: 20),
             _Section(
               children: [
+                _SwitchTile(
+                  icon: CupertinoIcons.play_circle,
+                  title: 'カード表示で曲を自動再生',
+                  subtitle: 'Apple Music プレビュー（約30秒）をアプリ内で再生します',
+                  value: autoplay.enabled,
+                  onChanged: (v) async {
+                    await ref.read(cardAutoplaySettingsProvider).setEnabled(v);
+                    if (!v) await ref.read(cardPreviewPlayerProvider).stop();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _Section(
+              children: [
                 _Tile(
                   icon: CupertinoIcons.star,
                   title: Platform.isIOS ? 'App Store で評価する' : 'ストアで評価する',
@@ -191,6 +209,60 @@ class _Section extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: children),
+      ),
+    );
+  }
+}
+
+class _SwitchTile extends StatelessWidget {
+  const _SwitchTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 22, color: ProfileMenuDrawer._secondary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: ProfileMenuDrawer._label),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, height: 1.35, color: ProfileMenuDrawer._secondary),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            activeTrackColor: const Color(0xFFFF749E),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
