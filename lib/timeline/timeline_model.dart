@@ -11,6 +11,7 @@ import '../post/post_validation.dart';
 import '../user/block_list_model.dart';
 import 'swipe_seen_state.dart';
 import 'timeline_filter.dart';
+import 'timeline_sort.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
 class TimelineModel extends ChangeNotifier {
@@ -31,10 +32,17 @@ class TimelineModel extends ChangeNotifier {
   List playList = [];
   String? newPlaylistName;
   TimelineFilterState filter = TimelineFilterState.empty;
+  TimelineSortOrder sortOrder = TimelineSortOrder.newest;
   List<String> masterGenreOptions = List<String>.from(kFallbackDefaultGenres);
   String? _serverGenreFilter;
   /// Firestore 複合インデックス未作成時はサーバー側ジャンル絞り込みを使わない。
   bool _serverGenreQueryDisabled = false;
+  /// 複合インデックスが無いときは `createdAt` の第2ソートを外して再試行する。
+  bool _likedSortSkipCreatedAtTiebreak = false;
+  String? sortLoadError;
+  String? filterLoadError;
+  /// ジャンル1件絞り込みを Firestore ではなく端末側で行っている。
+  bool filterClientGenreFallback = false;
   bool filterApplying = false;
   bool filterPrefetching = false;
   bool _filterBackgroundCancelled = false;
@@ -43,7 +51,21 @@ class TimelineModel extends ChangeNotifier {
     final eligible = postsList
         .where((p) => shouldShowPostInFeed(p, uid, blockedPosterIds: blockList.blockedIds))
         .toList();
-    return applyTimelineFilter(eligible, filter);
+    var result = applyTimelineFilter(eligible, filter);
+    if (!_usesServerSortOrder) {
+      result = applyTimelineSort(result, sortOrder);
+    }
+    return result;
+  }
+
+  /// 絞り込み結果を端末側でいいね数ソートする必要がある（複合条件など）。
+  bool get _needsClientMostLikedSort =>
+      sortOrder == TimelineSortOrder.mostLiked && filter.isActive && !filterUsesServerGenre;
+
+  /// Firestore の取得順がそのまま表示順になるか（クライアント側ソート不要か）。
+  bool get _usesServerSortOrder {
+    if (_needsClientMostLikedSort) return false;
+    return true;
   }
 
   bool get filterUsesServerGenre => _serverGenreFilter != null;
@@ -67,9 +89,22 @@ class TimelineModel extends ChangeNotifier {
         f.explanationFilter == TimelineTriFilter.all;
   }
 
+  Future<void> setSortOrder(TimelineSortOrder next) async {
+    if (sortOrder == next) return;
+    sortOrder = next;
+    _likedSortSkipCreatedAtTiebreak = false;
+    sortLoadError = null;
+    _filterBackgroundCancelled = true;
+    filterPrefetching = false;
+    notifyListeners();
+    await getFirstPostData();
+  }
+
   Future<void> setFilter(TimelineFilterState next) async {
     filter = next;
     _filterBackgroundCancelled = true;
+    filterLoadError = null;
+    filterClientGenreFallback = false;
     if (!filter.isActive) {
       _serverGenreFilter = null;
       filterPrefetching = false;
@@ -81,14 +116,52 @@ class TimelineModel extends ChangeNotifier {
     _filterBackgroundCancelled = false;
     notifyListeners();
     try {
-      _syncServerGenreFilter();
-      await _reloadPostsFromCurrentQuery();
-      await _loadFilteredUntilVisible(filterInitialVisibleTarget, maxBatches: filterMaxScanBatches);
+      await _reloadFilteredFeed();
+      _startFilteredBackgroundPrefetch();
+    } on FirebaseException catch (e, st) {
+      debugPrint('Timeline setFilter failed: ${e.code} ${e.message}\n$st');
+      filterLoadError = _feedLoadErrorMessage(
+        e,
+        forFilter: true,
+        forLikedSort: sortOrder == TimelineSortOrder.mostLiked,
+      );
+      postsList = [];
+      postsReady = true;
+      hasMorePosts = false;
+      filterPrefetching = false;
     } finally {
       filterApplying = false;
       notifyListeners();
     }
-    _startFilteredBackgroundPrefetch();
+  }
+
+  Future<void> _reloadFilteredFeed() async {
+    filterLoadError = null;
+    _syncServerGenreFilter();
+    await _reloadPostsFromCurrentQuery();
+    await _loadFilteredUntilVisible(filterInitialVisibleTarget, maxBatches: filterMaxScanBatches);
+  }
+
+  String _feedLoadErrorMessage(
+    FirebaseException e, {
+    required bool forFilter,
+    required bool forLikedSort,
+  }) {
+    if (e.code == 'failed-precondition') {
+      if (forFilter && forLikedSort) {
+        return '絞り込みと並び替え用の Firestore インデックスを準備中です。'
+            'コンソールでインデックスが「有効」になるまで待つか、条件を変えてお試しください。';
+      }
+      if (forFilter) {
+        return '絞り込み用の Firestore インデックスを準備中です。'
+            'しばらく待つか、条件を変えてお試しください。';
+      }
+      return 'Firestore インデックスを準備中です。構築完了後にもう一度お試しください。';
+    }
+    if (forFilter) {
+      return '絞り込み結果を読み込めませんでした。通信環境を確認して再度お試しください。';
+    }
+    return '投稿を読み込めませんでした。通信環境を確認して再度お試しください。';
   }
 
   void _syncServerGenreFilter() {
@@ -101,16 +174,21 @@ class TimelineModel extends ChangeNotifier {
 
   String filterBannerText(int visibleCount) {
     if (!filter.isActive) return '';
+    final fallbackNote = filterClientGenreFallback ? '端末側ジャンル絞り込み · ' : '';
     final suffix = filterPrefetching
         ? ' · 続きを読み込み中…'
         : hasMorePosts
             ? ' · 下へスクロールでさらに表示'
             : ' · ここまで全件';
+    final sortLabel = sortOrder.label;
     if (filterUsesServerGenre) {
       final g = _serverGenreFilter!;
-      return '$visibleCount件（ジャンル「$g」· 新着順）$suffix';
+      return '$fallbackNote$visibleCount件（ジャンル「$g」· $sortLabel）$suffix';
     }
-    return '$visibleCount件表示 · 取得済み投稿${postsList.length}件$suffix';
+    if (_needsClientMostLikedSort) {
+      return '$fallbackNote$visibleCount件 · $sortLabel（直近${postsList.length}件から集計）$suffix';
+    }
+    return '$fallbackNote$visibleCount件 · $sortLabel$suffix';
   }
 
   /// 通常タイムラインの1ページあたり件数。
@@ -125,7 +203,11 @@ class TimelineModel extends ChangeNotifier {
   /// 絞り込み初期スキャンの上限（40×15=600投稿まで走査）。
   static const filterMaxScanBatches = 15;
 
-  int get _currentFetchSize => filter.isActive ? filterFetchBatchSize : postsPageSize;
+  int get _currentFetchSize {
+    if (filter.isActive) return filterFetchBatchSize;
+    if (sortOrder == TimelineSortOrder.mostLiked) return filterInitialVisibleTarget;
+    return postsPageSize;
+  }
 
   Future<void> _reloadPostsFromCurrentQuery() async {
     final snapshot = await _queryPostsPage(limit: _currentFetchSize);
@@ -150,13 +232,22 @@ class TimelineModel extends ChangeNotifier {
     try {
       return await run();
     } on FirebaseException catch (e) {
-      if (e.code == 'failed-precondition' && _serverGenreFilter != null) {
+      if (e.code != 'failed-precondition') rethrow;
+      if (_serverGenreFilter != null && !_serverGenreQueryDisabled) {
         debugPrint(
-          'Firestore index missing for genres+createdAt; using client-side genre filter. '
+          'Firestore index missing for genre filter; using client-side genre filter. '
           'Deploy firestore.indexes.json or use the link in the error.',
         );
         _serverGenreQueryDisabled = true;
         _serverGenreFilter = null;
+        if (filter.isActive && canUseServerGenreQuery(filter)) {
+          filterClientGenreFallback = true;
+        }
+        return run();
+      }
+      if (sortOrder == TimelineSortOrder.mostLiked && !_likedSortSkipCreatedAtTiebreak) {
+        debugPrint('Retrying likedCount sort without createdAt tiebreak index.');
+        _likedSortSkipCreatedAtTiebreak = true;
         return run();
       }
       rethrow;
@@ -165,7 +256,8 @@ class TimelineModel extends ChangeNotifier {
 
   Future<void> _loadFilteredUntilVisible(int minVisible, {required int maxBatches}) async {
     var batches = 0;
-    while (batches < maxBatches && hasMorePosts && visiblePosts.length < minVisible) {
+    while (batches < maxBatches && hasMorePosts) {
+      if (!_needsClientMostLikedSort && visiblePosts.length >= minVisible) break;
       final loaded = await _fetchNextPostsPage();
       if (!loaded) break;
       batches++;
@@ -288,6 +380,13 @@ class TimelineModel extends ChangeNotifier {
       query = query.where('genres', arrayContains: _serverGenreFilter!);
     }
 
+    if (sortOrder == TimelineSortOrder.mostLiked) {
+      query = query.orderBy('likedCount', descending: true);
+      if (!_likedSortSkipCreatedAtTiebreak) {
+        query = query.orderBy('createdAt', descending: true);
+      }
+      return query;
+    }
     return query.orderBy('createdAt', descending: true);
   }
 
@@ -298,20 +397,22 @@ class TimelineModel extends ChangeNotifier {
     return docs.asMap().entries.map((entry) {
       final index = entry.key;
       final doc = entry.value;
+      final created = doc["createdAt"].toDate();
       return Post(
         doc["artist"],
         doc["singName"],
         doc["text"],
         doc["posterId"],
-        doc["likedCount"],
+        (doc["likedCount"] as num?)?.toInt() ?? 0,
         doc["genres"],
         "${userInfo[index][0]}",
         "${userInfo[index][1]}",
-        createTimeMessage(doc["createdAt"].toDate()),
+        createTimeMessage(created),
         doc.id,
         commentCount[index],
         doc["explanation"] ?? "",
         doc["youtubeLink"] ?? "",
+        createdAtMillis: created.millisecondsSinceEpoch,
       );
     }).where((post) => !blockList.isBlocked(post.posterId)).toList();
   }
@@ -357,15 +458,43 @@ class TimelineModel extends ChangeNotifier {
     await loadLikedPostIds();
     _filterBackgroundCancelled = true;
     filterPrefetching = false;
+    sortLoadError = null;
+    filterLoadError = null;
+    filterClientGenreFallback = false;
     if (filter.isActive) {
-      _syncServerGenreFilter();
+      try {
+        await _reloadFilteredFeed();
+        _startFilteredBackgroundPrefetch();
+      } on FirebaseException catch (e, st) {
+        debugPrint('Timeline initial load failed: ${e.code} ${e.message}\n$st');
+        final message = _feedLoadErrorMessage(
+          e,
+          forFilter: true,
+          forLikedSort: sortOrder == TimelineSortOrder.mostLiked,
+        );
+        if (sortOrder == TimelineSortOrder.mostLiked) sortLoadError = message;
+        filterLoadError = message;
+        postsList = [];
+        postsReady = true;
+        hasMorePosts = false;
+        notifyListeners();
+        return;
+      }
     } else {
       _serverGenreFilter = null;
-    }
-    await _reloadPostsFromCurrentQuery();
-    if (filter.isActive) {
-      await _loadFilteredUntilVisible(filterInitialVisibleTarget, maxBatches: filterMaxScanBatches);
-      _startFilteredBackgroundPrefetch();
+      try {
+        await _reloadPostsFromCurrentQuery();
+      } on FirebaseException catch (e, st) {
+        debugPrint('Timeline initial load failed: ${e.code} ${e.message}\n$st');
+        if (sortOrder == TimelineSortOrder.mostLiked) {
+          sortLoadError = _feedLoadErrorMessage(e, forFilter: false, forLikedSort: true);
+        }
+        postsList = [];
+        postsReady = true;
+        hasMorePosts = false;
+        notifyListeners();
+        return;
+      }
     }
     debugPrint("投稿を読み込みました");
     notifyListeners();
