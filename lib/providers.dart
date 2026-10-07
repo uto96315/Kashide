@@ -28,6 +28,8 @@ import 'searchResult/singerSearch/singer_result_model.dart';
 import 'song/listen_url_resolver.dart';
 import 'song/song_search_service.dart';
 import 'analytics/app_analytics.dart';
+import 'audio/card_preview_player.dart';
+import 'settings/card_autoplay_settings.dart';
 import 'timeline/timeline_model.dart';
 import 'user/block_list_model.dart';
 import 'top/top_model.dart';
@@ -40,6 +42,18 @@ final songSearchServiceProvider = Provider<SongSearchService>((ref) {
 
 final listenUrlResolverProvider = Provider<ListenUrlResolver>((ref) {
   return ListenUrlResolver(ref.watch(songSearchServiceProvider));
+});
+
+final cardAutoplaySettingsProvider = ChangeNotifierProvider<CardAutoplaySettings>((ref) {
+  return CardAutoplaySettings()..initialize();
+});
+
+final cardPreviewPlayerProvider = ChangeNotifierProvider<CardPreviewPlayer>((ref) {
+  final player = CardPreviewPlayer(ref.watch(listenUrlResolverProvider));
+  ref.onDispose(() {
+    player.disposePlayer();
+  });
+  return player;
 });
 
 final homeProvider = ChangeNotifierProvider.autoDispose<HomeModel>((ref) {

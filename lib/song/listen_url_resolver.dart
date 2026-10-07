@@ -7,6 +7,7 @@ class ListenUrlResolver {
 
   final SongSearchService _search;
   final _cache = <String, String?>{};
+  final _previewCache = <String, String?>{};
 
   static String cacheKey(String artist, String singName) =>
       '${artist.trim()}|${singName.trim()}';
@@ -37,4 +38,20 @@ class ListenUrlResolver {
         artist: post.artist,
         singName: post.singName,
       );
+
+  Future<String?> resolvePreviewForPost(Post post) async {
+    final key = cacheKey(post.artist, post.singName);
+    if (_previewCache.containsKey(key)) return _previewCache[key];
+    try {
+      final url = await _search.lookupTrackPreviewUrl(
+        artist: post.artist,
+        title: post.singName,
+      );
+      _previewCache[key] = url;
+      return url;
+    } catch (_) {
+      _previewCache[key] = null;
+      return null;
+    }
+  }
 }

@@ -23,6 +23,8 @@ class SwipeDeck extends StatefulWidget {
     required this.onNeedMore,
     required this.loadingMore,
     required this.hasMore,
+    this.onForegroundCard,
+    this.onStopPreview,
   });
 
   final List<Post> posts;
@@ -37,6 +39,9 @@ class SwipeDeck extends StatefulWidget {
   final VoidCallback onNeedMore;
   final bool loadingMore;
   final bool hasMore;
+  /// 手前のカードが変わったとき（自動再生など）。
+  final Future<void> Function(Post post)? onForegroundCard;
+  final VoidCallback? onStopPreview;
 
   @override
   State<SwipeDeck> createState() => _SwipeDeckState();
@@ -47,6 +52,7 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
   double _from = 0;
   double _to = 0;
   var _flying = false;
+  String? _foregroundNotifiedId;
   late final AnimationController _fly = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 280),
@@ -62,6 +68,20 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
   double get _dx => _flying ? _from + (_to - _from) * Curves.easeOutCubic.transform(_fly.value) : _drag;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _notifyForegroundIfNeeded());
+  }
+
+  void _notifyForegroundIfNeeded() {
+    final post = _post;
+    if (post == null || widget.onForegroundCard == null) return;
+    if (_foregroundNotifiedId == post.id) return;
+    _foregroundNotifiedId = post.id;
+    unawaited(widget.onForegroundCard!(post));
+  }
+
+  @override
   void didUpdateWidget(SwipeDeck oldWidget) {
     super.didUpdateWidget(oldWidget);
     final oldId = oldWidget.posts.isEmpty ? null : oldWidget.posts.first.id;
@@ -71,6 +91,8 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       _fly.reset();
       _drag = 0;
       _flying = false;
+      if (oldId != null) widget.onStopPreview?.call();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _notifyForegroundIfNeeded());
     }
   }
 

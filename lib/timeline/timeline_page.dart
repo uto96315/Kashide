@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/notification/notification_page.dart';
+import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
 import '../common/app_dialog.dart';
@@ -27,6 +28,16 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   var _deck = true;
 
   @override
+  void dispose() {
+    ref.read(cardPreviewPlayerProvider).stop();
+    super.dispose();
+  }
+
+  Future<void> _playCardPreview(Post post) async {
+    await ref.read(cardPreviewPlayerProvider).playForPost(post);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final model = ref.watch(timelineProvider);
     final posts = model.visiblePosts;
@@ -40,6 +51,16 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (_deck)
+                  _CardPreviewToggle(
+                    enabled: ref.watch(cardAutoplaySettingsProvider).enabled,
+                    onToggle: () async {
+                      final settings = ref.read(cardAutoplaySettingsProvider);
+                      final next = !settings.enabled;
+                      await settings.setEnabled(next);
+                      if (!next) await ref.read(cardPreviewPlayerProvider).stop();
+                    },
+                  ),
                 _SortButton(
                   sortOrder: model.sortOrder,
                   onSelected: (order) => model.setSortOrder(order),
@@ -57,7 +78,10 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                 ),
                 _ViewToggle(
                   deck: _deck,
-                  onChanged: (deck) => setState(() => _deck = deck),
+                  onChanged: (deck) {
+                    if (!deck) ref.read(cardPreviewPlayerProvider).stop();
+                    setState(() => _deck = deck);
+                  },
                 ),
                 IconButton(
                   onPressed: () {
@@ -109,14 +133,14 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     onOpenUser: (post) {
                       openUserProfile(context, posterId: post.posterId, userName: post.userName);
                     },
-                    onPlay: (post) async {
-                      final url = await ref.read(listenUrlResolverProvider).resolvePost(post);
-                      if (url != null && url.isNotEmpty) {
-                        await model.launchURL(url);
-                      }
-                    },
+                    onPlay: _playCardPreview,
                     onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
                     onNeedMore: model.loadMorePosts,
+                    onStopPreview: () => ref.read(cardPreviewPlayerProvider).stop(),
+                    onForegroundCard: (post) async {
+                      if (!ref.read(cardAutoplaySettingsProvider).enabled) return;
+                      await _playCardPreview(post);
+                    },
                   )
                 : NotificationListener<ScrollNotification>(
                     onNotification: (notification) {
@@ -231,6 +255,25 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
         await model.getPlayListData();
         model.addPlaylistController.text = '';
       },
+    );
+  }
+}
+
+class _CardPreviewToggle extends StatelessWidget {
+  const _CardPreviewToggle({required this.enabled, required this.onToggle});
+
+  final bool enabled;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: enabled ? 'カード自動再生 ON' : 'カード自動再生 OFF',
+      onPressed: onToggle,
+      icon: Icon(
+        enabled ? Icons.music_note_rounded : Icons.music_off_rounded,
+        color: enabled ? mainColor : const Color(0xFF8E8E93),
+      ),
     );
   }
 }
