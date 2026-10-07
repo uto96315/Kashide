@@ -36,43 +36,76 @@ class LikedPostsModel extends ChangeNotifier {
     final ordered = likes.docs.toList()
       ..sort((a, b) => _millis(b.data()['likedAt']).compareTo(_millis(a.data()['likedAt'])));
 
-    final loaded = <Post>[];
-    for (final like in ordered) {
-      if (_disposed) return;
-      final postDoc = await FirebaseFirestore.instance.collection('posts').doc(like.id).get();
-      final data = postDoc.data();
-      if (data == null) continue;
-      final posterId = data['posterId'] as String? ?? '';
-      final user = await FirebaseFirestore.instance.collection('users').doc(posterId).get();
-      if (_disposed) return;
-      final userData = user.data();
+    if (ordered.isEmpty) {
+      posts = [];
+      loading = false;
+      _notify();
+      return;
+    }
+
+    final postSnapshots = await Future.wait(
+      ordered.map((like) => FirebaseFirestore.instance.collection('posts').doc(like.id).get()),
+    );
+    if (_disposed) return;
+
+    final docs = <DocumentSnapshot<Map<String, dynamic>>>[];
+    for (var i = 0; i < ordered.length; i++) {
+      final snap = postSnapshots[i];
+      final data = snap.data();
+      if (!snap.exists || data == null) continue;
+      docs.add(snap);
+    }
+
+    if (docs.isEmpty) {
+      posts = [];
+      loading = false;
+      _notify();
+      return;
+    }
+
+    final userInfo = await Future.wait(
+      docs.map((doc) => _getUserData(doc.data()?['posterId'] as String? ?? '')),
+    );
+    if (_disposed) return;
+
+    final commentCount = await Future.wait(docs.map((doc) => getCommentCount(doc.id)));
+    if (_disposed) return;
+
+    posts = docs.asMap().entries.map((entry) {
+      final index = entry.key;
+      final doc = entry.value;
+      final data = doc.data()!;
       final created = data['createdAt'];
-      final commentCount = await getCommentCount(postDoc.id);
-      if (_disposed) return;
-      loaded.add(Post(
+      return Post(
         data['artist'] ?? '',
         data['singName'] ?? '',
         data['text'] ?? '',
-        posterId,
+        data['posterId'] ?? '',
         data['likedCount'] ?? 0,
         data['genres'] ?? [],
-        '${userData?['userName'] ?? ''}',
-        '${userData?['iconUrl'] ?? ''}',
+        '${userInfo[index][0]}',
+        '${userInfo[index][1]}',
         created is Timestamp ? timeAgo.format(created.toDate(), locale: 'ja') : '',
-        postDoc.id,
-        commentCount,
+        doc.id,
+        commentCount[index],
         data['explanation'] ?? '',
         data['youtubeLink'] ?? '',
-      ));
-    }
-    posts = loaded;
+      );
+    }).toList();
+
     loading = false;
     _notify();
   }
 
+  Future<List<dynamic>> _getUserData(String posterId) async {
+    if (posterId.isEmpty) return ['', ''];
+    final snapshot = await FirebaseFirestore.instance.collection('users').doc(posterId).get();
+    final data = snapshot.data();
+    return [data?['userName'], data?['iconUrl']];
+  }
+
   Future<int> getCommentCount(String id) async {
-    final doc = FirebaseFirestore.instance.collection('posts').doc(id).collection('comments');
-    final snapshot = await doc.get();
+    final snapshot = await FirebaseFirestore.instance.collection('posts').doc(id).collection('comments').get();
     return snapshot.docs.length;
   }
 

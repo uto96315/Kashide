@@ -26,6 +26,16 @@ class PostPage extends ConsumerWidget {
               child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
+            const Text(
+              '曲と歌詞',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F1419)),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '必須 · タップして曲と載せる歌詞を選ぶ',
+              style: TextStyle(fontSize: 13, color: Color(0xFF536471)),
+            ),
+            const SizedBox(height: 10),
             _SongCard(
               artist: model.singerName,
               title: model.singName,
@@ -166,18 +176,31 @@ class _SongCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasSong = (artist ?? '').isNotEmpty && (title ?? '').isNotEmpty;
+    final emptyStyle = !hasSong;
     return Material(
-      color: Colors.white,
+      color: emptyStyle ? const Color(0xFFFFF0F5) : Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onPick,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(emptyStyle ? 18 : 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFFFD0E0)),
+            border: Border.all(
+              color: emptyStyle ? mainColor : const Color(0xFFFFD0E0),
+              width: emptyStyle ? 2 : 1,
+            ),
+            boxShadow: emptyStyle
+                ? [
+                    BoxShadow(
+                      color: mainColor.withValues(alpha: 0.12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: hasSong
               ? Column(
@@ -211,14 +234,30 @@ class _SongCard extends StatelessWidget {
                     ),
                   ],
                 )
-              : const Row(
+              : Row(
                   children: [
-                    Icon(Icons.library_music, color: mainColor),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text('曲を選んで、載せたい歌詞の範囲を指定する'),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: mainColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.library_music_rounded, color: mainColor, size: 28),
                     ),
-                    Icon(Icons.chevron_right),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Text(
+                        '曲を選んで、載せたい歌詞の範囲を指定する',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          height: 1.35,
+                          color: Color(0xFF0F1419),
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: mainColor, size: 28),
                   ],
                 ),
         ),

@@ -112,16 +112,82 @@ class LyricsSelectPage extends StatefulWidget {
 }
 
 class _LyricsSelectPageState extends State<LyricsSelectPage> {
+  static var _lyricsPickTutorialShown = false;
+
   final _service = SongSearchService();
   String? _lyrics;
   String _selected = '';
   bool _loading = true;
   String? _error;
+  bool _showGuide = true;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  void _maybeShowTutorial({bool force = false}) {
+    if (!force && _lyricsPickTutorialShown) return;
+    if (!force) _lyricsPickTutorialShown = true;
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (ctx) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 8, 20, 20 + MediaQuery.paddingOf(ctx).bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '歌詞の選び方',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 16),
+              _tutorialStep('1', '歌詞のどこかを長押し', Icons.touch_app_rounded),
+              _tutorialStep('2', '載せたい始点〜終点まで範囲を広げる', Icons.swipe_rounded),
+              _tutorialStep('3', '下の「この範囲を載せる」を押す', Icons.check_circle_outline_rounded),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('OK、選んでみる'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _tutorialStep(String n, String text, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: mainColor.withValues(alpha: 0.15),
+            child: Text(n, style: const TextStyle(color: mainColor, fontWeight: FontWeight.w800)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(text, style: const TextStyle(fontSize: 16, height: 1.4)),
+            ),
+          ),
+          Icon(icon, color: mainColor, size: 26),
+        ],
+      ),
+    );
   }
 
   Future<void> _load() async {
@@ -133,6 +199,8 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
         _loading = false;
         if (lyrics == null || lyrics.isEmpty) {
           _error = 'この曲の歌詞が見つかりませんでした';
+        } else {
+          _maybeShowTutorial();
         }
       });
     } catch (_) {
@@ -180,13 +248,50 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
                         ],
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Text(
-                        '載せたい範囲をドラッグして選んでください',
-                        style: TextStyle(color: Colors.black54),
+                    if (_showGuide && _selected.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                        child: Material(
+                          color: const Color(0xFFFFF0F5),
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () => _maybeShowTutorial(force: true),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: mainColor.withValues(alpha: 0.35)),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.lightbulb_outline_rounded, color: mainColor, size: 22),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Text(
+                                      '長押し → 範囲を調整 →「この範囲を載せる」',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.35,
+                                        color: Color(0xFF0F1419),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                    onPressed: () => setState(() => _showGuide = false),
+                                    icon: const Icon(Icons.close, size: 20, color: Color(0xFF536471)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -199,6 +304,7 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
                             final end = selection.end.clamp(start, text.length);
                             setState(() {
                               _selected = text.substring(start, end).trim();
+                              if (_selected.isNotEmpty) _showGuide = false;
                             });
                           },
                         ),
