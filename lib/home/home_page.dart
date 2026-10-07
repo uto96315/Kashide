@@ -19,6 +19,14 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(pushTokenServiceProvider).syncForCurrentUser();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final model = ref.watch(homeProvider);
     if (!model.versionChecked) {

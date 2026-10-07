@@ -66,5 +66,6 @@ jobs:
           IPA=$(ls build/ios/ipa/*.ipa | head -1)
           firebase appdistribution:distribute "$IPA" \
             --app "1:685958858748:ios:ae5d8a6400ffee58ee1479" \
+            --testers "yuto.mabe@gmail.com" \
             --release-notes "${{ inputs.release_notes || format('GitHub {0}', github.sha) }}" \
             --token "$FIREBASE_TOKEN"

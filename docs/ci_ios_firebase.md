@@ -22,6 +22,8 @@ GitHub → **Actions** → **iOS Firebase Distribution** → **Run workflow**
 
 ## 3. テスター
 
-Firebase Console → App Distribution → グループ **testers**
+CI の `firebase appdistribution:distribute` で **`--testers yuto.mabe@gmail.com`** を付与しているため、ビルド成功時に毎回そのアドレスへ配布される（Console でリリースごとに追加不要）。
+
+初回のみ、そのメールで Firebase の招待を受け取り、テスターアプリを入れること。
 
 Ad Hoc のため端末 UDID 登録が必要な場合あり。

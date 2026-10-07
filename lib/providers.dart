@@ -13,6 +13,8 @@ import 'liked/liked_posts_model.dart';
 import 'login/login_model.dart';
 import 'mypage/my_model.dart';
 import 'notification/notification_model.dart';
+import 'notifications/notification_inbox_model.dart';
+import 'notifications/push_token_service.dart';
 import 'playlist/playlist_model.dart';
 import 'playlistDetails/playlist_details_model.dart';
 import 'post/post_model.dart';
@@ -156,9 +158,15 @@ final topProvider = ChangeNotifierProvider.autoDispose<TopModel>((ref) {
   return TopModel();
 });
 
+final pushTokenServiceProvider = Provider<PushTokenService>((ref) => PushTokenService());
+
 final notificationProvider =
     ChangeNotifierProvider.autoDispose<NotificationModel>((ref) {
   return NotificationModel()..getToken();
+});
+
+final notificationInboxProvider = ChangeNotifierProvider.autoDispose<NotificationInboxModel>((ref) {
+  return NotificationInboxModel();
 });
 
 final howToUseProvider = ChangeNotifierProvider.autoDispose<HowToUseModel>((ref) {
