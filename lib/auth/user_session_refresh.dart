@@ -3,10 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers.dart';
 
 /// アカウント切り替え・ログアウト後にユーザー依存の状態をリセットする。
-void refreshAfterAccountChange(WidgetRef ref) {
+void refreshAfterAccountChange(
+  WidgetRef ref, {
+  /// 追加ログイン後はマイページ(3)へ。通常はホーム(0)。
+  int homeTabIndex = 0,
+}) {
   ref.read(cardPreviewPlayerProvider).stop();
-  ref.read(homeTabIndexProvider.notifier).setTab(0);
+  ref.read(sessionRefreshKeyProvider.notifier).bump();
+  ref.read(homeTabIndexProvider.notifier).setTab(homeTabIndex);
   ref.invalidate(blockListProvider);
+  ref.invalidate(timelineProvider);
   ref.invalidate(homeProvider);
   ref.invalidate(myPageProvider);
   ref.invalidate(searchProvider);
