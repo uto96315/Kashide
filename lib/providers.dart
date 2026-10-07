@@ -28,6 +28,7 @@ import 'searchResult/singerSearch/singer_result_model.dart';
 import 'song/listen_url_resolver.dart';
 import 'song/song_search_service.dart';
 import 'timeline/timeline_model.dart';
+import 'user/block_list_model.dart';
 import 'top/top_model.dart';
 
 final songSearchServiceProvider = Provider<SongSearchService>((ref) {
@@ -52,9 +53,17 @@ class HomeTabIndexNotifier extends Notifier<int> {
 
 final homeTabIndexProvider = NotifierProvider<HomeTabIndexNotifier, int>(HomeTabIndexNotifier.new);
 
+final blockListProvider = ChangeNotifierProvider<BlockListModel>((ref) {
+  return BlockListModel()..load();
+});
+
 final timelineProvider = ChangeNotifierProvider.autoDispose<TimelineModel>((ref) {
-  return TimelineModel()
-    ..getBlockedUsers()
+  final blockList = ref.watch(blockListProvider);
+  final timeline = TimelineModel(blockList: blockList);
+  ref.listen<BlockListModel>(blockListProvider, (_, next) {
+    timeline.purgeBlockedPosts(next.blockedIds);
+  });
+  return timeline
     ..getFirstPostData()
     ..loadMasterGenres()
     ..getPlayListData();

@@ -125,6 +125,14 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                             else
                               Column(
                                 children: [
+                                  if (model.filter.isActive)
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                                      child: Text(
+                                        model.filterBannerText(posts.length),
+                                        style: const TextStyle(fontSize: 13, color: Color(0xFF536471)),
+                                      ),
+                                    ),
                                   for (final post in posts)
                                     LyricPostCard(
                                       post: post,
@@ -166,7 +174,8 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     } else if (value == 'block') {
       final ok = await showAppConfirm(context, title: 'ブロック', message: 'このユーザーをブロックしますか？', confirm: 'ブロックする', destructive: true);
       if (!ok || !context.mounted) return;
-      await model.blockUser(post.posterId);
+      await ref.read(blockListProvider).blockUser(post.posterId);
+      ref.read(timelineProvider).removePostsByPoster(post.posterId);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ブロックしました')));
     } else if (value == 'report') {

@@ -4,6 +4,8 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/genre_browse_header.dart';
 import 'package:str_gram_beta/common/post_feed_list.dart';
+import 'package:str_gram_beta/common/block_user_actions.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/providers.dart';
 
 class LyricsSearchPage extends ConsumerWidget {
@@ -14,6 +16,7 @@ class LyricsSearchPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final model = ref.watch(lyricsSearchProvider(searchWord));
     final timeline = ref.watch(timelineProvider);
+    final posts = withoutBlockedPosts(model.lyricsResultList, ref.watch(blockListProvider).blockedIds);
 
     if (model.isLoading) {
       return const Center(child: CircularProgressIndicator(color: mainColor));
@@ -35,7 +38,7 @@ class LyricsSearchPage extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: PostFeedList(
-              posts: model.lyricsResultList,
+              posts: posts,
               uid: timeline.uid,
               playlists: timeline.playList,
               onDeletePost: (id) async {
@@ -43,6 +46,10 @@ class LyricsSearchPage extends ConsumerWidget {
                 ref.invalidate(lyricsSearchProvider(searchWord));
               },
               onReportPost: timeline.reportPosts,
+              onBlockUser: (posterId) async {
+                await blockUserFromFeed(context, ref, posterId);
+                ref.invalidate(lyricsSearchProvider(searchWord));
+              },
               onAddToPlaylist: (playlistId, post) => timeline.addToPlaylist(
                 playlistId,
                 post.artist,

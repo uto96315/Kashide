@@ -8,12 +8,15 @@ import 'package:str_gram_beta/domain/user_domain.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../domain/post_domain.dart';
 import '../post/post_validation.dart';
+import '../user/block_list_model.dart';
 import 'swipe_seen_state.dart';
 import 'timeline_filter.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
 class TimelineModel extends ChangeNotifier {
+  TimelineModel({required this.blockList});
 
+  final BlockListModel blockList;
   final addPlaylistController = TextEditingController();
 
   var user = FirebaseAuth.instance.currentUser;
@@ -26,16 +29,20 @@ class TimelineModel extends ChangeNotifier {
   bool hasMorePosts = true;
   bool loadingMore = false;
   List playList = [];
-  List blockedUsers = [];
   String? newPlaylistName;
   TimelineFilterState filter = TimelineFilterState.empty;
   List<String> masterGenreOptions = List<String>.from(kFallbackDefaultGenres);
   String? _serverGenreFilter;
+  /// Firestore 複合インデックス未作成時はサーバー側ジャンル絞り込みを使わない。
+  bool _serverGenreQueryDisabled = false;
   bool filterApplying = false;
+  bool filterPrefetching = false;
+  bool _filterBackgroundCancelled = false;
 
   List<Post> get visiblePosts {
-    final eligible =
-        postsList.where((p) => shouldShowPostInFeed(p, uid)).toList();
+    final eligible = postsList
+        .where((p) => shouldShowPostInFeed(p, uid, blockedPosterIds: blockList.blockedIds))
+        .toList();
     return applyTimelineFilter(eligible, filter);
   }
 
@@ -62,64 +69,150 @@ class TimelineModel extends ChangeNotifier {
 
   Future<void> setFilter(TimelineFilterState next) async {
     filter = next;
+    _filterBackgroundCancelled = true;
     if (!filter.isActive) {
       _serverGenreFilter = null;
+      filterPrefetching = false;
       await getFirstPostData();
       return;
     }
 
     filterApplying = true;
+    _filterBackgroundCancelled = false;
     notifyListeners();
     try {
-      if (canUseServerGenreQuery(filter)) {
-        _serverGenreFilter = filter.genres.first;
-        await _reloadPostsFromCurrentQuery();
-      } else {
-        _serverGenreFilter = null;
-        await _expandLoadedPostsForFilter(maxPages: 5);
-      }
+      _syncServerGenreFilter();
+      await _reloadPostsFromCurrentQuery();
+      await _loadFilteredUntilVisible(filterInitialVisibleTarget, maxBatches: filterMaxScanBatches);
     } finally {
       filterApplying = false;
       notifyListeners();
     }
+    _startFilteredBackgroundPrefetch();
+  }
+
+  void _syncServerGenreFilter() {
+    if (_serverGenreQueryDisabled) {
+      _serverGenreFilter = null;
+      return;
+    }
+    _serverGenreFilter = canUseServerGenreQuery(filter) ? filter.genres.first : null;
   }
 
   String filterBannerText(int visibleCount) {
     if (!filter.isActive) return '';
+    final suffix = filterPrefetching
+        ? ' · 続きを読み込み中…'
+        : hasMorePosts
+            ? ' · 下へスクロールでさらに表示'
+            : ' · ここまで全件';
     if (filterUsesServerGenre) {
       final g = _serverGenreFilter!;
-      if (hasMorePosts) {
-        return '$visibleCount件表示（「$g」を新着順 · まだ続きがある可能性があります）';
-      }
-      return '$visibleCount件表示（「$g」${postsList.length}件まで取得）';
+      return '$visibleCount件（ジャンル「$g」· 新着順）$suffix';
     }
-    if (hasMorePosts) {
-      return '$visibleCount件表示 · 読み込み済み${postsList.length}件'
-          '（未読み込みにも条件に合う投稿がある可能性があります。下へスクロールで追加読み込み）';
-    }
-    return '$visibleCount件表示 · 読み込み済み${postsList.length}件（ここまで全件）';
+    return '$visibleCount件表示 · 取得済み投稿${postsList.length}件$suffix';
   }
 
-  /// 初回・追加読み込みとも Firestore から **10件ずつ**。
+  /// 通常タイムラインの1ページあたり件数。
   static const postsPageSize = 10;
 
+  /// 絞り込み時: まず条件に合う投稿をこの件数まで揃えてから表示。
+  static const filterInitialVisibleTarget = 30;
+
+  /// 絞り込み時の Firestore 1リクエストあたり件数。
+  static const filterFetchBatchSize = 40;
+
+  /// 絞り込み初期スキャンの上限（40×15=600投稿まで走査）。
+  static const filterMaxScanBatches = 15;
+
+  int get _currentFetchSize => filter.isActive ? filterFetchBatchSize : postsPageSize;
+
   Future<void> _reloadPostsFromCurrentQuery() async {
-    final snapshot = await _postsQuery.limit(postsPageSize).get();
+    final snapshot = await _queryPostsPage(limit: _currentFetchSize);
     postsList = await _postsFromDocs(snapshot.docs);
     _lastDoc = snapshot.docs.isEmpty ? null : snapshot.docs.last;
-    hasMorePosts = snapshot.docs.length == postsPageSize;
+    hasMorePosts = snapshot.docs.length == _currentFetchSize;
     postsReady = true;
   }
 
-  Future<void> _expandLoadedPostsForFilter({required int maxPages}) async {
-    var pages = 0;
-    var lastVisible = -1;
-    while (pages < maxPages && hasMorePosts) {
-      final visible = visiblePosts.length;
-      if (visible == lastVisible && visible >= 15) break;
-      lastVisible = visible;
-      await loadMorePosts();
-      pages++;
+  Future<QuerySnapshot<Map<String, dynamic>>> _queryPostsPage({
+    DocumentSnapshot? startAfter,
+    required int limit,
+  }) async {
+    Future<QuerySnapshot<Map<String, dynamic>>> run() {
+      Query<Map<String, dynamic>> q = _postsQuery;
+      if (startAfter != null) {
+        q = q.startAfterDocument(startAfter);
+      }
+      return q.limit(limit).get();
+    }
+
+    try {
+      return await run();
+    } on FirebaseException catch (e) {
+      if (e.code == 'failed-precondition' && _serverGenreFilter != null) {
+        debugPrint(
+          'Firestore index missing for genres+createdAt; using client-side genre filter. '
+          'Deploy firestore.indexes.json or use the link in the error.',
+        );
+        _serverGenreQueryDisabled = true;
+        _serverGenreFilter = null;
+        return run();
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _loadFilteredUntilVisible(int minVisible, {required int maxBatches}) async {
+    var batches = 0;
+    while (batches < maxBatches && hasMorePosts && visiblePosts.length < minVisible) {
+      final loaded = await _fetchNextPostsPage();
+      if (!loaded) break;
+      batches++;
+      notifyListeners();
+    }
+  }
+
+  void _startFilteredBackgroundPrefetch() {
+    if (!filter.isActive) return;
+    _filterBackgroundCancelled = false;
+    Future<void>(() async {
+      filterPrefetching = true;
+      notifyListeners();
+      try {
+        var batches = 0;
+        while (!_filterBackgroundCancelled &&
+            batches < 8 &&
+            hasMorePosts &&
+            visiblePosts.length < filterInitialVisibleTarget * 2) {
+          final loaded = await _fetchNextPostsPage();
+          if (!loaded) break;
+          batches++;
+          notifyListeners();
+        }
+      } finally {
+        if (!_filterBackgroundCancelled) {
+          filterPrefetching = false;
+          notifyListeners();
+        }
+      }
+    });
+  }
+
+  /// 次ページ取得。失敗時は [hasMorePosts] を false にして false を返す。
+  Future<bool> _fetchNextPostsPage() async {
+    if (!hasMorePosts || _lastDoc == null) return false;
+    try {
+      final snapshot = await _queryPostsPage(startAfter: _lastDoc, limit: _currentFetchSize);
+      final more = await _postsFromDocs(snapshot.docs);
+      postsList.addAll(more);
+      if (snapshot.docs.isNotEmpty) _lastDoc = snapshot.docs.last;
+      hasMorePosts = snapshot.docs.length == _currentFetchSize;
+      return true;
+    } on FirebaseException catch (e, st) {
+      debugPrint('Timeline loadMore failed: ${e.code} ${e.message}\n$st');
+      hasMorePosts = false;
+      return false;
     }
   }
 
@@ -183,19 +276,19 @@ class TimelineModel extends ChangeNotifier {
           doc["youtubeLink"] ?? ""
       );
     }).toList();
-    postsList.removeWhere((post) => blockedUsers.contains(post.posterId));
+    postsList.removeWhere((post) => blockList.isBlocked(post.posterId));
     debugPrint("投稿を読み込みました");
     notifyListeners();
   }
 
   Query<Map<String, dynamic>> get _postsQuery {
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('posts');
+
     if (_serverGenreFilter != null) {
-      return FirebaseFirestore.instance
-          .collection('posts')
-          .where('genres', arrayContains: _serverGenreFilter!)
-          .orderBy('createdAt', descending: true);
+      query = query.where('genres', arrayContains: _serverGenreFilter!);
     }
-    return FirebaseFirestore.instance.collection('posts').orderBy('createdAt', descending: true);
+
+    return query.orderBy('createdAt', descending: true);
   }
 
   Future<List<Post>> _postsFromDocs(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
@@ -220,7 +313,18 @@ class TimelineModel extends ChangeNotifier {
         doc["explanation"] ?? "",
         doc["youtubeLink"] ?? "",
       );
-    }).where((post) => !blockedUsers.contains(post.posterId)).toList();
+    }).where((post) => !blockList.isBlocked(post.posterId)).toList();
+  }
+
+  void removePostsByPoster(String posterId) {
+    postsList.removeWhere((post) => post.posterId == posterId);
+    notifyListeners();
+  }
+
+  void purgeBlockedPosts(Set<String> blockedIds) {
+    if (blockedIds.isEmpty) return;
+    postsList.removeWhere((post) => blockedIds.contains(post.posterId));
+    notifyListeners();
   }
 
   // 最初に１０件を取得する
@@ -235,6 +339,7 @@ class TimelineModel extends ChangeNotifier {
   }
 
   bool isVisibleInSwipeDeck(Post post) {
+    if (blockList.isBlocked(post.posterId)) return false;
     return !seenSwipeIds.contains(post.id) && !likedPostIds.contains(post.id);
   }
 
@@ -249,16 +354,18 @@ class TimelineModel extends ChangeNotifier {
   }
 
   Future getFirstPostData() async {
-    await getBlockedUsers();
     await loadLikedPostIds();
-    if (filter.isActive && canUseServerGenreQuery(filter)) {
-      _serverGenreFilter = filter.genres.first;
+    _filterBackgroundCancelled = true;
+    filterPrefetching = false;
+    if (filter.isActive) {
+      _syncServerGenreFilter();
     } else {
       _serverGenreFilter = null;
     }
     await _reloadPostsFromCurrentQuery();
-    if (filter.isActive && !canUseServerGenreQuery(filter)) {
-      await _expandLoadedPostsForFilter(maxPages: 5);
+    if (filter.isActive) {
+      await _loadFilteredUntilVisible(filterInitialVisibleTarget, maxBatches: filterMaxScanBatches);
+      _startFilteredBackgroundPrefetch();
     }
     debugPrint("投稿を読み込みました");
     notifyListeners();
@@ -269,11 +376,9 @@ class TimelineModel extends ChangeNotifier {
     loadingMore = true;
     notifyListeners();
     try {
-      final snapshot = await _postsQuery.startAfterDocument(_lastDoc!).limit(postsPageSize).get();
-      final more = await _postsFromDocs(snapshot.docs);
-      postsList.addAll(more);
-      if (snapshot.docs.isNotEmpty) _lastDoc = snapshot.docs.last;
-      hasMorePosts = snapshot.docs.length == postsPageSize;
+      await _fetchNextPostsPage();
+    } on FirebaseException {
+      // _fetchNextPostsPage 内で hasMorePosts を更新済み
     } finally {
       loadingMore = false;
       notifyListeners();
@@ -414,33 +519,6 @@ class TimelineModel extends ChangeNotifier {
       "playlistName": newPlaylistName,
     });
     await getPlayListData();
-    notifyListeners();
-  }
-
-  // ブロック処理
-  Future blockUser(String posterId) async{
-    final doc = FirebaseFirestore.instance.collection("users").doc(uid).collection("blockList");
-    final targetUserDoc = FirebaseFirestore.instance.collection("users").doc(posterId);
-    final blockedUserData = await targetUserDoc.get();
-
-    await doc.add({
-      "id": posterId,
-      "blockedAt": DateTime.now(),
-      "blockedUserName": blockedUserData["userName"],  // ここでブロックしたユーザーの名前
-    });
-    blockedUsers.add(posterId);
-    postsList.removeWhere((post) => post.posterId == posterId);
-    notifyListeners();
-  }
-
-  // ブロックされているユーザーの取得
-  Future getBlockedUsers() async{
-    final doc = FirebaseFirestore.instance.collection("users").doc(uid).collection("blockList");
-    final snapshot = await doc.get();
-    blockedUsers = snapshot.docs.asMap().entries.map((blockedUser){
-      return blockedUser.value["id"];
-    }).toList();
-    print(blockedUsers);
     notifyListeners();
   }
 
