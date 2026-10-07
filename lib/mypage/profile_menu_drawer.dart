@@ -283,7 +283,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
     Navigator.pop(context);
     try {
       await ref.read(accountSwitchServiceProvider).switchToAccount(account);
-      refreshAfterAccountChange(ref);
+      refreshAfterAccountChange(ref, homeTabIndex: 3);
       await ref.read(savedAccountsProvider).reload();
     } catch (e) {
       if (!context.mounted) return;

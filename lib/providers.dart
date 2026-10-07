@@ -87,6 +87,17 @@ class HomeTabIndexNotifier extends Notifier<int> {
 
 final homeTabIndexProvider = NotifierProvider<HomeTabIndexNotifier, int>(HomeTabIndexNotifier.new);
 
+/// アカウント切替時にホームタブの子ウィジェットを作り直すためのキー。
+class SessionRefreshKeyNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state++;
+}
+
+final sessionRefreshKeyProvider =
+    NotifierProvider<SessionRefreshKeyNotifier, int>(SessionRefreshKeyNotifier.new);
+
 final blockListProvider = ChangeNotifierProvider<BlockListModel>((ref) {
   return BlockListModel()..load();
 });
@@ -114,7 +125,9 @@ final playlistProvider = ChangeNotifierProvider.autoDispose<PlaylistModel>((ref)
 });
 
 final myPageProvider = ChangeNotifierProvider.autoDispose<MyModel>((ref) {
-  return MyModel()
+  final model = MyModel();
+  model.bindCurrentAuthUser();
+  return model
     ..getUserData()
     ..getUserPosts()
     ..loadLikedCount()
