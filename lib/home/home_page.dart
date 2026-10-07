@@ -18,13 +18,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  static const _pages = [
-    TimelinePage(),
-    SearchPage(),
-    PlaylistPage(),
-    MyPage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final model = ref.watch(homeProvider);
@@ -63,8 +56,15 @@ class _HomePageState extends ConsumerState<HomePage> {
       );
     }
     final tabIndex = ref.watch(homeTabIndexProvider);
+    final sessionKey = ref.watch(sessionRefreshKeyProvider);
+    final pages = [
+      TimelinePage(key: ValueKey('home-timeline-$sessionKey')),
+      SearchPage(key: ValueKey('home-search-$sessionKey')),
+      PlaylistPage(key: ValueKey('home-playlist-$sessionKey')),
+      MyPage(key: ValueKey('home-mypage-$sessionKey')),
+    ];
     return Scaffold(
-      body: IndexedStack(index: tabIndex, children: _pages),
+      body: IndexedStack(index: tabIndex, children: pages),
       bottomNavigationBar: HomeTabBar(
         index: tabIndex,
         onChanged: (index) => ref.read(homeTabIndexProvider.notifier).setTab(index),

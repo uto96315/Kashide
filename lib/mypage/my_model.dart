@@ -34,8 +34,14 @@ class MyModel extends ChangeNotifier {
   String? latestIosVersion; // 最新のiosバージョン
   String? latestAndroidVersion; // 最新のandroidバージョン
 
+  void bindCurrentAuthUser() {
+    user = FirebaseAuth.instance.currentUser;
+    uid = user?.uid;
+  }
+
   // ユーザー情報の取得
   Future getUserData() async{
+    bindCurrentAuthUser();
     var uid = user?.uid;
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
     final get = await doc.get();
@@ -90,6 +96,7 @@ class MyModel extends ChangeNotifier {
   // ユーザーの投稿を取得する処理
   // todo: ここをasMapに変換する
   Future getUserPosts() async{
+    bindCurrentAuthUser();
     var uid = user?.uid;
     final doc = FirebaseFirestore
         .instance

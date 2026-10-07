@@ -84,15 +84,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           duration: const Duration(milliseconds: 220),
                           switchInCurve: Curves.easeOutCubic,
                           switchOutCurve: Curves.easeInCubic,
-                          layoutBuilder: (current, previous) {
-                            return Stack(
-                              alignment: Alignment.topCenter,
-                              children: [
-                                ...previous,
-                                if (current != null) current,
-                              ],
-                            );
-                          },
                           transitionBuilder: (child, animation) {
                             final incoming = child.key == ValueKey(_register);
                             final begin = Offset(incoming ? (_register ? 0.06 : -0.06) : 0, 0);
@@ -136,7 +127,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           password: model.loginPasswordController.text,
         );
     if (!context.mounted) return;
-    refreshAfterAccountChange(ref);
+    refreshAfterAccountChange(
+      ref,
+      homeTabIndex: widget.addingAccount ? 3 : 0,
+    );
     if (Navigator.of(context).canPop()) {
       Navigator.pop(context);
     } else {
