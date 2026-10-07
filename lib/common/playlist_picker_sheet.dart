@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
-Future<void> showPlaylistPickerSheet(
+/// プレイリストへ曲を追加したら `true`。
+Future<bool> showPlaylistPickerSheet(
   BuildContext context, {
   required List<dynamic> playlists,
   required Future<void> Function(String playlistId) onSelect,
   required Future<void> Function(String name) onCreate,
 }) async {
-  await showModalBottomSheet<void>(
+  final added = await showModalBottomSheet<bool>(
     context: context,
     backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -50,8 +51,8 @@ Future<void> showPlaylistPickerSheet(
                         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
                         trailing: const Icon(Icons.chevron_right, color: Color(0xFF8E8E93)),
                         onTap: () async {
-                          Navigator.pop(sheetContext);
                           await onSelect(id);
+                          if (sheetContext.mounted) Navigator.pop(sheetContext, true);
                         },
                       );
                     },
@@ -81,6 +82,7 @@ Future<void> showPlaylistPickerSheet(
       );
     },
   );
+  return added ?? false;
 }
 
 Future<String?> _askNewPlaylistName(BuildContext context) {
