@@ -9,13 +9,30 @@ import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/song/song_pick_page.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 
-class PostPage extends ConsumerWidget {
-  const PostPage(this.defaultGenre, {super.key});
+class PostPage extends ConsumerStatefulWidget {
+  const PostPage(this.defaultGenre, {super.key, this.analyticsSource = 'unknown'});
+
   final String? defaultGenre;
+  final String analyticsSource;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final model = ref.watch(postProvider(defaultGenre));
+  ConsumerState<PostPage> createState() => _PostPageState();
+}
+
+class _PostPageState extends ConsumerState<PostPage> {
+  var _loggedComposeOpen = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_loggedComposeOpen) return;
+    _loggedComposeOpen = true;
+    ref.read(appAnalyticsProvider).logPostComposeOpen(source: widget.analyticsSource);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final model = ref.watch(postProvider(widget.defaultGenre));
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -127,13 +144,19 @@ class PostPage extends ConsumerWidget {
               onPressed: model.posting
                   ? null
                   : () async {
+                      final analytics = ref.read(appAnalyticsProvider);
+                      final source = widget.analyticsSource;
                       final message = model.validationMessage();
                       if (message != null) {
+                        await analytics.logPostSubmitValidationFailed(source: source);
+                        if (!context.mounted) return;
                         await showAppMessage(context, message);
                         return;
                       }
+                      await analytics.logPostSubmitAttempt(source: source);
                       try {
                         await model.post();
+                        await analytics.logPostSubmitSuccess(source: source);
                         if (!context.mounted) return;
                         await ref.read(timelineProvider).getFirstPostData();
                         ref.invalidate(myPageProvider);
@@ -142,6 +165,7 @@ class PostPage extends ConsumerWidget {
                         Navigator.pop(context);
                         messenger.showSnackBar(const SnackBar(content: Text('投稿しました')));
                       } catch (e) {
+                        await analytics.logPostSubmitFailure(source: source, reason: e.toString());
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
                       }

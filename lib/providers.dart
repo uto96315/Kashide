@@ -27,9 +27,12 @@ import 'searchResult/singSearch/sing_search_model.dart';
 import 'searchResult/singerSearch/singer_result_model.dart';
 import 'song/listen_url_resolver.dart';
 import 'song/song_search_service.dart';
+import 'analytics/app_analytics.dart';
 import 'timeline/timeline_model.dart';
 import 'user/block_list_model.dart';
 import 'top/top_model.dart';
+
+final appAnalyticsProvider = Provider<AppAnalytics>((ref) => AppAnalytics());
 
 final songSearchServiceProvider = Provider<SongSearchService>((ref) {
   return SongSearchService();
