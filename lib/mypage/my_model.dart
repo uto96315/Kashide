@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 import '../domain/post_domain.dart';
+import '../post/post_lyrics.dart';
+import '../post/post_view_service.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
 
@@ -115,6 +117,8 @@ class MyModel extends ChangeNotifier {
             commentCounts[entry.key],
             doc["explanation"],
             doc["youtubeLink"],
+            viewCount: viewCountFromFirestore(doc.data()),
+            textSegments: lyricSegmentsFromFirestore(doc.data()),
         );
     }).toList();
     postsReady = true;

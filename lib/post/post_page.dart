@@ -7,6 +7,7 @@ import 'package:str_gram_beta/common/primary_button.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/song/song_pick_page.dart';
+import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 
 class PostPage extends ConsumerStatefulWidget {
@@ -57,6 +58,7 @@ class _PostPageState extends ConsumerState<PostPage> {
               artist: model.singerName,
               title: model.singName,
               artworkUrl: model.artworkUrl,
+              lyricSegments: model.lyricSegments,
               lyrics: model.lyrics,
               onPick: () async {
                 final quote = await Navigator.push<SongQuote>(
@@ -189,6 +191,7 @@ class _SongCard extends StatelessWidget {
     this.title,
     this.artworkUrl,
     this.lyrics,
+    this.lyricSegments = const [],
   });
 
   final VoidCallback onPick;
@@ -196,6 +199,7 @@ class _SongCard extends StatelessWidget {
   final String? title;
   final String? artworkUrl;
   final String? lyrics;
+  final List<String> lyricSegments;
 
   @override
   Widget build(BuildContext context) {
@@ -247,10 +251,17 @@ class _SongCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      (lyrics ?? '').isEmpty ? '歌詞の範囲を選んでください' : lyrics!,
-                      style: const TextStyle(fontSize: 16, height: 1.6),
-                    ),
+                    if ((lyrics ?? '').isEmpty)
+                      const Text(
+                        '歌詞の範囲を選んでください',
+                        style: TextStyle(fontSize: 16, height: 1.6),
+                      )
+                    else
+                      PostLyricsText(
+                        text: lyrics ?? '',
+                        segments: lyricSegments,
+                        style: const TextStyle(fontSize: 16, height: 1.6),
+                      ),
                     const SizedBox(height: 4),
                     Text(
                       '${(lyrics ?? '').length} / 300',

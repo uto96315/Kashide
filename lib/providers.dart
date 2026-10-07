@@ -33,8 +33,25 @@ import 'settings/card_autoplay_settings.dart';
 import 'timeline/timeline_model.dart';
 import 'user/block_list_model.dart';
 import 'top/top_model.dart';
+import 'auth/account_switch_service.dart';
+import 'auth/saved_accounts_notifier.dart';
+import 'auth/saved_accounts_store.dart';
+import 'post/post_view_service.dart';
 
 final appAnalyticsProvider = Provider<AppAnalytics>((ref) => AppAnalytics());
+
+final postViewServiceProvider = Provider<PostViewService>((ref) => PostViewService());
+
+final savedAccountsStoreProvider = Provider<SavedAccountsStore>((ref) => SavedAccountsStore());
+
+final accountSwitchServiceProvider = Provider<AccountSwitchService>((ref) {
+  return AccountSwitchService(ref.watch(savedAccountsStoreProvider));
+});
+
+final savedAccountsProvider = ChangeNotifierProvider<SavedAccountsNotifier>((ref) {
+  final service = ref.watch(accountSwitchServiceProvider);
+  return SavedAccountsNotifier(service)..reload();
+});
 
 final songSearchServiceProvider = Provider<SongSearchService>((ref) {
   return SongSearchService();
@@ -204,7 +221,8 @@ final likedPostsProvider = ChangeNotifierProvider.autoDispose<LikedPostsModel>((
 final postDetailProvider =
     ChangeNotifierProvider.autoDispose.family<PostDetailModel, String>((ref, id) {
   final uid = FirebaseAuth.instance.currentUser?.uid;
-  final model = PostDetailModel(id, false)..getPost(id)..getComments(id);
+  final views = ref.watch(postViewServiceProvider);
+  final model = PostDetailModel(id, false, views)..getPost(id)..getComments(id);
   if (uid != null) {
     model.getUserData(uid);
   }

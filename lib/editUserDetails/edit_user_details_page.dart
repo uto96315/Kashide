@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/network_image_utils.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/providers.dart';
 
@@ -78,16 +79,20 @@ class EditUserDetailsPage extends ConsumerWidget {
                               border: Border.all(color: Colors.grey),
                               borderRadius: BorderRadius.circular(100),
                               color: Colors.grey.shade200,
-                              image: (model.imageFile == null)
+                              image: model.imageFile != null
                                   ? DecorationImage(
-                                      image: NetworkImage(model.userImageUrl!),
-                                      fit: BoxFit.cover)
-                                  : DecorationImage(
                                       image: FileImage(model.imageFile!),
-                                      fit: BoxFit.cover),
+                                      fit: BoxFit.cover)
+                                  : isUsableNetworkImageUrl(model.userImageUrl)
+                                      ? DecorationImage(
+                                          image: NetworkImage(
+                                            normalizeNetworkImageUrl(model.userImageUrl)!,
+                                          ),
+                                          fit: BoxFit.cover)
+                                      : null,
                             ),
                             child: (model.imageFile != null ||
-                                    model.userImageUrl != "")
+                                    isUsableNetworkImageUrl(model.userImageUrl))
                                 ? null
                                 : const Icon(Icons.person)),
                       ),

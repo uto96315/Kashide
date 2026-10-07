@@ -7,10 +7,8 @@ import 'package:str_gram_beta/common/genre_browse_header.dart';
 import 'package:str_gram_beta/common/genre_empty_message.dart';
 import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/post_feed_list.dart';
-import 'package:str_gram_beta/common/post_fab.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/genre/genre_model.dart';
-import 'package:str_gram_beta/post/post_page.dart';
 import 'package:str_gram_beta/common/block_user_actions.dart';
 import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/providers.dart';
@@ -46,18 +44,6 @@ class GenrePage extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: isGenre
-          ? PostFab(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PostPage(genre, analyticsSource: 'genre_create_button'),
-                  ),
-                );
-              },
-            )
-          : null,
     );
   }
 }

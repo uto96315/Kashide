@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:str_gram_beta/common/swipe_card_scene.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
+import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 
 class SwipeDeck extends StatefulWidget {
@@ -359,10 +360,7 @@ class _LyricCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          post.text,
-                          style: _lyricStyle,
-                        ),
+                        PostLyricsText.fromPost(post, style: _lyricStyle),
                         const SizedBox(height: 14),
                         Text(
                           post.singName,

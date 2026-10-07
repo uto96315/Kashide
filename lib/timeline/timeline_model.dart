@@ -1,4 +1,6 @@
 import 'package:in_app_review/in_app_review.dart';
+import 'package:str_gram_beta/post/post_lyrics.dart';
+import 'package:str_gram_beta/post/post_view_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -18,6 +20,7 @@ class TimelineModel extends ChangeNotifier {
   TimelineModel({required this.blockList});
 
   final BlockListModel blockList;
+  bool _disposed = false;
   final addPlaylistController = TextEditingController();
 
   var user = FirebaseAuth.instance.currentUser;
@@ -365,7 +368,9 @@ class TimelineModel extends ChangeNotifier {
           doc.id,
           commentCount[index],
           doc["explanation"] ?? "",
-          doc["youtubeLink"] ?? ""
+          doc["youtubeLink"] ?? "",
+          viewCount: viewCountFromFirestore(doc.data()),
+          textSegments: lyricSegmentsFromFirestore(doc.data()),
       );
     }).toList();
     postsList.removeWhere((post) => blockList.isBlocked(post.posterId));
@@ -413,6 +418,8 @@ class TimelineModel extends ChangeNotifier {
         doc["explanation"] ?? "",
         doc["youtubeLink"] ?? "",
         createdAtMillis: created.millisecondsSinceEpoch,
+        viewCount: viewCountFromFirestore(doc.data()),
+        textSegments: lyricSegmentsFromFirestore(doc.data()),
       );
     }).where((post) => !blockList.isBlocked(post.posterId)).toList();
   }
@@ -660,5 +667,18 @@ class TimelineModel extends ChangeNotifier {
       }
     });
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    addPlaylistController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 
-/// 5スロット（中央は投稿）。選択インジケータの円は4タブのみスライドする。
+/// 5スロット（中央は投稿）。選択インジケータの円は4タブのみスライド（中央は白い投稿ボタンが被せる）。
 class HomeTabBar extends StatelessWidget {
   const HomeTabBar({
     super.key,
@@ -25,7 +25,7 @@ class HomeTabBar extends StatelessWidget {
   ];
 
   static const _circleSize = 48.0;
-  static const _postSize = 56.0;
+  static const _postSize = 52.0;
   static const _barHeight = 56.0;
 
   /// タブ index (0..3) → 画面上のスロット (0,1,3,4)。2 は投稿用。
@@ -106,25 +106,37 @@ class _CenterPostButton extends StatelessWidget {
 
   final VoidCallback onTap;
 
+  /// 白タブバー上でも投稿ボタンとスライドする選択円を区別しやすい色。
+  static const _postFill = Color(0xFFFFE4EC);
+  static const _postRing = Color(0xFFFF749E);
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: HomeTabBar._barHeight,
-      child: Transform.translate(
-        offset: const Offset(0, -4),
-        child: Center(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Transform.translate(
+          offset: const Offset(0, -10),
           child: Material(
-            color: mainColor,
+            color: Colors.transparent,
             elevation: 6,
-            shadowColor: mainColor.withValues(alpha: 0.45),
+            shadowColor: mainColor.withValues(alpha: 0.28),
             shape: const CircleBorder(),
             child: InkWell(
               onTap: onTap,
               customBorder: const CircleBorder(),
-              child: const SizedBox(
-                width: HomeTabBar._postSize,
-                height: HomeTabBar._postSize,
-                child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
+              child: Ink(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _postFill,
+                  border: Border.all(color: _postRing, width: 2),
+                ),
+                child: const SizedBox(
+                  width: HomeTabBar._postSize,
+                  height: HomeTabBar._postSize,
+                  child: Icon(Icons.add_rounded, color: mainColor, size: 32),
+                ),
               ),
             ),
           ),
