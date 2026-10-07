@@ -7,6 +7,7 @@ import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/liked/liked_posts_page.dart';
 import 'package:str_gram_beta/mypage/my_model.dart';
 import 'package:str_gram_beta/playlist/playlist_page.dart';
+import 'package:str_gram_beta/user/blocked_users_page.dart';
 
 /// マイページ用・iOS 設定風の右ドロワー。
 class ProfileMenuDrawer extends StatelessWidget {
@@ -107,6 +108,11 @@ class ProfileMenuDrawer extends StatelessWidget {
                   icon: CupertinoIcons.music_note_list,
                   title: 'プレイリスト',
                   onTap: () => _closeAndPush(context, const PlaylistPage()),
+                ),
+                _Tile(
+                  icon: CupertinoIcons.hand_raised,
+                  title: 'ブロック中のユーザー',
+                  onTap: () => _closeAndPush(context, const BlockedUsersPage()),
                   showDivider: false,
                 ),
               ],

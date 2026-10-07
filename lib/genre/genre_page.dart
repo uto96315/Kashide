@@ -11,6 +11,8 @@ import 'package:str_gram_beta/common/post_fab.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/genre/genre_model.dart';
 import 'package:str_gram_beta/post/post_page.dart';
+import 'package:str_gram_beta/common/block_user_actions.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/providers.dart';
 
 class GenrePage extends ConsumerWidget {
@@ -55,7 +57,7 @@ class GenrePage extends ConsumerWidget {
   }
 }
 
-class _GenreBody extends StatelessWidget {
+class _GenreBody extends ConsumerWidget {
   const _GenreBody({
     required this.model,
     required this.genre,
@@ -73,7 +75,15 @@ class _GenreBody extends StatelessWidget {
   final String pageTitle;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (isPoster && ref.watch(blockListProvider).isBlocked(genre)) {
+      return const EmptyState(
+        icon: Icons.block,
+        message: 'ブロック中のユーザーです',
+        detail: 'マイページのメニュー → ブロック中のユーザー から解除できます。',
+      );
+    }
+    final posts = withoutBlockedPosts(model.genrePostsList, ref.watch(blockListProvider).blockedIds);
     if (model.postCount == null) {
       return const Center(child: CircularProgressIndicator(color: mainColor));
     }
@@ -114,12 +124,13 @@ class _GenreBody extends StatelessWidget {
           ),
           SliverToBoxAdapter(
             child: PostFeedList(
-              posts: model.genrePostsList,
+              posts: posts,
               uid: model.uid,
               playlists: model.playList,
               showAuthor: !isPoster,
               onDeletePost: model.deletePosts,
               onReportPost: model.reportPosts,
+              onBlockUser: (posterId) => blockUserFromFeed(context, ref, posterId),
               onAddToPlaylist: (playlistId, post) => model.addToPlaylist(
                 playlistId,
                 post.artist,

@@ -29,7 +29,17 @@ String? validatePostForm({
   return null;
 }
 
-bool shouldShowPostInFeed(Post post, String? currentUid) {
+bool shouldShowPostInFeed(
+  Post post,
+  String? currentUid, {
+  Set<String> blockedPosterIds = const {},
+}) {
+  if (blockedPosterIds.contains(post.posterId)) return false;
   if (currentUid != null && post.posterId == currentUid) return true;
   return post.text.trim().length >= postLyricsMinLength;
+}
+
+List<Post> withoutBlockedPosts(List<Post> posts, Set<String> blockedPosterIds) {
+  if (blockedPosterIds.isEmpty) return posts;
+  return posts.where((p) => !blockedPosterIds.contains(p.posterId)).toList(growable: false);
 }

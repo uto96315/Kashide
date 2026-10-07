@@ -5,6 +5,7 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/post_feed_list.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/providers.dart';
 
 class LikedPostsPage extends ConsumerWidget {
@@ -13,6 +14,8 @@ class LikedPostsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final model = ref.watch(likedPostsProvider);
+    final blocked = ref.watch(blockListProvider).blockedIds;
+    final posts = withoutBlockedPosts(model.posts, blocked);
     final playlists = ref.watch(playlistProvider).playlists;
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -24,12 +27,18 @@ class LikedPostsPage extends ConsumerWidget {
           Expanded(
             child: model.loading
                 ? const Center(child: CircularProgressIndicator(color: mainColor))
-                : model.posts.isEmpty
-                    ? const EmptyState(icon: Icons.favorite_border, message: 'まだいいねした歌詞がありません')
+                : posts.isEmpty
+                    ? EmptyState(
+                        icon: Icons.favorite_border,
+                        message: model.posts.isEmpty
+                            ? 'まだいいねした歌詞がありません'
+                            : '表示できるいいねがありません',
+                        detail: model.posts.isNotEmpty ? 'ブロック中のユーザーの投稿は非表示です。' : null,
+                      )
                     : ListView(
                         children: [
                           PostFeedList(
-                            posts: model.posts,
+                            posts: posts,
                             uid: uid,
                             playlists: playlists,
                             onDeletePost: (id) async {
@@ -39,6 +48,11 @@ class LikedPostsPage extends ConsumerWidget {
                               await ref.read(myPageProvider).loadLikedCount();
                             },
                             onReportPost: (id) => ref.read(timelineProvider).reportPosts(id),
+                            onBlockUser: (posterId) async {
+                              await ref.read(blockListProvider).blockUser(posterId);
+                              ref.read(timelineProvider).removePostsByPoster(posterId);
+                              ref.invalidate(likedPostsProvider);
+                            },
                             onAddToPlaylist: (playlistId, post) => ref.read(timelineProvider).addToPlaylist(
                               playlistId,
                               post.artist,

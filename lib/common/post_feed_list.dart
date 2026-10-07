@@ -14,6 +14,7 @@ class PostFeedList extends StatelessWidget {
     required this.playlists,
     required this.onDeletePost,
     required this.onReportPost,
+    this.onBlockUser,
     required this.onAddToPlaylist,
     required this.onCreatePlaylist,
     this.showAuthor = true,
@@ -24,6 +25,7 @@ class PostFeedList extends StatelessWidget {
   final List<dynamic> playlists;
   final Future<void> Function(String postId) onDeletePost;
   final Future<void> Function(String postId) onReportPost;
+  final Future<void> Function(String posterId)? onBlockUser;
   final Future<void> Function(String playlistId, Post post) onAddToPlaylist;
   final Future<void> Function(String name) onCreatePlaylist;
   final bool showAuthor;
@@ -42,8 +44,10 @@ class PostFeedList extends StatelessWidget {
                     PopupMenuItem(value: 'edit', child: Text('編集する')),
                     PopupMenuItem(value: 'delete', child: Text('削除する')),
                   ]
-                : const [
-                    PopupMenuItem(value: 'report', child: Text('報告する')),
+                : [
+                    const PopupMenuItem(value: 'report', child: Text('報告する')),
+                    if (onBlockUser != null)
+                      const PopupMenuItem(value: 'block', child: Text('ブロックする')),
                   ],
             onMenu: (value) => _onMenu(context, post, value),
           ),
@@ -74,6 +78,19 @@ class PostFeedList extends StatelessWidget {
         destructive: true,
       );
       if (ok) await onDeletePost(post.id);
+    } else if (value == 'block' && onBlockUser != null) {
+      final ok = await showAppConfirm(
+        context,
+        title: 'ブロック',
+        message: 'このユーザーをブロックしますか？',
+        confirm: 'ブロックする',
+        destructive: true,
+      );
+      if (!ok || !context.mounted) return;
+      await onBlockUser!(post.posterId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ブロックしました')));
+      }
     } else if (value == 'report') {
       final ok = await showAppConfirm(
         context,
