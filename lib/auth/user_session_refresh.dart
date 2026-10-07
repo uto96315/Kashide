@@ -18,4 +18,6 @@ void refreshAfterAccountChange(
   ref.invalidate(searchProvider);
   ref.invalidate(playlistProvider);
   ref.invalidate(notificationProvider);
+  ref.invalidate(notificationInboxProvider);
+  ref.read(pushTokenServiceProvider).syncForCurrentUser();
 }
