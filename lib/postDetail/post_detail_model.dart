@@ -6,9 +6,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
 import '../domain/comment_domain.dart';
+import '../post/post_lyrics.dart';
+import '../post/post_view_service.dart';
 
 class PostDetailModel extends ChangeNotifier {
-  PostDetailModel(id, commentButtonTapped);
+  PostDetailModel(this._postId, commentButtonTapped, this._postViews);
+
+  final String _postId;
+  final PostViewService _postViews;
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -16,11 +21,13 @@ class PostDetailModel extends ChangeNotifier {
 
   // 投稿関係
   String? postText;
+  List<String> textSegments = [];
   String? posterId;
   String? singName;
   String? singerName;
   List genreList = [];
   int? likedCount;
+  int viewCount = 0;
   String? explanation;
   String? youtubeLink;
 
@@ -48,17 +55,30 @@ class PostDetailModel extends ChangeNotifier {
     final data = snapshot.data();
 
     postText = data?["text"];
+    textSegments = lyricSegmentsFromFirestore(data);
     posterId = data?["posterId"];
     singName = data?["singName"];
     singerName = data?["artist"];
     genreList = data?["genres"];
     likedCount = data?["likedCount"];
+    viewCount = viewCountFromFirestore(data ?? {});
     explanation = data?["explanation"];
     youtubeLink = data?["youtubeLink"] ?? "";
 
     await getPosterData(posterId ?? "");
 
     notifyListeners();
+    await _countViewIfNeeded();
+  }
+
+  Future<void> _countViewIfNeeded() async {
+    final viewerUid = uid;
+    if (viewerUid == null) return;
+    final updated = await _postViews.recordDetailView(postId: _postId, viewerUid: viewerUid);
+    if (viewCount != updated) {
+      viewCount = updated;
+      notifyListeners();
+    }
   }
 
   // 投稿者の取得

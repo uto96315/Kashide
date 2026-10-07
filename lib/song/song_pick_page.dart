@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/post/post_lyrics.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 import 'package:str_gram_beta/song/song_search_service.dart';
 
@@ -117,6 +119,7 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
   final _service = SongSearchService();
   String? _lyrics;
   String _selected = '';
+  final List<String> _segments = [];
   bool _loading = true;
   String? _error;
   bool _showGuide = true;
@@ -150,7 +153,7 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
               const SizedBox(height: 16),
               _tutorialStep('1', '歌詞のどこかを長押し', Icons.touch_app_rounded),
               _tutorialStep('2', '載せたい始点〜終点まで範囲を広げる', Icons.swipe_rounded),
-              _tutorialStep('3', '下の「この範囲を載せる」を押す', Icons.check_circle_outline_rounded),
+              _tutorialStep('3', '「追加」で複数箇所もOK。最後に「これで決定」', Icons.check_circle_outline_rounded),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -212,13 +215,69 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
     }
   }
 
-  bool get _canUse =>
-      _selected.isNotEmpty && _selected.length <= SongSearchService.lyricsLimit;
+  int get _combinedLength {
+    final pending = [..._segments, if (_selected.isNotEmpty) _selected];
+    return combineLyricSegments(pending).length;
+  }
+
+  bool get _selectionOverLimit => _selected.length > SongSearchService.lyricsLimit;
+
+  bool get _totalOverLimit => _combinedLength > postLyricsLimit;
+
+  bool get _canAdd =>
+      _selected.isNotEmpty &&
+      !_selectionOverLimit &&
+      !_totalOverLimit &&
+      _segments.length < maxLyricSegments;
+
+  List<String> get _pendingSegments {
+    final segments = List<String>.from(_segments);
+    if (_selected.isNotEmpty) segments.add(_selected.trim());
+    return segments;
+  }
+
+  bool get _canFinish {
+    final segments = _pendingSegments;
+    if (segments.isEmpty) return false;
+    final combined = combineLyricSegments(segments);
+    if (combined.length > postLyricsLimit) return false;
+    if (combined.length < postLyricsMinLength) return false;
+    return true;
+  }
+
+  void _addSegment() {
+    if (!_canAdd) return;
+    setState(() {
+      _segments.add(_selected.trim());
+      _selected = '';
+    });
+  }
+
+  void _removeSegment(int index) {
+    setState(() => _segments.removeAt(index));
+  }
+
+  void _finish() {
+    final segments = _pendingSegments;
+    final combined = combineLyricSegments(segments);
+    Navigator.pop(
+      context,
+      SongQuote(
+        artist: widget.song.artist,
+        title: widget.song.title,
+        lyrics: combined,
+        listenUrl: widget.song.listenUrl,
+        artworkUrl: widget.song.artworkUrl,
+        lyricSegments: segments.length > 1 ? segments : const [],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final count = _selected.length;
-    final over = count > SongSearchService.lyricsLimit;
+    final over = _selectionOverLimit;
+    final totalLen = _combinedLength;
     return Scaffold(
       body: Column(
         children: [
@@ -271,7 +330,7 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
                                   const SizedBox(width: 10),
                                   const Expanded(
                                     child: Text(
-                                      '長押し → 範囲を調整 →「この範囲を載せる」',
+                                      '長押し → 範囲を調整 →「追加」or「これで決定」',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
@@ -324,35 +383,61 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
                         children: [
                           Text(
                             over
-                                ? '選択は${SongSearchService.lyricsLimit}文字までです（$count文字）'
-                                : _selected.isEmpty
-                                    ? 'まだ範囲が選ばれていません'
-                                    : '選択中 $count / ${SongSearchService.lyricsLimit}文字',
-                            style: TextStyle(color: over ? Colors.red : Colors.black54),
+                                ? '1回の選択は${SongSearchService.lyricsLimit}文字まで（$count文字）'
+                                : _totalOverLimit
+                                    ? '合計は$postLyricsLimit文字まで（現在 $totalLen 文字）'
+                                    : _selected.isEmpty && _segments.isEmpty
+                                        ? 'まだ範囲が選ばれていません'
+                                        : '合計 $totalLen / $postLyricsLimit文字 · ${_segments.length}箇所追加済み',
+                            style: TextStyle(color: (over || _totalOverLimit) ? Colors.red : Colors.black54),
                           ),
                           if (_selected.isNotEmpty) ...[
                             const SizedBox(height: 8),
                             Text(_selected, maxLines: 3, overflow: TextOverflow.ellipsis),
                           ],
+                          if (_segments.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            for (var i = 0; i < _segments.length; i++)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Material(
+                                  color: const Color(0xFFFFF7F8),
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: ListTile(
+                                    dense: true,
+                                    title: Text(
+                                      _segments[i],
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 14, height: 1.35),
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.close, size: 20),
+                                      onPressed: () => _removeSegment(i),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                           const SizedBox(height: 12),
+                          if (_segments.length < maxLyricSegments)
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: _canAdd ? _addSegment : null,
+                                child: Text(_segments.isEmpty ? 'この範囲を追加' : '別の箇所を追加（${_segments.length}/$maxLyricSegments）'),
+                              ),
+                            ),
+                          const SizedBox(height: 8),
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: _canUse
-                                  ? () {
-                                      Navigator.pop(
-                                        context,
-                                        SongQuote(
-                                          artist: widget.song.artist,
-                                          title: widget.song.title,
-                                          lyrics: _selected,
-                                          listenUrl: widget.song.listenUrl,
-                                          artworkUrl: widget.song.artworkUrl,
-                                        ),
-                                      );
-                                    }
-                                  : null,
-                              child: const Text('この範囲を載せる'),
+                              onPressed: _canFinish ? _finish : null,
+                              child: Text(
+                                _pendingSegments.length <= 1
+                                    ? 'この範囲で決定'
+                                    : 'これで決定（${_pendingSegments.length}箇所）',
+                              ),
                             ),
                           ),
                         ],

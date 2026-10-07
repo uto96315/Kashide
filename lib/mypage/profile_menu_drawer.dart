@@ -4,7 +4,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/auth/saved_account.dart';
+import 'package:str_gram_beta/common/network_image_utils.dart';
+import 'package:str_gram_beta/auth/saved_accounts_store.dart';
+import 'package:str_gram_beta/auth/user_session_refresh.dart';
+import 'package:str_gram_beta/login/login_page.dart';
 import 'package:str_gram_beta/providers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/liked/liked_posts_page.dart';
 import 'package:str_gram_beta/mypage/my_model.dart';
@@ -12,7 +18,7 @@ import 'package:str_gram_beta/playlist/playlist_page.dart';
 import 'package:str_gram_beta/user/blocked_users_page.dart';
 
 /// マイページ用・iOS 設定風の右ドロワー。
-class ProfileMenuDrawer extends ConsumerWidget {
+class ProfileMenuDrawer extends ConsumerStatefulWidget {
   const ProfileMenuDrawer({
     super.key,
     required this.model,
@@ -28,14 +34,32 @@ class ProfileMenuDrawer extends ConsumerWidget {
   static const _separator = Color(0xFFE5E5EA);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileMenuDrawer> createState() => _ProfileMenuDrawerState();
+}
+
+class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshAccountList());
+  }
+
+  Future<void> _refreshAccountList() async {
+    if (!mounted) return;
+    await ref.read(savedAccountsProvider).ensureCurrentListed();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final autoplay = ref.watch(cardAutoplaySettingsProvider);
-    final version = Platform.isIOS ? model.iosVersion : model.androidVersion;
-    final hasAvatar =
-        model.userImageURL != null && model.userImageURL!.isNotEmpty && model.userImageURL != 'null';
+    final savedAccounts = ref.watch(savedAccountsProvider);
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    final version = Platform.isIOS ? widget.model.iosVersion : widget.model.androidVersion;
+    final hasAvatar = isUsableNetworkImageUrl(widget.model.userImageURL);
 
     return Drawer(
-      backgroundColor: _bg,
+      backgroundColor: ProfileMenuDrawer._bg,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       width: MediaQuery.sizeOf(context).width * 0.86,
@@ -44,39 +68,46 @@ class ProfileMenuDrawer extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(CupertinoIcons.xmark, size: 22, color: _label),
+                    icon: const Icon(CupertinoIcons.xmark, size: 22, color: ProfileMenuDrawer._label),
                   ),
                   const Spacer(),
                 ],
               ),
             ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: _separator,
-                    backgroundImage: hasAvatar ? NetworkImage(model.userImageURL!) : null,
+                    backgroundColor: ProfileMenuDrawer._separator,
+                    backgroundImage:
+                        hasAvatar ? NetworkImage(normalizeNetworkImageUrl(widget.model.userImageURL)!) : null,
                     child: hasAvatar
                         ? null
-                        : const Icon(CupertinoIcons.person_fill, size: 28, color: _secondary),
+                        : const Icon(CupertinoIcons.person_fill, size: 28, color: ProfileMenuDrawer._secondary),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      model.userName ?? '',
+                      widget.model.userName ?? '',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: _label,
+                        color: ProfileMenuDrawer._label,
                         height: 1.2,
                       ),
                     ),
@@ -85,6 +116,46 @@ class ProfileMenuDrawer extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 28),
+            if (savedAccounts.ready) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(
+                  'アカウント',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: ProfileMenuDrawer._secondary.withValues(alpha: 0.95),
+                  ),
+                ),
+              ),
+              _Section(
+                children: [
+                  if (savedAccounts.accounts.isEmpty)
+                    _Tile(
+                      icon: CupertinoIcons.person_fill,
+                      title: widget.model.userName ?? '現在のアカウント',
+                      showChevron: false,
+                      onTap: () {},
+                    )
+                  else
+                    for (var i = 0; i < savedAccounts.accounts.length; i++)
+                      _AccountTile(
+                        account: savedAccounts.accounts[i],
+                        selected: savedAccounts.accounts[i].uid == currentUid,
+                        showDivider: i < savedAccounts.accounts.length,
+                        onTap: () => _switchAccount(context, ref, savedAccounts.accounts[i]),
+                        onRemove: () => _removeAccount(context, ref, savedAccounts.accounts[i]),
+                      ),
+                  _Tile(
+                    icon: CupertinoIcons.person_add,
+                    title: 'アカウントを追加',
+                    showDivider: false,
+                    onTap: () => _openAddAccount(context, ref, savedAccounts.accounts.length),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
             _Section(
               children: [
                 _Tile(
@@ -93,12 +164,12 @@ class ProfileMenuDrawer extends ConsumerWidget {
                   onTap: () => _closeAndPush(
                     context,
                     EditUserDetailsPage(
-                      model.userName ?? '',
-                      model.userAge ?? '',
-                      model.userIntroduction ?? '',
-                      model.userGender ?? '',
-                      model.userFavorite!,
-                      model.userImageURL ?? '',
+                      widget.model.userName ?? '',
+                      widget.model.userAge ?? '',
+                      widget.model.userIntroduction ?? '',
+                      widget.model.userGender ?? '',
+                      widget.model.userFavorite!,
+                      widget.model.userImageURL ?? '',
                     ),
                   ),
                 ),
@@ -143,13 +214,13 @@ class ProfileMenuDrawer extends ConsumerWidget {
                   title: Platform.isIOS ? 'App Store で評価する' : 'ストアで評価する',
                   onTap: () {
                     Navigator.pop(context);
-                    model.requestReview();
+                    widget.model.requestReview();
                   },
                   showDivider: false,
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 24),
             _Section(
               children: [
                 _Tile(
@@ -168,7 +239,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
                       confirm: 'ログアウト',
                     );
                     if (!ok || !context.mounted) return;
-                    await onLogOut();
+                    await widget.onLogOut();
                   },
                 ),
               ],
@@ -178,10 +249,14 @@ class ProfileMenuDrawer extends ConsumerWidget {
               Text(
                 'バージョン $version',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12, color: _secondary),
+                style: const TextStyle(fontSize: 12, color: ProfileMenuDrawer._secondary),
               ),
             ],
             const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -191,6 +266,143 @@ class ProfileMenuDrawer extends ConsumerWidget {
   void _closeAndPush(BuildContext context, Widget page) {
     Navigator.pop(context);
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
+  Future<void> _switchAccount(BuildContext context, WidgetRef ref, SavedAccount account) async {
+    if (account.uid == FirebaseAuth.instance.currentUser?.uid) return;
+    if (!account.canQuickSwitch) {
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LoginPage(initialEmail: account.email, addingAccount: true),
+        ),
+      );
+      return;
+    }
+    Navigator.pop(context);
+    try {
+      await ref.read(accountSwitchServiceProvider).switchToAccount(account);
+      refreshAfterAccountChange(ref);
+      await ref.read(savedAccountsProvider).reload();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('切り替えに失敗しました。パスワードを変更した場合は再度ログインしてください。')),
+      );
+    }
+  }
+
+  void _openAddAccount(BuildContext context, WidgetRef ref, int count) {
+    if (count >= maxSavedAccounts) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('アカウントは最大$maxSavedAccounts件まで保存できます')),
+      );
+      return;
+    }
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage(addingAccount: true)),
+    );
+  }
+
+  Future<void> _removeAccount(BuildContext context, WidgetRef ref, SavedAccount account) async {
+    final ok = await showAppConfirm(
+      context,
+      title: '端末から削除',
+      message: '${account.label} をこの端末の一覧から削除します。Firebase のアカウント自体は削除されません。',
+      confirm: '削除',
+    );
+    if (!ok || !context.mounted) return;
+
+    final isCurrent = account.uid == FirebaseAuth.instance.currentUser?.uid;
+    await ref.read(savedAccountsProvider).removeFromDevice(account.uid);
+    if (isCurrent) {
+      await FirebaseAuth.instance.signOut();
+      refreshAfterAccountChange(ref);
+      if (!context.mounted) return;
+      Navigator.popUntil(context, ModalRoute.withName('/'));
+    }
+  }
+}
+
+class _AccountTile extends StatelessWidget {
+  const _AccountTile({
+    required this.account,
+    required this.selected,
+    required this.onTap,
+    required this.onRemove,
+    this.showDivider = true,
+  });
+
+  final SavedAccount account;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = normalizeNetworkImageUrl(account.iconUrl);
+    final hasAvatar = avatarUrl != null;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            onLongPress: onRemove,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: ProfileMenuDrawer._separator,
+                    backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+                    child: hasAvatar
+                        ? null
+                        : const Icon(CupertinoIcons.person_fill, size: 16, color: ProfileMenuDrawer._secondary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          account.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: ProfileMenuDrawer._label,
+                          ),
+                        ),
+                        if (account.displayName != null && account.displayName!.isNotEmpty)
+                          Text(
+                            account.email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, color: ProfileMenuDrawer._secondary),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (selected)
+                    const Icon(CupertinoIcons.checkmark_circle_fill, size: 22, color: Color(0xFFFF749E)),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (showDivider)
+          const Divider(height: 1, thickness: 0.5, indent: 52, color: ProfileMenuDrawer._separator),
+      ],
+    );
   }
 }
 

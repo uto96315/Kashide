@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/post/post_lyrics.dart';
 import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 
@@ -63,6 +64,7 @@ class EditPostModel extends ChangeNotifier {
   bool genreMaxLength = true; // 三つ以下
   bool canPush = true;
   String? youtubeLink;
+  List<String> lyricSegments = [];
 
   // firestoreからジャンルを取得する
   Future getDefaultGenres()async{
@@ -82,6 +84,9 @@ class EditPostModel extends ChangeNotifier {
     defaultSingerName = quote.artist;
     defaultSingName = quote.title;
     defaultLyrics = quote.lyrics;
+    lyricSegments = quote.lyricSegments.isNotEmpty
+        ? List<String>.from(quote.lyricSegments)
+        : (quote.lyrics.trim().isEmpty ? [] : [quote.lyrics.trim()]);
     youtubeLink = quote.listenUrl;
     postSingerController.text = quote.artist;
     postSingNameController.text = quote.title;
@@ -179,12 +184,18 @@ class EditPostModel extends ChangeNotifier {
   Future updatePost() async{
     final doc = FirebaseFirestore.instance.collection("posts").doc(postId);
 
+    final lyricFields = lyricFieldsForFirestore(
+      segments: lyricSegments.isNotEmpty
+          ? lyricSegments
+          : [(defaultLyrics ?? postLyricsController.text).trim()],
+      forUpdate: true,
+    );
     await doc.update({
       "artist": defaultSingerName ?? "不明",
       "likedCount": 0,
       "posterId": uid,
       "genres": selectedGenreList,  // todo: ここは後から変更する
-      "text": defaultLyrics,
+      ...lyricFields,
       "singName": defaultSingName ?? "不明",
       "explanation": defaultExplanation ?? "",
       "createdAt": DateTime.now(),

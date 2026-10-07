@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/post/post_lyrics.dart';
 import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 
@@ -23,6 +24,7 @@ class PostModel extends ChangeNotifier {
   String? defaultGenres;
   String? explanation;
   String? lyrics;
+  List<String> lyricSegments = [];
   String? singerName;
   String? singName;
   String? userName;
@@ -75,6 +77,9 @@ class PostModel extends ChangeNotifier {
   void applyQuote(SongQuote quote) {
     singerName = quote.artist;
     singName = quote.title;
+    lyricSegments = quote.lyricSegments.isNotEmpty
+        ? List<String>.from(quote.lyricSegments)
+        : (quote.lyrics.trim().isEmpty ? [] : [quote.lyrics.trim()]);
     lyrics = quote.lyrics;
     youtubeLink = quote.listenUrl;
     artworkUrl = quote.artworkUrl;
@@ -176,16 +181,20 @@ class PostModel extends ChangeNotifier {
       singName = singNameController.text;
       youtubeLink = youtubeLinkController.text;
 
+      final lyricFields = lyricFieldsForFirestore(
+        segments: lyricSegments.isNotEmpty ? lyricSegments : [lyrics ?? ''],
+      );
       await doc.add({
         "explanation": explanation ?? "",
         "artist": singerName ?? "不明",
         "likedCount": 0,
         "posterId": uid,
         "genres": genres,
-        "text": lyrics,
+        ...lyricFields,
         "singName": singName ?? "不明",
         "createdAt": DateTime.now(),
         "youtubeLink": youtubeLink ?? "",
+        "viewCount": 0,
       });
     } finally {
       posting = false;

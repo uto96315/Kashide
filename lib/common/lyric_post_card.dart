@@ -6,6 +6,7 @@ import 'package:str_gram_beta/element/favorite/favorite_button.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
+import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 
 /// X（Twitter）タイムライン風：左アバター・右本文・アクションは下段で均等タップ領域。
@@ -193,8 +194,8 @@ class _PostCardContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFEFF3F4)),
             ),
-            child: Text(
-              post.text,
+            child: PostLyricsText.fromPost(
+              post,
               textAlign: TextAlign.start,
               style: const TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w600, color: Color(0xFF0F0F0F)),
             ),
@@ -276,6 +277,13 @@ class _PostCardContent extends StatelessWidget {
                 icon: Icons.chat_bubble_outline_rounded,
                 count: post.commentCount,
                 onTap: () => onOpenPost(true),
+              ),
+            ),
+            Expanded(
+              child: _TimelineAction(
+                icon: Icons.bar_chart_rounded,
+                count: post.viewCount,
+                onTap: () => onOpenPost(false),
               ),
             ),
             Expanded(

@@ -7,6 +7,7 @@ import 'package:str_gram_beta/element/comment/comment_area.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
+import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/providers.dart';
 import '../element/favorite/favorite_button.dart';
 
@@ -90,8 +91,9 @@ class PostDetailPage extends ConsumerWidget {
                                       color: const Color(0xFFF2F2F7),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(
-                                      model.postText ?? '',
+                                    child: PostLyricsText(
+                                      text: model.postText ?? '',
+                                      segments: model.textSegments,
                                       style: const TextStyle(fontSize: 16, height: 1.5, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
                                     ),
                                   ),
@@ -187,6 +189,17 @@ class PostDetailPage extends ConsumerWidget {
                                             const Icon(Icons.chat_bubble_outline, size: 22, color: Color(0xFF8E8E93)),
                                             const SizedBox(width: 6),
                                             Text('${model.commentsList.length}', style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93))),
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.bar_chart_rounded, size: 22, color: Color(0xFF8E8E93)),
+                                            const SizedBox(width: 6),
+                                            Text('${model.viewCount}', style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93))),
                                           ],
                                         ),
                                       ),

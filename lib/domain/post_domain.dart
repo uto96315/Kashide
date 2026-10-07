@@ -16,6 +16,8 @@ class Post {
     this.explanation,
     this.youtubeLink, {
     this.createdAtMillis = 0,
+    this.viewCount = 0,
+    this.textSegments = const [],
   });
 
   String explanation;
@@ -32,4 +34,6 @@ class Post {
   String youtubeLink;
   int commentCount;
   int createdAtMillis;
+  int viewCount;
+  List<String> textSegments;
 }

@@ -5,15 +5,24 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/primary_button.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/login/login_model.dart';
+import 'package:str_gram_beta/auth/user_session_refresh.dart';
 import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/register/register_model.dart';
 import 'package:str_gram_beta/resetPassword/reset_password_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key, this.startWithRegister = false});
+  const LoginPage({
+    super.key,
+    this.startWithRegister = false,
+    this.addingAccount = false,
+    this.initialEmail,
+  });
 
+  /// ログイン済みの端末に別アカウントを追加するとき。
   final bool startWithRegister;
+  final bool addingAccount;
+  final String? initialEmail;
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -21,6 +30,20 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   late bool _register = widget.startWithRegister;
+
+  @override
+  void initState() {
+    super.initState();
+    final email = widget.initialEmail?.trim();
+    if (email != null && email.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final login = ref.read(loginProvider);
+        login.loginEmailController.text = email;
+        login.setEmail(email);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,8 +105,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             );
                           },
                           child: _register
-                              ? _RegisterForm(key: const ValueKey(true), model: register, loading: loading)
-                              : _LoginForm(key: const ValueKey(false), model: login, loading: loading),
+                              ? _RegisterForm(
+                                  key: const ValueKey(true),
+                                  model: register,
+                                  loading: loading,
+                                  onRegistered: () => _onRegistered(context, register),
+                                )
+                              : _LoginForm(
+                                  key: const ValueKey(false),
+                                  model: login,
+                                  loading: loading,
+                                  onLoggedIn: () => _onLoggedIn(context, login),
+                                ),
                         ),
                       ),
                     ],
@@ -95,6 +128,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _onLoggedIn(BuildContext context, LoginModel model) async {
+    await ref.read(savedAccountsProvider).syncAfterAuth(
+          email: model.loginEmailController.text.trim(),
+          password: model.loginPasswordController.text,
+        );
+    if (!context.mounted) return;
+    refreshAfterAccountChange(ref);
+    if (Navigator.of(context).canPop()) {
+      Navigator.pop(context);
+    } else {
+      await Navigator.pushNamed(context, '/home');
+    }
+  }
+
+  Future<void> _onRegistered(BuildContext context, RegisterModel model) async {
+    await ref.read(savedAccountsProvider).syncAfterAuth(
+          email: model.registerEmailController.text.trim(),
+          password: model.registerPasswordController.text,
+        );
+    await model.registerBlankData();
+    if (!context.mounted) return;
+    await Navigator.pushNamed(context, '/registerUserDetails');
   }
 }
 
@@ -172,10 +229,16 @@ class _SlidingToggle extends StatelessWidget {
 }
 
 class _LoginForm extends StatelessWidget {
-  const _LoginForm({super.key, required this.model, required this.loading});
+  const _LoginForm({
+    super.key,
+    required this.model,
+    required this.loading,
+    required this.onLoggedIn,
+  });
 
   final LoginModel model;
   final bool loading;
+  final Future<void> Function() onLoggedIn;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +281,7 @@ class _LoginForm extends StatelessWidget {
             try {
               await model.login();
               if (!context.mounted) return;
-              await Navigator.pushNamed(context, '/home');
+              await onLoggedIn();
             } catch (e) {
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -233,10 +296,16 @@ class _LoginForm extends StatelessWidget {
 }
 
 class _RegisterForm extends StatelessWidget {
-  const _RegisterForm({super.key, required this.model, required this.loading});
+  const _RegisterForm({
+    super.key,
+    required this.model,
+    required this.loading,
+    required this.onRegistered,
+  });
 
   final RegisterModel model;
   final bool loading;
+  final Future<void> Function() onRegistered;
 
   @override
   Widget build(BuildContext context) {
@@ -278,9 +347,8 @@ class _RegisterForm extends StatelessWidget {
                   model.startLoading();
                   try {
                     await model.signIn();
-                    await model.registerBlankData();
                     if (!context.mounted) return;
-                    await Navigator.pushNamed(context, '/registerUserDetails');
+                    await onRegistered();
                   } catch (e) {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));

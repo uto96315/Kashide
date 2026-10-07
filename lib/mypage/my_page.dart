@@ -8,6 +8,7 @@ import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/lyric_post_card.dart';
 import 'package:str_gram_beta/liked/liked_posts_page.dart';
 import 'package:str_gram_beta/mypage/profile_menu_drawer.dart';
+import 'package:str_gram_beta/auth/user_session_refresh.dart';
 import 'package:str_gram_beta/providers.dart';
 import '../editPost/edit_post_page.dart';
 
@@ -33,6 +34,7 @@ class MyPage extends ConsumerWidget {
         model: model,
         onLogOut: () async {
           await model.logOut();
+          refreshAfterAccountChange(ref);
           if (!context.mounted) return;
           Navigator.popUntil(context, ModalRoute.withName('/'));
         },
