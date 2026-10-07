@@ -19,6 +19,38 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "likedCount",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "genres",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "likedCount",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "posterId",
           "order": "ASCENDING"
         },

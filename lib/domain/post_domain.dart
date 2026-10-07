@@ -1,13 +1,22 @@
 
 
 class Post {
-  Post(this.artist, this.singName,
-      this.text, this.posterId,
-      this.likedCount, this.genres,
-      this.userName, this.userImageUrl,
-      this.createdAt, this.id, this.commentCount,
-      this.explanation, this.youtubeLink,
-      );
+  Post(
+    this.artist,
+    this.singName,
+    this.text,
+    this.posterId,
+    this.likedCount,
+    this.genres,
+    this.userName,
+    this.userImageUrl,
+    this.createdAt,
+    this.id,
+    this.commentCount,
+    this.explanation,
+    this.youtubeLink, {
+    this.createdAtMillis = 0,
+  });
 
   String explanation;
   String artist;
@@ -22,4 +31,5 @@ class Post {
   String id;
   String youtubeLink;
   int commentCount;
+  int createdAtMillis;
 }

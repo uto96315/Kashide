@@ -13,6 +13,7 @@ import '../common/lyric_post_card.dart';
 import '../providers.dart';
 import 'swipe_deck.dart';
 import 'timeline_filter_sheet.dart';
+import 'timeline_sort.dart';
 
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
@@ -39,6 +40,10 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                _SortButton(
+                  sortOrder: model.sortOrder,
+                  onSelected: (order) => model.setSortOrder(order),
+                ),
                 _FilterButton(
                   active: model.filter.isActive,
                   onPressed: () async {
@@ -67,6 +72,24 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
               child: LinearProgressIndicator(color: mainColor, minHeight: 2),
+            ),
+          if (model.filterLoadError != null || model.sortLoadError != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+              child: Text(
+                model.filterLoadError ?? model.sortLoadError!,
+                style: const TextStyle(fontSize: 13, color: Color(0xFFCF6679)),
+              ),
+            ),
+          if (model.filterClientGenreFallback &&
+              model.filterLoadError == null &&
+              model.filter.isActive)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(
+                'ジャンル絞り込みを端末側で実行しています（Firestore インデックス待ち）。',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
             ),
           Expanded(
             child: _deck
@@ -118,18 +141,23 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                               )
                             else if (posts.isEmpty)
                               EmptyState(
-                                message: model.filter.isActive
-                                    ? '条件に合う投稿がありません'
-                                    : 'まだ歌詞の投稿がありません',
+                                message: model.filterLoadError != null
+                                    ? '絞り込みを読み込めませんでした'
+                                    : model.filter.isActive
+                                        ? '条件に合う投稿がありません'
+                                        : 'まだ歌詞の投稿がありません',
+                                detail: model.filterLoadError,
                               )
                             else
                               Column(
                                 children: [
-                                  if (model.filter.isActive)
+                                  if (model.filter.isActive || model.sortOrder != TimelineSortOrder.newest)
                                     Padding(
                                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                                       child: Text(
-                                        model.filterBannerText(posts.length),
+                                        model.filter.isActive
+                                            ? model.filterBannerText(posts.length)
+                                            : '${posts.length}件 · ${model.sortOrder.label}',
                                         style: const TextStyle(fontSize: 13, color: Color(0xFF536471)),
                                       ),
                                     ),
@@ -203,6 +231,34 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
         await model.getPlayListData();
         model.addPlaylistController.text = '';
       },
+    );
+  }
+}
+
+class _SortButton extends StatelessWidget {
+  const _SortButton({required this.sortOrder, required this.onSelected});
+
+  final TimelineSortOrder sortOrder;
+  final ValueChanged<TimelineSortOrder> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlighted = sortOrder != TimelineSortOrder.newest;
+    return PopupMenuButton<TimelineSortOrder>(
+      tooltip: '並び替え',
+      onSelected: onSelected,
+      icon: Icon(
+        Icons.sort_rounded,
+        color: highlighted ? mainColor : const Color(0xFF1C1C1E),
+      ),
+      itemBuilder: (context) => [
+        for (final order in TimelineSortOrder.values)
+          CheckedPopupMenuItem(
+            value: order,
+            checked: sortOrder == order,
+            child: Text(order.label),
+          ),
+      ],
     );
   }
 }

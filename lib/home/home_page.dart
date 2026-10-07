@@ -69,7 +69,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         index: tabIndex,
         onChanged: (index) => ref.read(homeTabIndexProvider.notifier).setTab(index),
         onPost: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => PostPage(null)));
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const PostPage(null, analyticsSource: 'home_create_button'),
+            ),
+          );
         },
       ),
     );

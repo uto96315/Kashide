@@ -49,7 +49,12 @@ class GenrePage extends ConsumerWidget {
       floatingActionButton: isGenre
           ? PostFab(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PostPage(genre)));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PostPage(genre, analyticsSource: 'genre_create_button'),
+                  ),
+                );
               },
             )
           : null,
