@@ -217,8 +217,8 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     }
   }
 
-  Future<void> _pickPlaylist(BuildContext context, dynamic model, dynamic post) async {
-    await showPlaylistPickerSheet(
+  Future<bool> _pickPlaylist(BuildContext context, dynamic model, dynamic post) {
+    return showPlaylistPickerSheet(
       context,
       playlists: model.playList,
       onSelect: (playlistId) async {

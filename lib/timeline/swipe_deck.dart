@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
 import 'package:str_gram_beta/common/swipe_card_scene.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
@@ -29,7 +32,8 @@ class SwipeDeck extends StatefulWidget {
   final void Function(Post post) onOpen;
   final void Function(Post post) onOpenUser;
   final void Function(Post post) onPlay;
-  final void Function(Post post) onAddToPlaylist;
+  /// プレイリストに追加できたら true。
+  final Future<bool> Function(Post post) onAddToPlaylist;
   final VoidCallback onNeedMore;
   final bool loadingMore;
   final bool hasMore;
@@ -38,7 +42,7 @@ class SwipeDeck extends StatefulWidget {
   State<SwipeDeck> createState() => _SwipeDeckState();
 }
 
-class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMixin {
+class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
   double _drag = 0;
   double _from = 0;
   double _to = 0;
@@ -48,14 +52,38 @@ class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMix
     duration: const Duration(milliseconds: 280),
   )..addListener(() => setState(() {}));
 
+  late final AnimationController _celebrate = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 420),
+  )..addListener(() => setState(() {}));
+
   Post? get _post => widget.posts.isEmpty ? null : widget.posts.first;
 
   double get _dx => _flying ? _from + (_to - _from) * Curves.easeOutCubic.transform(_fly.value) : _drag;
 
   @override
+  void didUpdateWidget(SwipeDeck oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldId = oldWidget.posts.isEmpty ? null : oldWidget.posts.first.id;
+    final newId = widget.posts.isEmpty ? null : widget.posts.first.id;
+    if (oldId != newId) {
+      _celebrate.reset();
+      _fly.reset();
+      _drag = 0;
+      _flying = false;
+    }
+  }
+
+  @override
   void dispose() {
     _fly.dispose();
+    _celebrate.dispose();
     super.dispose();
+  }
+
+  Future<void> _triggerLikeButtonPulse() async {
+    await _celebrate.forward(from: 0);
+    if (mounted) _celebrate.reset();
   }
 
   Future<void> _settle(bool? like) async {
@@ -65,6 +93,7 @@ class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMix
     _from = _drag;
     _to = like == null ? 0 : (like ? width * 1.25 : -width * 1.25);
     _flying = true;
+    if (like == true) unawaited(_triggerLikeButtonPulse());
     await _fly.forward(from: 0);
     if (!mounted) return;
     setState(() {
@@ -73,8 +102,15 @@ class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMix
     });
     if (like == null) return;
     widget.onDismiss(post.id);
-    if (like) widget.onLike(post);
+    if (like) await widget.onLike(post);
     if (widget.posts.length <= 2 && widget.hasMore) widget.onNeedMore();
+  }
+
+  Future<void> _onPlaylistTap(Post post) async {
+    if (_flying) return;
+    final added = await widget.onAddToPlaylist(post);
+    if (!mounted || !added || _flying) return;
+    await _settle(true);
   }
 
   @override
@@ -141,25 +177,84 @@ class _SwipeDeckState extends State<SwipeDeck> with SingleTickerProviderStateMix
               _RoundAction(
                 icon: Icons.close,
                 color: const Color(0xFF8E8E93),
-                onTap: () => _settle(false),
+                onTap: _flying ? null : () => _settle(false),
               ),
               const SizedBox(width: 16),
               _RoundAction(
                 icon: Icons.playlist_add_rounded,
                 color: mainColor,
-                onTap: () => widget.onAddToPlaylist(post),
+                onTap: _flying ? null : () => _onPlaylistTap(post),
               ),
               const SizedBox(width: 16),
-              _RoundAction(
-                icon: widget.likedIds.contains(post.id) ? Icons.favorite : Icons.favorite_border,
-                color: mainColor,
-                onTap: () => _settle(true),
+              _LikeAction(
+                filled: widget.likedIds.contains(post.id),
+                celebrate: _celebrate,
+                onTap: _flying ? null : () => _settle(true),
               ),
             ],
           ),
           const SizedBox(height: 4),
         ],
       ),
+    );
+  }
+}
+
+class _LikeAction extends StatelessWidget {
+  const _LikeAction({
+    required this.filled,
+    required this.celebrate,
+    required this.onTap,
+  });
+
+  final bool filled;
+  final AnimationController celebrate;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: celebrate,
+      builder: (context, child) {
+        final t = celebrate.value;
+        final pop = t > 0 ? 1 + 0.14 * math.sin(t * math.pi) : 1.0;
+        final fill = filled ? 1.0 : Curves.easeOutCubic.transform(t);
+        final heartFilled = filled || t > 0.25;
+        return SizedBox(
+          width: 72,
+          height: 72,
+          child: Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              if (t > 0.05 && t < 0.92)
+                for (var i = 0; i < 6; i++)
+                  Transform.translate(
+                    offset: Offset(
+                      math.cos(i * math.pi / 3) * (18 + 22 * t),
+                      math.sin(i * math.pi / 3) * (18 + 22 * t) - 4 * t,
+                    ),
+                    child: Opacity(
+                      opacity: (1 - t).clamp(0.0, 1.0) * 0.85,
+                      child: Icon(
+                        i.isEven ? Icons.auto_awesome : Icons.favorite_rounded,
+                        size: i.isEven ? 11 : 9,
+                        color: i.isEven ? const Color(0xFFFFB8D0) : mainColor,
+                      ),
+                    ),
+                  ),
+              Transform.scale(
+                scale: pop,
+                child: _RoundAction(
+                  icon: heartFilled ? Icons.favorite_rounded : Icons.favorite_border,
+                  color: Color.lerp(const Color(0xFFC7C7CC), mainColor, fill)!,
+                  onTap: onTap,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -389,11 +484,11 @@ const _subStyle = TextStyle(
 );
 
 class _RoundAction extends StatelessWidget {
-  const _RoundAction({required this.icon, required this.color, required this.onTap});
+  const _RoundAction({required this.icon, required this.color, this.onTap});
 
   final IconData icon;
   final Color color;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
