@@ -22,6 +22,11 @@ class GenreModel extends ChangeNotifier {
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
+  Future<void> refreshViewCountForPost(String postId) async {
+    await refreshViewCountInList(genrePostsList, postId);
+    notifyListeners();
+  }
+
   String? profileUserName;
   String? profileImageUrl;
   String? profileIntroduction;

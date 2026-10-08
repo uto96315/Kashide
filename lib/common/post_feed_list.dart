@@ -18,6 +18,8 @@ class PostFeedList extends StatelessWidget {
     required this.onAddToPlaylist,
     required this.onCreatePlaylist,
     this.showAuthor = true,
+    this.onAfterDetailVisit,
+    this.trackFeedView = false,
   });
 
   final List<Post> posts;
@@ -29,6 +31,8 @@ class PostFeedList extends StatelessWidget {
   final Future<void> Function(String playlistId, Post post) onAddToPlaylist;
   final Future<void> Function(String name) onCreatePlaylist;
   final bool showAuthor;
+  final Future<void> Function(String postId)? onAfterDetailVisit;
+  final bool trackFeedView;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +42,8 @@ class PostFeedList extends StatelessWidget {
           LyricPostCard(
             post: post,
             showAuthor: showAuthor,
+            onAfterDetailVisit: onAfterDetailVisit,
+            trackFeedView: trackFeedView,
             onPlaylist: () => _pickPlaylist(context, post),
             menuItems: post.posterId == uid
                 ? const [

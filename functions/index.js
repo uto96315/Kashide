@@ -150,3 +150,61 @@ exports.notifyOnPostComment = functions.firestore
 
     return null;
   });
+
+/**
+ * 改善要望（feedback コレクション）をメール通知。
+ * Firestore に保存されたら送信。Gmail 未設定時はログのみ（保存は成功）。
+ *
+ * 設定例:
+ *   firebase functions:config:set gmail.email="kashide.music@gmail.com" gmail.password="アプリパスワード"
+ * デプロイ: firebase deploy --only functions:onFeedbackCreated
+ */
+exports.onFeedbackCreated = functions.firestore
+  .document('feedback/{feedbackId}')
+  .onCreate(async (snap) => {
+    const data = snap.data() || {};
+    const userName = data.userName || '（名前なし）';
+    const userId = data.userId || '';
+    const message = data.message || '';
+    const category = data.category || 'other';
+    const categoryLabel = data.categoryLabel || category;
+    const source = data.source || 'app';
+
+    const subject = `【Kashide】${categoryLabel}`;
+    const text = [
+      `種別: ${categoryLabel} (${category})`,
+      `送信元: ${source}`,
+      `ユーザー: ${userName}`,
+      `UID: ${userId}`,
+      '',
+      '---',
+      message,
+      '---',
+    ].join('\n');
+
+    const cfg = functions.config().gmail || {};
+    const from = cfg.email;
+    const pass = cfg.password;
+    const to = cfg.to || 'kashide.music@gmail.com';
+
+    if (!from || !pass) {
+      functions.logger.warn('gmail config missing; feedback stored in Firestore only', {
+        feedbackId: snap.id,
+      });
+      return null;
+    }
+
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: from, pass },
+      });
+      await transporter.sendMail({ from, to, subject, text });
+      functions.logger.info('Feedback email sent', { feedbackId: snap.id });
+    } catch (e) {
+      functions.logger.error('Feedback email failed', e);
+    }
+
+    return null;
+  });

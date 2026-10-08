@@ -8,6 +8,32 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function postViewCount(data) {
+      return data.viewCount is int ? data.viewCount : 0;
+    }
+
+    function postLikedCount(data) {
+      return data.likedCount is int ? data.likedCount : 0;
+    }
+
+    // 投稿詳細の閲覧数だけ、本人以外が +1 更新できる（post_view_service の transaction 用）
+    function isViewCountIncrementOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount'])
+        && request.resource.data.viewCount == postViewCount(resource.data) + 1;
+    }
+
+    // いいね / いいね解除（likedUsers とセットでクライアント更新）
+    function isLikedCountIncrementOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedCount'])
+        && request.resource.data.likedCount == postLikedCount(resource.data) + 1;
+    }
+
+    function isLikedCountDecrementOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedCount'])
+        && postLikedCount(resource.data) > 0
+        && request.resource.data.likedCount == postLikedCount(resource.data) - 1;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create, update: if isUser(userId);
@@ -24,7 +50,13 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.posterId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.posterId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.posterId == request.auth.uid
+        || isViewCountIncrementOnly()
+        || isLikedCountIncrementOnly()
+        || isLikedCountDecrementOnly()
+      );
 
       match /likedUsers/{likerId} {
         allow read: if isSignedIn();
@@ -55,6 +87,15 @@ service cloud.firestore {
 
     match /reportedComments/{docId} {
       allow create: if isSignedIn();
+    }
+
+    match /feedback/{docId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 5
+        && request.resource.data.message.size() <= 800
+        && request.resource.data.category in ['inquiry', 'improvement', 'collaboration', 'other'];
     }
 
     match /deletedUsers/{userId} {

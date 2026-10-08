@@ -1,5 +1,7 @@
 
 
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,12 +14,17 @@ import '../post/post_view_service.dart';
 class PostDetailModel extends ChangeNotifier {
   PostDetailModel(this._postId, commentButtonTapped, this._postViews);
 
+  static const _loadTimeout = Duration(seconds: 25);
+
   final String _postId;
   final PostViewService _postViews;
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
 
   final commentController = TextEditingController();
+
+  /// 投稿本体の読み込みが終わった（成功・失敗どちらでも true）。UI のスピナー制御用。
+  bool postReady = false;
 
   // 投稿関係
   String? postText;
@@ -44,31 +51,54 @@ class PostDetailModel extends ChangeNotifier {
   bool canComment = false;
 
   // UI関係
-  bool counterTextVisible = false;  // コメント入力欄のカウント表示
+  bool counterTextVisible = false;
 
+  Future getPost(String id) async {
+    try {
+      final doc = FirebaseFirestore.instance.collection('posts').doc(id);
+      final snapshot = await doc.get().timeout(_loadTimeout);
+      final data = snapshot.data();
 
-  // 投稿の詳細取得
-  Future getPost(String id) async{
-    final doc = FirebaseFirestore.instance.collection("posts").doc(id);
+      if (!snapshot.exists || data == null) {
+        postText = '';
+        return;
+      }
 
-    final snapshot = await doc.get();
-    final data = snapshot.data();
+      postText = data['text'] as String? ?? '';
+      textSegments = lyricSegmentsFromFirestore(data);
+      posterId = data['posterId'] as String?;
+      singName = data['singName'] as String?;
+      singerName = data['artist'] as String?;
+      genreList = data['genres'] ?? [];
+      likedCount = (data['likedCount'] as num?)?.toInt();
+      viewCount = viewCountFromFirestore(data);
+      explanation = data['explanation'] as String?;
+      youtubeLink = data['youtubeLink'] as String? ?? '';
 
-    postText = data?["text"];
-    textSegments = lyricSegmentsFromFirestore(data);
-    posterId = data?["posterId"];
-    singName = data?["singName"];
-    singerName = data?["artist"];
-    genreList = data?["genres"];
-    likedCount = data?["likedCount"];
-    viewCount = viewCountFromFirestore(data ?? {});
-    explanation = data?["explanation"];
-    youtubeLink = data?["youtubeLink"] ?? "";
+      notifyListeners();
 
-    await getPosterData(posterId ?? "");
+      final poster = posterId?.trim() ?? '';
+      if (poster.isNotEmpty) {
+        await getPosterData(poster);
+      }
+    } on TimeoutException {
+      debugPrint('getPost timed out for $_postId');
+    } catch (e, st) {
+      debugPrint('getPost failed: $e\n$st');
+    } finally {
+      postText ??= '';
+      postReady = true;
+      notifyListeners();
+      unawaited(_safeCountView());
+    }
+  }
 
-    notifyListeners();
-    await _countViewIfNeeded();
+  Future<void> _safeCountView() async {
+    try {
+      await _countViewIfNeeded();
+    } catch (e, st) {
+      debugPrint('_countViewIfNeeded failed: $e\n$st');
+    }
   }
 
   Future<void> _countViewIfNeeded() async {
@@ -81,123 +111,128 @@ class PostDetailModel extends ChangeNotifier {
     }
   }
 
-  // 投稿者の取得
-  Future getPosterData(String id) async{
-    final doc = FirebaseFirestore.instance.collection("users").doc(id);
+  Future getPosterData(String id) async {
+    if (id.isEmpty) return;
+    try {
+      final doc = FirebaseFirestore.instance.collection('users').doc(id);
+      final snapshot = await doc.get().timeout(_loadTimeout);
+      final data = snapshot.data();
 
-    final snapshot = await doc.get();
-    final data = snapshot.data();
-
-    posterName = data?["userName"] ?? "";
-    userIconUrl = data?["iconUrl"] ?? "";
-    notifyListeners();
+      posterName = data?['userName'] as String? ?? '';
+      userIconUrl = data?['iconUrl'] as String? ?? '';
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('getPosterData failed: $e\n$st');
+      posterName = posterName ?? '';
+      userIconUrl = userIconUrl ?? '';
+    }
   }
 
-  // ユーザーの情報取得
-  Future getUserData(String uid) async{
-    final doc = FirebaseFirestore.instance.collection("users").doc(uid);
-    final snapshot = await doc.get();
-    userImageUrl = snapshot["iconUrl"];
-    userName = snapshot["userName"];
-
-    notifyListeners();
+  Future getUserData(String uid) async {
+    try {
+      final doc = FirebaseFirestore.instance.collection('users').doc(uid);
+      final snapshot = await doc.get().timeout(_loadTimeout);
+      final data = snapshot.data();
+      userImageUrl = data?['iconUrl'] as String?;
+      userName = data?['userName'] as String?;
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('getUserData failed: $e\n$st');
+    }
   }
 
-  // ユーザー情報を取得する関数 // todo: 上と一つにする
-  Future getUserDataF(String uid) async {
-    final doc = FirebaseFirestore.instance.collection("users").doc(uid);
-    final snapshot = await doc.get();
-    final data = snapshot.data();
-    final userName = data?["userName"];
-    final userImageUrl = data?["iconUrl"];
-    notifyListeners();
-    return [userName, userImageUrl];
+  Future<List<String?>> getUserDataF(String uid) async {
+    try {
+      final doc = FirebaseFirestore.instance.collection('users').doc(uid);
+      final snapshot = await doc.get().timeout(_loadTimeout);
+      final data = snapshot.data();
+      return [
+        data?['userName'] as String?,
+        data?['iconUrl'] as String?,
+      ];
+    } catch (e) {
+      debugPrint('getUserDataF failed: $e');
+      return const [null, null];
+    }
   }
 
-
-  // コメント入力欄のカウント
   void showCount(String text) {
     counterTextVisible = text.isNotEmpty;
     notifyListeners();
   }
 
-
-  // コメントの可否判定
   void checkComment(String text) {
     canComment = text.isNotEmpty;
     notifyListeners();
   }
 
-
-  // コメントの投稿機能
-  Future addComment(String postId) async{
+  Future addComment(String postId) async {
     comment = commentController.text;
-    final doc = FirebaseFirestore.instance
-                  .collection("posts").doc(postId).collection("comments");
+    final doc = FirebaseFirestore.instance.collection('posts').doc(postId).collection('comments');
 
     await doc.add({
-      "comment": comment,
-      "createdAt": DateTime.now(),
-      "posterId": uid
+      'comment': comment,
+      'createdAt': DateTime.now(),
+      'posterId': uid,
     });
 
-    debugPrint("コメントを送信しました");
+    debugPrint('コメントを送信しました');
     canComment = false;
     await getComments(postId);
     notifyListeners();
   }
 
-
-
-
-
-  //---------------------
-
   List<CommentDomain> commentsList = [];
 
-  // コメントの取得
   Future getComments(String postId) async {
-    final collection = FirebaseFirestore.instance
-        .collection("posts")
-        .doc(postId)
-        .collection("comments")
-        .orderBy("createdAt");
+    try {
+      final collection = FirebaseFirestore.instance
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .orderBy('createdAt');
 
-    final snapshot = await collection.get();
+      final snapshot = await collection.get().timeout(_loadTimeout);
 
-    final userInfo = await Future.wait(
-        snapshot.docs.map((doc) => getUserDataF(doc["posterId"])).toList());
-
-    commentsList = snapshot.docs.asMap().entries.map((entry) {
-      int index = entry.key;
-      final doc = entry.value;
-
-      return CommentDomain(
-        doc.id,
-        doc["comment"],
-        createTimeMessage(doc["createdAt"].toDate()),
-        doc["posterId"],
-        "${userInfo[index][0]}",
-        "${userInfo[index][1]}",
+      final userInfo = await Future.wait(
+        snapshot.docs.map((doc) => getUserDataF(doc['posterId'] as String? ?? '')).toList(),
       );
-    }).toList();
 
-    notifyListeners();
+      commentsList = snapshot.docs.asMap().entries.map((entry) {
+        final index = entry.key;
+        final doc = entry.value;
+        final createdAt = doc['createdAt'];
+        final at = createdAt is Timestamp ? createdAt.toDate() : DateTime.now();
+
+        return CommentDomain(
+          doc.id,
+          doc['comment'] as String? ?? '',
+          createTimeMessage(at),
+          doc['posterId'] as String? ?? '',
+          userInfo[index][0] ?? '',
+          userInfo[index][1] ?? '',
+        );
+      }).toList();
+
+      notifyListeners();
+    } catch (e, st) {
+      debugPrint('getComments failed: $e\n$st');
+      commentsList = [];
+      notifyListeners();
+    }
   }
 
-  // 投稿時間から〜分前に変換する
   String createTimeMessage(DateTime postDateTime) {
     final now = DateTime.now();
     final difference = now.difference(postDateTime);
-    return timeAgo.format(now.subtract(difference), locale: "ja");
+    return timeAgo.format(now.subtract(difference), locale: 'ja');
   }
 
-  // コメントの削除機能
   Future<bool> deleteComment(String postId, String commentId) async {
     final doc = FirebaseFirestore.instance
-        .collection("posts")
+        .collection('posts')
         .doc(postId)
-        .collection("comments")
+        .collection('comments')
         .doc(commentId);
 
     try {
@@ -206,25 +241,23 @@ class PostDetailModel extends ChangeNotifier {
       debugPrint('deleteComment: ${e.code} ${e.message}');
       return false;
     }
-    debugPrint("削除しました");
+    debugPrint('削除しました');
 
     await getComments(postId);
     notifyListeners();
     return true;
   }
 
-  // コメントの報告機能
-  Future reportComment(String postId, String commentId, String commentText) async{
-    final doc = FirebaseFirestore.instance
-        .collection("reportedComments");
+  Future reportComment(String postId, String commentId, String commentText) async {
+    final doc = FirebaseFirestore.instance.collection('reportedComments');
 
     await doc.add({
-      "postId": postId,
-      "commentId": commentId,
-      "commentText": commentText,
-      "reportedAt": DateTime.now(),
+      'postId': postId,
+      'commentId': commentId,
+      'commentText': commentText,
+      'reportedAt': DateTime.now(),
     });
-    debugPrint("報告しました");
+    debugPrint('報告しました');
     notifyListeners();
   }
 }

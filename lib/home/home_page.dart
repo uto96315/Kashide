@@ -7,7 +7,7 @@ import 'package:str_gram_beta/auth/account_switch_providers.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
-import 'package:str_gram_beta/playlist/playlist_page.dart';
+import 'package:str_gram_beta/lab/lab_page.dart';
 import 'package:str_gram_beta/search/search_page.dart';
 import 'package:str_gram_beta/common/home_tab_bar.dart';
 import 'package:str_gram_beta/post/post_page.dart';
@@ -90,7 +90,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final pages = [
       TimelinePage(key: ValueKey('home-timeline-$sessionKey')),
       SearchPage(key: ValueKey('home-search-$sessionKey')),
-      PlaylistPage(key: ValueKey('home-playlist-$sessionKey')),
+      LabPage(key: ValueKey('home-lab-$sessionKey')),
       MyPage(key: ValueKey('home-mypage-$sessionKey')),
     ];
     return Scaffold(

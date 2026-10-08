@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:str_gram_beta/domain/post_domain.dart';
 
 /// 投稿詳細を開いたときの閲覧数（1ユーザー×1投稿あたり最大 [maxViewsPerUser] 回まで加算）。
 class PostViewService {
@@ -45,7 +46,8 @@ class PostViewService {
           },
           SetOptions(merge: true),
         );
-        tx.update(postRef, {'viewCount': FieldValue.increment(1)});
+        // increment だとセキュリティルールの +1 判定と噛み合わないことがあるため明示的に +1
+        tx.update(postRef, {'viewCount': viewCount + 1});
         return viewCount + 1;
       });
     } catch (e, st) {
@@ -67,3 +69,13 @@ class PostViewService {
 
 int viewCountFromFirestore(Map<String, dynamic> data) =>
     (data['viewCount'] as num?)?.toInt() ?? 0;
+
+/// 一覧の [Post.viewCount] を Firestore の値に合わせる（詳細画面から戻ったあとなど）。
+Future<void> refreshViewCountInList(List<Post> posts, String postId) async {
+  if (postId.isEmpty) return;
+  final count = await PostViewService().fetchViewCount(postId);
+  final i = posts.indexWhere((p) => p.id == postId);
+  if (i >= 0) {
+    posts[i].viewCount = count;
+  }
+}

@@ -30,7 +30,14 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
     return Scaffold(
       body: Column(
         children: [
-          const ScreenTop(),
+          ScreenTop(
+            trailing: inbox.unreadCount > 0 && !inbox.loading && inbox.error == null
+                ? TextButton(
+                    onPressed: () => ref.read(notificationInboxProvider).markAllRead(),
+                    child: const Text('すべて既読'),
+                  )
+                : null,
+          ),
           Expanded(
             child: inbox.loading
                 ? const Center(child: CircularProgressIndicator(color: mainColor))

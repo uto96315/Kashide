@@ -7,6 +7,7 @@ import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/common/post_lyrics_text.dart';
+import 'package:str_gram_beta/post/record_post_feed_view.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 
 /// X（Twitter）タイムライン風：左アバター・右本文・アクションは下段で均等タップ領域。
@@ -18,6 +19,8 @@ class LyricPostCard extends StatelessWidget {
     required this.onMenu,
     this.onPlaylist,
     this.showAuthor = true,
+    this.onAfterDetailVisit,
+    this.trackFeedView = false,
   });
 
   final Post post;
@@ -25,6 +28,8 @@ class LyricPostCard extends StatelessWidget {
   final Future<void> Function(String value) onMenu;
   final VoidCallback? onPlaylist;
   final bool showAuthor;
+  final Future<void> Function(String postId)? onAfterDetailVisit;
+  final bool trackFeedView;
 
   static const _actionGray = Color(0xFF536471);
   static const _cardPadding = EdgeInsets.fromLTRB(16, 12, 16, 8);
@@ -47,7 +52,7 @@ class LyricPostCard extends StatelessWidget {
       onOpenListen: _openListen,
     );
 
-    return DecoratedBox(
+    final body = DecoratedBox(
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFEFF3F4), width: 1)),
@@ -77,14 +82,21 @@ class LyricPostCard extends StatelessWidget {
               child: content,
             ),
     );
+
+    if (!trackFeedView) return body;
+    return RecordPostFeedView(post: post, child: body);
   }
 
   void _openUser(BuildContext context) {
     openUserProfile(context, posterId: post.posterId, userName: post.userName);
   }
 
-  void _openPost(BuildContext context, bool comments) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailPage(post.id, comments)));
+  Future<void> _openPost(BuildContext context, bool comments) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => PostDetailPage(post.id, comments)),
+    );
+    await onAfterDetailVisit?.call(post.id);
   }
 
   Future<void> _openListen(String url) async {
