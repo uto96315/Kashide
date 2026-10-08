@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/editPost/edit_post_page.dart';
@@ -15,6 +17,7 @@ import '../providers.dart';
 import 'swipe_deck.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
+import 'timeline_tutorial.dart';
 
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
@@ -27,6 +30,18 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   /// デフォルトはカード（スワイプ）表示。
   var _deck = true;
 
+  int? _tutorialStep;
+  var _tutorialLaunchChecked = false;
+
+  final _tutorialTargets = TimelineTutorialTargets(
+    viewToggle: GlobalKey(),
+    autoplay: GlobalKey(),
+    sort: GlobalKey(),
+    filter: GlobalKey(),
+    swipeCard: GlobalKey(),
+    swipeActions: GlobalKey(),
+  );
+
   @override
   void dispose() {
     ref.read(cardPreviewPlayerProvider).stop();
@@ -37,14 +52,54 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
   }
 
+  Future<void> _tryLaunchTutorial() async {
+    if (_tutorialLaunchChecked || _tutorialStep != null) return;
+    final model = ref.read(timelineProvider);
+    if (!model.postsReady) return;
+    _tutorialLaunchChecked = true;
+    if (!await TimelineTutorialStorage.shouldShow(model.uid)) return;
+    if (!mounted) return;
+    setState(() {
+      _deck = true;
+      _tutorialStep = 0;
+    });
+  }
+
+  void _advanceTutorial() {
+    final step = _tutorialStep;
+    if (step == null) return;
+    if (step >= timelineTutorialStepCount - 1) {
+      unawaited(TimelineTutorialStorage.markComplete(ref.read(timelineProvider).uid));
+      setState(() => _tutorialStep = null);
+      return;
+    }
+    setState(() => _tutorialStep = step + 1);
+  }
+
+  Future<void> _skipTutorial() async {
+    await TimelineTutorialStorage.markComplete(ref.read(timelineProvider).uid);
+    if (!mounted) return;
+    setState(() => _tutorialStep = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final model = ref.watch(timelineProvider);
     final posts = model.visiblePosts;
 
+    if (model.postsReady && !_tutorialLaunchChecked && _tutorialStep == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_tryLaunchTutorial()));
+    }
+
+    final tutorialStep = _tutorialStep;
+    final tutorialActive = tutorialStep != null;
+    final notificationUnread = ref.watch(notificationInboxProvider.select((m) => m.unreadCount));
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: Stack(
+        children: [
+          Column(
         children: [
           ScreenTop(
             showBack: false,
@@ -53,6 +108,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               children: [
                 if (_deck)
                   _CardPreviewToggle(
+                    key: tutorialActive ? _tutorialTargets.autoplay : null,
                     enabled: ref.watch(cardAutoplaySettingsProvider).enabled,
                     onToggle: () async {
                       final settings = ref.read(cardAutoplaySettingsProvider);
@@ -62,10 +118,12 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     },
                   ),
                 _SortButton(
+                  key: tutorialActive ? _tutorialTargets.sort : null,
                   sortOrder: model.sortOrder,
                   onSelected: (order) => model.setSortOrder(order),
                 ),
                 _FilterButton(
+                  key: tutorialActive ? _tutorialTargets.filter : null,
                   active: model.filter.isActive,
                   onPressed: () async {
                     final next = await showTimelineFilterSheet(
@@ -77,17 +135,33 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                   },
                 ),
                 _ViewToggle(
+                  key: tutorialActive ? _tutorialTargets.viewToggle : null,
                   deck: _deck,
                   onChanged: (deck) {
+                    if (tutorialActive) return;
                     if (!deck) ref.read(cardPreviewPlayerProvider).stop();
                     setState(() => _deck = deck);
                   },
                 ),
                 IconButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationPage()));
+                  tooltip: '通知',
+                  onPressed: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationPage()));
+                    if (!mounted) return;
+                    await ref.read(notificationInboxProvider).load();
                   },
-                  icon: const Icon(Icons.notifications_none),
+                  icon: Badge(
+                    isLabelVisible: notificationUnread > 0,
+                    label: Text(
+                      notificationUnread > 99 ? '99+' : '$notificationUnread',
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+                    ),
+                    backgroundColor: mainColor,
+                    child: Icon(
+                      notificationUnread > 0 ? Icons.notifications_rounded : Icons.notifications_none,
+                      color: notificationUnread > 0 ? mainColor : const Color(0xFF1C1C1E),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -118,6 +192,8 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
           Expanded(
             child: _deck
                 ? SwipeDeck(
+                    tutorialCardKey: tutorialActive ? _tutorialTargets.swipeCard : null,
+                    tutorialActionsKey: tutorialActive ? _tutorialTargets.swipeActions : null,
                     posts: [
                       for (final post in posts)
                         if (model.isVisibleInSwipeDeck(post)) post,
@@ -126,7 +202,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     loadingMore: model.loadingMore,
                     hasMore: model.hasMorePosts,
                     onLike: (post) => model.likePost(post.id),
-                    onDismiss: model.markSwipeSeen,
+                    onDismiss: (id) => unawaited(model.markSwipeSeen(id)),
                     onOpen: (post) {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailPage(post.id, false)));
                     },
@@ -216,6 +292,20 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
           ),
         ],
       ),
+          if (tutorialStep != null)
+            Positioned.fill(
+              child: TimelineTutorialOverlay(
+                step: tutorialStep,
+                stepCount: timelineTutorialStepCount,
+                title: timelineTutorialTitle(tutorialStep),
+                body: timelineTutorialBody(tutorialStep),
+                targets: _tutorialTargets,
+                onNext: _advanceTutorial,
+                onSkip: () => unawaited(_skipTutorial()),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -260,7 +350,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
 }
 
 class _CardPreviewToggle extends StatelessWidget {
-  const _CardPreviewToggle({required this.enabled, required this.onToggle});
+  const _CardPreviewToggle({super.key, required this.enabled, required this.onToggle});
 
   final bool enabled;
   final VoidCallback onToggle;
@@ -279,7 +369,7 @@ class _CardPreviewToggle extends StatelessWidget {
 }
 
 class _SortButton extends StatelessWidget {
-  const _SortButton({required this.sortOrder, required this.onSelected});
+  const _SortButton({super.key, required this.sortOrder, required this.onSelected});
 
   final TimelineSortOrder sortOrder;
   final ValueChanged<TimelineSortOrder> onSelected;
@@ -307,7 +397,7 @@ class _SortButton extends StatelessWidget {
 }
 
 class _FilterButton extends StatelessWidget {
-  const _FilterButton({required this.active, required this.onPressed});
+  const _FilterButton({super.key, required this.active, required this.onPressed});
 
   final bool active;
   final VoidCallback onPressed;
@@ -327,7 +417,7 @@ class _FilterButton extends StatelessWidget {
 }
 
 class _ViewToggle extends StatelessWidget {
-  const _ViewToggle({required this.deck, required this.onChanged});
+  const _ViewToggle({super.key, required this.deck, required this.onChanged});
 
   final bool deck;
   final ValueChanged<bool> onChanged;

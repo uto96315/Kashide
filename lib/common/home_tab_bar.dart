@@ -8,11 +8,13 @@ class HomeTabBar extends StatelessWidget {
     required this.index,
     required this.onChanged,
     required this.onPost,
+    this.notificationUnreadCount = 0,
   });
 
   final int index;
   final ValueChanged<int> onChanged;
   final VoidCallback onPost;
+  final int notificationUnreadCount;
 
   static const _slotCount = 5;
   static const _postSlot = 2;
@@ -86,6 +88,7 @@ class HomeTabBar extends StatelessWidget {
                               : _TabHit(
                                   icon: _icons[_tabForSlot(slot)!],
                                   selected: index == _tabForSlot(slot),
+                                  showUnreadDot: _tabForSlot(slot) == 0 && notificationUnreadCount > 0,
                                   onTap: () => onChanged(_tabForSlot(slot)!),
                                 ),
                         ),
@@ -151,11 +154,13 @@ class _TabHit extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.showUnreadDot = false,
   });
 
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  final bool showUnreadDot;
 
   @override
   Widget build(BuildContext context) {
@@ -167,10 +172,15 @@ class _TabHit extends StatelessWidget {
         child: SizedBox(
           height: HomeTabBar._barHeight,
           child: Center(
-            child: Icon(
-              icon,
-              size: 24,
-              color: selected ? Colors.white : const Color(0xFF8E8E93),
+            child: Badge(
+              isLabelVisible: showUnreadDot,
+              smallSize: 9,
+              backgroundColor: const Color(0xFFFF3B30),
+              child: Icon(
+                icon,
+                size: 24,
+                color: selected ? Colors.white : const Color(0xFF8E8E93),
+              ),
             ),
           ),
         ),

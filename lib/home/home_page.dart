@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/auth/account_switch_providers.dart';
@@ -19,12 +22,24 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  StreamSubscription<RemoteMessage>? _fcmForegroundSub;
+
   @override
   void initState() {
     super.initState();
+    _fcmForegroundSub = FirebaseMessaging.onMessage.listen((_) {
+      ref.read(notificationInboxProvider).load();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(pushTokenServiceProvider).syncForCurrentUser();
+      ref.read(notificationInboxProvider).load();
     });
+  }
+
+  @override
+  void dispose() {
+    _fcmForegroundSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -71,6 +86,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
     final tabIndex = ref.watch(homeTabIndexProvider);
     final sessionKey = ref.watch(sessionRefreshKeyProvider);
+    final notificationUnread = ref.watch(notificationInboxProvider.select((m) => m.unreadCount));
     final pages = [
       TimelinePage(key: ValueKey('home-timeline-$sessionKey')),
       SearchPage(key: ValueKey('home-search-$sessionKey')),
@@ -81,6 +97,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: IndexedStack(index: tabIndex, children: pages),
       bottomNavigationBar: HomeTabBar(
         index: tabIndex,
+        notificationUnreadCount: notificationUnread,
         onChanged: (index) => ref.read(homeTabIndexProvider.notifier).setTab(index),
         onPost: () {
           Navigator.push(

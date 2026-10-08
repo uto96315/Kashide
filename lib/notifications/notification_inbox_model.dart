@@ -1,3 +1,4 @@
+import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,8 @@ class NotificationInboxModel extends ChangeNotifier {
   List<AppNotification> items = [];
   bool loading = true;
   String? error;
+
+  int get unreadCount => items.where((n) => !n.read).length;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -39,7 +42,16 @@ class NotificationInboxModel extends ChangeNotifier {
     } finally {
       loading = false;
       notifyListeners();
+      _syncAppBadge();
     }
+  }
+
+  void _syncAppBadge() {
+    final count = unreadCount;
+    try {
+      // ignore: unawaited_futures
+      AppBadgePlus.updateBadge(count);
+    } catch (_) {}
   }
 
   Future<List<AppNotification>> _fetchNotifications(String uid) async {
@@ -76,6 +88,7 @@ class NotificationInboxModel extends ChangeNotifier {
     );
     items = items.map((n) => n.id == id ? _copyRead(n) : n).toList();
     notifyListeners();
+    _syncAppBadge();
   }
 
   AppNotification _copyRead(AppNotification n) => AppNotification(
@@ -86,5 +99,6 @@ class NotificationInboxModel extends ChangeNotifier {
         fromUserName: n.fromUserName,
         createdAt: n.createdAt,
         read: true,
+        commentPreview: n.commentPreview,
       );
 }

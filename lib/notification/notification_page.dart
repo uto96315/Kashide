@@ -102,7 +102,11 @@ class _NotificationTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                item.type == 'like' ? Icons.favorite_rounded : Icons.notifications_outlined,
+                item.type == 'like'
+                    ? Icons.favorite_rounded
+                    : item.type == 'comment'
+                        ? Icons.chat_bubble_outline_rounded
+                        : Icons.notifications_outlined,
                 color: mainColor,
                 size: 22,
               ),

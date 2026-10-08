@@ -193,18 +193,24 @@ class PostDetailModel extends ChangeNotifier {
   }
 
   // コメントの削除機能
-  Future deleteComment(String postId, String commentId) async {
+  Future<bool> deleteComment(String postId, String commentId) async {
     final doc = FirebaseFirestore.instance
         .collection("posts")
         .doc(postId)
         .collection("comments")
         .doc(commentId);
 
-    await doc.delete();
+    try {
+      await doc.delete();
+    } on FirebaseException catch (e) {
+      debugPrint('deleteComment: ${e.code} ${e.message}');
+      return false;
+    }
     debugPrint("削除しました");
 
     await getComments(postId);
     notifyListeners();
+    return true;
   }
 
   // コメントの報告機能
