@@ -77,7 +77,6 @@ class TopPage extends ConsumerWidget {
     if (account == null) return;
     try {
       await ref.read(accountSwitchServiceProvider).switchToAccount(account);
-      refreshAfterAccountChange(ref);
       await ref.read(savedAccountsProvider).reload();
     } catch (e) {
       if (!context.mounted) return;

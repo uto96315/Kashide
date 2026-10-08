@@ -1,14 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../common/network_image_utils.dart';
+import 'account_switch_providers.dart';
 import 'saved_account.dart';
 import 'saved_accounts_store.dart';
 
 class AccountSwitchService {
-  AccountSwitchService(this._store);
+  AccountSwitchService(
+    this._store,
+    this._ref,
+    this._refreshSession,
+  );
 
   final SavedAccountsStore _store;
+  final Ref _ref;
+  final void Function({int homeTabIndex}) _refreshSession;
 
   Future<List<SavedAccount>> loadSaved() => _store.load();
 
@@ -76,16 +84,40 @@ class AccountSwitchService {
     );
   }
 
-  Future<void> switchToAccount(SavedAccount account) async {
+  Future<void> switchToAccount(
+    SavedAccount account, {
+    int homeTabIndex = 0,
+  }) async {
     final current = FirebaseAuth.instance.currentUser?.uid;
     if (current == account.uid) return;
 
-    await FirebaseAuth.instance.signOut();
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: account.email,
-      password: account.password,
-    );
-    await _store.upsert(account);
+    _ref.read(accountSwitchInProgressProvider.notifier).set(true);
+    try {
+      await _signInAs(account);
+      await _store.upsert(account);
+      _refreshSession(homeTabIndex: homeTabIndex);
+    } finally {
+      _ref.read(accountSwitchInProgressProvider.notifier).set(false);
+    }
+  }
+
+  Future<void> _signInAs(SavedAccount account) async {
+    final auth = FirebaseAuth.instance;
+    try {
+      await auth.signInWithEmailAndPassword(
+        email: account.email,
+        password: account.password,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        rethrow;
+      }
+      await auth.signOut();
+      await auth.signInWithEmailAndPassword(
+        email: account.email,
+        password: account.password,
+      );
+    }
   }
 
   Future<Map<String, dynamic>?> _fetchUserProfile(String uid) async {

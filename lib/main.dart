@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/auth/account_switch_providers.dart';
 import 'package:flutter/services.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/timeline/timeline_page.dart';
@@ -85,12 +86,12 @@ void main() async {
 }
 
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accountSwitching = ref.watch(accountSwitchInProgressProvider);
     return MaterialApp(
       title: '',
       theme: ThemeData(
@@ -130,6 +131,11 @@ class MyApp extends StatelessWidget {
           }
           if (snapshot.hasData) {
             return HomePage();
+          }
+          if (accountSwitching) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator(color: mainColor)),
+            );
           }
           return const TopPage();
           },
