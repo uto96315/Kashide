@@ -64,7 +64,12 @@ class CommentArea extends ConsumerWidget {
                     icon: const Icon(Icons.more_horiz, size: 18, color: Color(0xFF8E8E93)),
                     onSelected: (value) async {
                       if (value == 'delete') {
-                        await model.deleteComment(id, comment.id);
+                        final ok = await model.deleteComment(id, comment.id);
+                        if (!ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('コメントを削除できませんでした')),
+                          );
+                        }
                       } else if (value == 'report') {
                         await model.reportComment(id, comment.id, comment.comment);
                       }

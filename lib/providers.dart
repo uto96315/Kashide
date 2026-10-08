@@ -171,7 +171,7 @@ final notificationProvider =
   return NotificationModel()..getToken();
 });
 
-final notificationInboxProvider = ChangeNotifierProvider.autoDispose<NotificationInboxModel>((ref) {
+final notificationInboxProvider = ChangeNotifierProvider<NotificationInboxModel>((ref) {
   return NotificationInboxModel();
 });
 

@@ -11,7 +11,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../domain/post_domain.dart';
 import '../post/post_validation.dart';
 import '../user/block_list_model.dart';
-import 'swipe_seen_state.dart';
 import 'timeline_filter.dart';
 import 'timeline_sort.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
@@ -438,11 +437,18 @@ class TimelineModel extends ChangeNotifier {
   // 最初に１０件を取得する
   Future<void> loadLikedPostIds() async {
     if (uid == null) return;
-    final snapshot = await FirebaseFirestore.instance.collection("users").doc(uid).collection("likePost").get();
+    final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+    final results = await Future.wait([
+      userRef.collection('likePost').get(),
+      userRef.collection('cardSkipped').get(),
+    ]);
     likedPostIds
       ..clear()
-      ..addAll(snapshot.docs.map((doc) => doc.id));
-    seenSwipeIds.addAll(likedPostIds);
+      ..addAll(results[0].docs.map((doc) => doc.id));
+    seenSwipeIds
+      ..clear()
+      ..addAll(likedPostIds)
+      ..addAll(results[1].docs.map((doc) => doc.id));
     notifyListeners();
   }
 
@@ -451,13 +457,16 @@ class TimelineModel extends ChangeNotifier {
     return !seenSwipeIds.contains(post.id) && !likedPostIds.contains(post.id);
   }
 
-  void markSwipeSeen(String id) {
-    updateSwipeSeenIds(
-      seenIds: seenSwipeIds,
-      postIds: postsList.map((post) => post.id),
-      hasMorePosts: hasMorePosts,
-      dismissedId: id,
-    );
+  Future<void> markSwipeSeen(String id) async {
+    if (seenSwipeIds.contains(id)) return;
+    seenSwipeIds.add(id);
+    final userId = uid;
+    if (userId != null) {
+      await FirebaseFirestore.instance.collection('users').doc(userId).collection('cardSkipped').doc(id).set({
+        'postId': id,
+        'skippedAt': FieldValue.serverTimestamp(),
+      });
+    }
     notifyListeners();
   }
 
