@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/auth/account_switch_providers.dart';
 import 'package:str_gram_beta/auth/saved_account.dart';
 import 'package:str_gram_beta/common/network_image_utils.dart';
 import 'package:str_gram_beta/auth/saved_accounts_store.dart';
@@ -283,11 +284,13 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
       );
       return;
     }
+    ref.read(accountSwitchInProgressProvider.notifier).set(true);
     Navigator.pop(context);
     try {
       await ref.read(accountSwitchServiceProvider).switchToAccount(account, homeTabIndex: 3);
       await ref.read(savedAccountsProvider).reload();
     } on FirebaseAuthException catch (_) {
+      ref.read(accountSwitchInProgressProvider.notifier).set(false);
       if (!context.mounted) return;
       Navigator.push(
         context,
@@ -299,6 +302,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
         ),
       );
     } catch (e) {
+      ref.read(accountSwitchInProgressProvider.notifier).set(false);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('切り替えに失敗しました。パスワードを変更した場合は再度ログインしてください。')),

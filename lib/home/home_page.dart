@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/auth/account_switch_providers.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/mypage/my_page.dart';
@@ -30,6 +31,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final model = ref.watch(homeProvider);
     if (!model.versionChecked) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: mainColor)),
+      );
+    }
+    if (ref.watch(accountSwitchInProgressProvider)) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: mainColor)),
       );

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../common/network_image_utils.dart';
@@ -91,13 +92,16 @@ class AccountSwitchService {
     final current = FirebaseAuth.instance.currentUser?.uid;
     if (current == account.uid) return;
 
-    _ref.read(accountSwitchInProgressProvider.notifier).set(true);
+    final switching = _ref.read(accountSwitchInProgressProvider.notifier);
+    switching.set(true);
     try {
+      await SchedulerBinding.instance.endOfFrame;
       await _signInAs(account);
       await persistAfterAuth(email: account.email, password: account.password);
       _refreshSession(homeTabIndex: homeTabIndex);
+      await SchedulerBinding.instance.endOfFrame;
     } finally {
-      _ref.read(accountSwitchInProgressProvider.notifier).set(false);
+      switching.set(false);
     }
   }
 
