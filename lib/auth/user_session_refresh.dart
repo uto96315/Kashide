@@ -7,6 +7,18 @@ void refreshUserSession(
   Ref ref, {
   /// 追加ログイン後はマイページ(3)へ。通常はホーム(0)。
   int homeTabIndex = 0,
+}) =>
+    _applySessionRefresh(ref, homeTabIndex: homeTabIndex);
+
+void refreshAfterAccountChange(
+  WidgetRef ref, {
+  int homeTabIndex = 0,
+}) =>
+    _applySessionRefresh(ref, homeTabIndex: homeTabIndex);
+
+void _applySessionRefresh(
+  dynamic ref, {
+  required int homeTabIndex,
 }) {
   ref.read(cardPreviewPlayerProvider).stop();
   ref.read(sessionRefreshKeyProvider.notifier).bump();
@@ -21,9 +33,3 @@ void refreshUserSession(
   ref.invalidate(notificationInboxProvider);
   ref.read(pushTokenServiceProvider).syncForCurrentUser();
 }
-
-void refreshAfterAccountChange(
-  WidgetRef ref, {
-  int homeTabIndex = 0,
-}) =>
-    refreshUserSession(ref, homeTabIndex: homeTabIndex);
