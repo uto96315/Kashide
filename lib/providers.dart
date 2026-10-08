@@ -35,8 +35,10 @@ import 'settings/card_autoplay_settings.dart';
 import 'timeline/timeline_model.dart';
 import 'user/block_list_model.dart';
 import 'top/top_model.dart';
+import 'auth/account_switch_providers.dart';
 import 'auth/account_switch_service.dart';
 import 'auth/saved_accounts_notifier.dart';
+import 'auth/user_session_refresh.dart';
 import 'auth/saved_accounts_store.dart';
 import 'post/post_view_service.dart';
 
@@ -47,7 +49,11 @@ final postViewServiceProvider = Provider<PostViewService>((ref) => PostViewServi
 final savedAccountsStoreProvider = Provider<SavedAccountsStore>((ref) => SavedAccountsStore());
 
 final accountSwitchServiceProvider = Provider<AccountSwitchService>((ref) {
-  return AccountSwitchService(ref.watch(savedAccountsStoreProvider));
+  return AccountSwitchService(
+    ref.watch(savedAccountsStoreProvider),
+    ref,
+    ({int homeTabIndex = 0}) => refreshUserSession(ref, homeTabIndex: homeTabIndex),
+  );
 });
 
 final savedAccountsProvider = ChangeNotifierProvider<SavedAccountsNotifier>((ref) {
