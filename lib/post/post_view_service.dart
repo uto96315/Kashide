@@ -46,7 +46,8 @@ class PostViewService {
           },
           SetOptions(merge: true),
         );
-        tx.update(postRef, {'viewCount': FieldValue.increment(1)});
+        // increment だとセキュリティルールの +1 判定と噛み合わないことがあるため明示的に +1
+        tx.update(postRef, {'viewCount': viewCount + 1});
         return viewCount + 1;
       });
     } catch (e, st) {

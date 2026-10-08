@@ -48,27 +48,49 @@ class PostDetailModel extends ChangeNotifier {
 
 
   // 投稿の詳細取得
-  Future getPost(String id) async{
-    final doc = FirebaseFirestore.instance.collection("posts").doc(id);
+  Future getPost(String id) async {
+    try {
+      final doc = FirebaseFirestore.instance.collection('posts').doc(id);
+      final snapshot = await doc.get();
+      final data = snapshot.data();
 
-    final snapshot = await doc.get();
-    final data = snapshot.data();
+      if (!snapshot.exists || data == null) {
+        postText = '';
+        notifyListeners();
+        return;
+      }
 
-    postText = data?["text"];
-    textSegments = lyricSegmentsFromFirestore(data);
-    posterId = data?["posterId"];
-    singName = data?["singName"];
-    singerName = data?["artist"];
-    genreList = data?["genres"];
-    likedCount = data?["likedCount"];
-    viewCount = viewCountFromFirestore(data ?? {});
-    explanation = data?["explanation"];
-    youtubeLink = data?["youtubeLink"] ?? "";
+      postText = data['text'] as String? ?? '';
+      textSegments = lyricSegmentsFromFirestore(data);
+      posterId = data['posterId'] as String?;
+      singName = data['singName'] as String?;
+      singerName = data['artist'] as String?;
+      genreList = data['genres'] ?? [];
+      likedCount = (data['likedCount'] as num?)?.toInt();
+      viewCount = viewCountFromFirestore(data);
+      explanation = data['explanation'] as String?;
+      youtubeLink = data['youtubeLink'] as String? ?? '';
 
-    await getPosterData(posterId ?? "");
+      notifyListeners();
 
-    notifyListeners();
-    await _countViewIfNeeded();
+      final poster = posterId?.trim() ?? '';
+      if (poster.isNotEmpty) {
+        try {
+          await getPosterData(poster);
+        } catch (e) {
+          debugPrint('getPosterData failed: $e');
+          posterName = posterName ?? '';
+          userIconUrl = userIconUrl ?? '';
+          notifyListeners();
+        }
+      }
+
+      await _countViewIfNeeded();
+    } catch (e, st) {
+      debugPrint('getPost failed: $e\n$st');
+      postText = postText ?? '';
+      notifyListeners();
+    }
   }
 
   Future<void> _countViewIfNeeded() async {
@@ -82,14 +104,15 @@ class PostDetailModel extends ChangeNotifier {
   }
 
   // 投稿者の取得
-  Future getPosterData(String id) async{
-    final doc = FirebaseFirestore.instance.collection("users").doc(id);
+  Future getPosterData(String id) async {
+    if (id.isEmpty) return;
+    final doc = FirebaseFirestore.instance.collection('users').doc(id);
 
     final snapshot = await doc.get();
     final data = snapshot.data();
 
-    posterName = data?["userName"] ?? "";
-    userIconUrl = data?["iconUrl"] ?? "";
+    posterName = data?['userName'] as String? ?? '';
+    userIconUrl = data?['iconUrl'] as String? ?? '';
     notifyListeners();
   }
 
