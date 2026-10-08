@@ -20,7 +20,7 @@ class PostDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final model = ref.watch(postDetailProvider(id));
-    final loading = model.postText == null;
+    final loading = !model.postReady;
     final icon = model.userIconUrl;
     final hasIcon = icon != null && icon.isNotEmpty && icon != 'null';
     final genres = model.genreList.whereType<String>().where((g) => g.isNotEmpty);

@@ -34,13 +34,17 @@ class _RecordPostFeedViewState extends State<RecordPostFeedView> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final updated = await _service.recordDetailView(
-      postId: widget.post.id,
-      viewerUid: uid,
-    );
-    if (!mounted) return;
-    if (widget.post.viewCount != updated) {
-      setState(() => widget.post.viewCount = updated);
+    try {
+      final updated = await _service.recordDetailView(
+        postId: widget.post.id,
+        viewerUid: uid,
+      );
+      if (!mounted) return;
+      if (widget.post.viewCount != updated) {
+        setState(() => widget.post.viewCount = updated);
+      }
+    } catch (e, st) {
+      debugPrint('RecordPostFeedView failed: $e\n$st');
     }
   }
 
