@@ -16,12 +16,15 @@ class LoginPage extends ConsumerStatefulWidget {
     super.key,
     this.startWithRegister = false,
     this.addingAccount = false,
+    this.reauthForQuickSwitch = false,
     this.initialEmail,
   });
 
   /// ログイン済みの端末に別アカウントを追加するとき。
   final bool startWithRegister;
   final bool addingAccount;
+  /// 保存済みアカウントのパスワード再入力（ワンタップ切替用）。
+  final bool reauthForQuickSwitch;
   final String? initialEmail;
 
   @override
@@ -129,7 +132,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!context.mounted) return;
     refreshAfterAccountChange(
       ref,
-      homeTabIndex: widget.addingAccount ? 3 : 0,
+      homeTabIndex: (widget.addingAccount || widget.reauthForQuickSwitch) ? 3 : 0,
     );
     if (Navigator.of(context).canPop()) {
       Navigator.pop(context);

@@ -94,7 +94,7 @@ class AccountSwitchService {
     _ref.read(accountSwitchInProgressProvider.notifier).set(true);
     try {
       await _signInAs(account);
-      await _store.upsert(account);
+      await persistAfterAuth(email: account.email, password: account.password);
       _refreshSession(homeTabIndex: homeTabIndex);
     } finally {
       _ref.read(accountSwitchInProgressProvider.notifier).set(false);
