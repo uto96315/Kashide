@@ -39,6 +39,11 @@ class MyModel extends ChangeNotifier {
     uid = user?.uid;
   }
 
+  Future<void> refreshViewCountForPost(String postId) async {
+    await refreshViewCountInList(userPostsList, postId);
+    notifyListeners();
+  }
+
   // ユーザー情報の取得
   Future getUserData() async{
     bindCurrentAuthUser();

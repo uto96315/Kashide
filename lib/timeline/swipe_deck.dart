@@ -26,8 +26,6 @@ class SwipeDeck extends StatefulWidget {
     required this.hasMore,
     this.onForegroundCard,
     this.onStopPreview,
-    this.tutorialCardKey,
-    this.tutorialActionsKey,
   });
 
   final List<Post> posts;
@@ -45,8 +43,6 @@ class SwipeDeck extends StatefulWidget {
   /// 手前のカードが変わったとき（自動再生など）。
   final Future<void> Function(Post post)? onForegroundCard;
   final VoidCallback? onStopPreview;
-  final GlobalKey? tutorialCardKey;
-  final GlobalKey? tutorialActionsKey;
 
   @override
   State<SwipeDeck> createState() => _SwipeDeckState();
@@ -164,7 +160,6 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       child: Column(
         children: [
           Expanded(
-            key: widget.tutorialCardKey,
             child: GestureDetector(
               onHorizontalDragUpdate: (details) {
                 if (_flying) return;
@@ -203,7 +198,6 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 10),
           Row(
-            key: widget.tutorialActionsKey,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _RoundAction(

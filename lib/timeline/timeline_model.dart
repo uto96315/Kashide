@@ -84,6 +84,26 @@ class TimelineModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshViewCountForPost(String postId) async {
+    await refreshViewCountInList(postsList, postId);
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> recordViewForPost(Post post) async {
+    final viewer = uid;
+    if (viewer == null) return;
+    final updated = await PostViewService().recordDetailView(
+      postId: post.id,
+      viewerUid: viewer,
+    );
+    final i = postsList.indexWhere((p) => p.id == post.id);
+    if (i >= 0) {
+      postsList[i].viewCount = updated;
+    }
+    post.viewCount = updated;
+    if (!_disposed) notifyListeners();
+  }
+
   static bool canUseServerGenreQuery(TimelineFilterState f) {
     return f.genres.length == 1 &&
         f.commentFilter == TimelineCommentFilter.all &&

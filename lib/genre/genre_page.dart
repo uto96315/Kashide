@@ -119,6 +119,8 @@ class _GenreBody extends ConsumerWidget {
               uid: model.uid,
               playlists: model.playList,
               showAuthor: !isPoster,
+              onAfterDetailVisit: model.refreshViewCountForPost,
+              trackFeedView: true,
               onDeletePost: model.deletePosts,
               onReportPost: model.reportPosts,
               onBlockUser: (posterId) => blockUserFromFeed(context, ref, posterId),

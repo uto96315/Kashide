@@ -79,6 +79,24 @@ class NotificationInboxModel extends ChangeNotifier {
     return docs.map(AppNotification.fromDoc).whereType<AppNotification>().toList();
   }
 
+  Future<void> markAllRead() async {
+    final uid = _uid;
+    if (uid == null) return;
+    final unread = items.where((n) => !n.read).toList();
+    if (unread.isEmpty) return;
+
+    final col = FirebaseFirestore.instance.collection('users').doc(uid).collection('notifications');
+    final batch = FirebaseFirestore.instance.batch();
+    for (final n in unread) {
+      batch.set(col.doc(n.id), {'read': true}, SetOptions(merge: true));
+    }
+    await batch.commit();
+
+    items = items.map(_copyRead).toList();
+    notifyListeners();
+    _syncAppBadge();
+  }
+
   Future<void> markRead(String id) async {
     final uid = _uid;
     if (uid == null) return;

@@ -16,6 +16,7 @@ import 'package:str_gram_beta/editUserDetails/edit_user_details_page.dart';
 import 'package:str_gram_beta/liked/liked_posts_page.dart';
 import 'package:str_gram_beta/mypage/my_model.dart';
 import 'package:str_gram_beta/playlist/playlist_page.dart';
+import 'package:str_gram_beta/timeline/timeline_tutorial.dart';
 import 'package:str_gram_beta/user/blocked_users_page.dart';
 
 /// マイページ用・iOS 設定風の右ドロワー。
@@ -178,6 +179,18 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                   icon: CupertinoIcons.heart,
                   title: 'いいねした歌詞',
                   onTap: () => _closeAndPush(context, const LikedPostsPage()),
+                ),
+                _Tile(
+                  icon: CupertinoIcons.lightbulb,
+                  title: 'タイムラインの使い方',
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (!context.mounted) return;
+                    await TimelineTutorialFlow.run(
+                      context,
+                      uid: FirebaseAuth.instance.currentUser?.uid,
+                    );
+                  },
                 ),
                 _Tile(
                   icon: CupertinoIcons.music_note_list,

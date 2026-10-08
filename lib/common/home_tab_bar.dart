@@ -22,7 +22,7 @@ class HomeTabBar extends StatelessWidget {
   static const _icons = [
     Icons.home_rounded,
     Icons.search_rounded,
-    Icons.queue_music_rounded,
+    Icons.science_rounded,
     Icons.person_rounded,
   ];
 
@@ -172,15 +172,30 @@ class _TabHit extends StatelessWidget {
         child: SizedBox(
           height: HomeTabBar._barHeight,
           child: Center(
-            child: Badge(
-              isLabelVisible: showUnreadDot,
-              smallSize: 9,
-              backgroundColor: const Color(0xFFFF3B30),
-              child: Icon(
-                icon,
-                size: 24,
-                color: selected ? Colors.white : const Color(0xFF8E8E93),
-              ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: selected ? Colors.white : const Color(0xFF8E8E93),
+                ),
+                if (showUnreadDot)
+                  const Positioned(
+                    right: -1,
+                    top: 6,
+                    child: SizedBox(
+                      width: 8,
+                      height: 8,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF3B30),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
