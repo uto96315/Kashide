@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
+import 'package:str_gram_beta/auth/account_switch_providers.dart';
 import 'package:str_gram_beta/auth/saved_account.dart';
 import 'package:str_gram_beta/common/network_image_utils.dart';
 import 'package:str_gram_beta/auth/saved_accounts_store.dart';
@@ -275,16 +276,33 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => LoginPage(initialEmail: account.email, addingAccount: true),
+          builder: (_) => LoginPage(
+            initialEmail: account.email,
+            reauthForQuickSwitch: true,
+          ),
         ),
       );
       return;
     }
+    ref.read(accountSwitchInProgressProvider.notifier).set(true);
     Navigator.pop(context);
     try {
       await ref.read(accountSwitchServiceProvider).switchToAccount(account, homeTabIndex: 3);
       await ref.read(savedAccountsProvider).reload();
+    } on FirebaseAuthException catch (_) {
+      ref.read(accountSwitchInProgressProvider.notifier).set(false);
+      if (!context.mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LoginPage(
+            initialEmail: account.email,
+            reauthForQuickSwitch: true,
+          ),
+        ),
+      );
     } catch (e) {
+      ref.read(accountSwitchInProgressProvider.notifier).set(false);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('切り替えに失敗しました。パスワードを変更した場合は再度ログインしてください。')),
@@ -292,18 +310,90 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
     }
   }
 
-  void _openAddAccount(BuildContext context, WidgetRef ref, int count) {
+  Future<void> _openAddAccount(BuildContext context, WidgetRef ref, int count) async {
     if (count >= maxSavedAccounts) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('アカウントは最大$maxSavedAccounts件まで保存できます')),
       );
       return;
     }
+    final ok = await _ensureCurrentAccountPasswordSaved(context, ref);
+    if (!ok || !context.mounted) return;
     Navigator.pop(context);
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const LoginPage(addingAccount: true)),
     );
+  }
+
+  /// 別アカウント追加前に、今のアカウントをワンタップ切替できるようパスワードを保存する。
+  Future<bool> _ensureCurrentAccountPasswordSaved(BuildContext context, WidgetRef ref) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email?.trim();
+    if (user == null || email == null || email.isEmpty) return true;
+
+    await ref.read(savedAccountsProvider).ensureCurrentListed();
+    final current = ref
+        .read(savedAccountsProvider)
+        .accounts
+        .where((a) => a.uid == user.uid)
+        .firstOrNull;
+    if (current != null && current.canQuickSwitch) return true;
+
+    final password = await _promptPassword(
+      context,
+      title: '現在のアカウントを保存',
+      message: '追加後に戻れるよう、いまのアカウントのパスワードを入力してください。',
+    );
+    if (password == null || password.isEmpty) return false;
+
+    try {
+      final cred = EmailAuthProvider.credential(email: email, password: password);
+      await user.reauthenticateWithCredential(cred);
+      await ref.read(savedAccountsProvider).syncAfterAuth(email: email, password: password);
+      return true;
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('パスワードが正しくないか、保存に失敗しました。')),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<String?> _promptPassword(
+    BuildContext context, {
+    required String title,
+    required String message,
+  }) async {
+    final controller = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(message),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              autocorrect: false,
+              decoration: const InputDecoration(labelText: 'パスワード'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('キャンセル')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('保存')),
+        ],
+      ),
+    );
+    if (result != true) return null;
+    return controller.text;
   }
 
   Future<void> _removeAccount(BuildContext context, WidgetRef ref, SavedAccount account) async {

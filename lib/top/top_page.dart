@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:str_gram_beta/auth/user_session_refresh.dart';
 import 'package:str_gram_beta/common/network_image_utils.dart';
 import 'package:str_gram_beta/common/primary_button.dart';
 import 'package:str_gram_beta/providers.dart';
