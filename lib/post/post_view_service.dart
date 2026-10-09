@@ -9,6 +9,9 @@ class PostViewService {
 
   static const maxViewsPerUser = 5;
 
+  /// 同一ユーザー×投稿の同時呼び出しを1本にまとめる（一覧で複数カードが一気に載るとき等）。
+  static final _inflight = <String, Future<int>>{};
+
   final FirebaseFirestore _firestore;
 
   Future<int> recordDetailView({
@@ -19,6 +22,25 @@ class PostViewService {
       return await fetchViewCount(postId);
     }
 
+    final key = '$viewerUid|$postId';
+    final existing = _inflight[key];
+    if (existing != null) {
+      return existing;
+    }
+
+    final future = _recordDetailViewOnce(postId: postId, viewerUid: viewerUid);
+    _inflight[key] = future;
+    try {
+      return await future;
+    } finally {
+      _inflight.remove(key);
+    }
+  }
+
+  Future<int> _recordDetailViewOnce({
+    required String postId,
+    required String viewerUid,
+  }) async {
     final postRef = _firestore.collection('posts').doc(postId);
     final userViewRef =
         _firestore.collection('users').doc(viewerUid).collection('postViews').doc(postId);

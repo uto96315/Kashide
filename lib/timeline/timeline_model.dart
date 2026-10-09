@@ -92,6 +92,7 @@ class TimelineModel extends ChangeNotifier {
   Future<void> recordViewForPost(Post post) async {
     final viewer = uid;
     if (viewer == null) return;
+    final before = post.viewCount;
     final updated = await PostViewService().recordDetailView(
       postId: post.id,
       viewerUid: viewer,
@@ -101,7 +102,9 @@ class TimelineModel extends ChangeNotifier {
       postsList[i].viewCount = updated;
     }
     post.viewCount = updated;
-    if (!_disposed) notifyListeners();
+    if (!_disposed && before != updated) {
+      notifyListeners();
+    }
   }
 
   static bool canUseServerGenreQuery(TimelineFilterState f) {
