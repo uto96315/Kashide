@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:str_gram_beta/common/app_avatar.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,8 +37,6 @@ class LyricPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = post.userImageUrl;
-    final hasImage = image.isNotEmpty && image != 'null';
     final genres = post.genres.whereType<String>().where((genre) => genre.isNotEmpty);
 
     final content = _PostCardContent(
@@ -65,12 +64,7 @@ class LyricPostCard extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () => _openUser(context),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFFE7E9EA),
-                      backgroundImage: hasImage ? NetworkImage(image) : null,
-                      child: hasImage ? null : const Icon(Icons.person, size: 20, color: Color(0xFF536471)),
-                    ),
+                    child: AppAvatar(imageUrl: post.userImageUrl, radius: 20, iconSize: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(child: content),

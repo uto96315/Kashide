@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:in_app_review/in_app_review.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
 import 'package:str_gram_beta/post/post_view_service.dart';
@@ -48,6 +50,8 @@ class TimelineModel extends ChangeNotifier {
   bool filterApplying = false;
   bool filterPrefetching = false;
   bool _filterBackgroundCancelled = false;
+
+  final Map<String, List<dynamic>> _posterInfoCache = {};
 
   List<Post> get visiblePosts {
     final eligible = postsList
@@ -335,12 +339,38 @@ class TimelineModel extends ChangeNotifier {
 
   // ユーザー情報を取得する関数
   Future getUserData(String uid) async {
+    if (uid.isEmpty) return ['', ''];
     final doc = FirebaseFirestore.instance.collection("users").doc(uid);
     final snapshot = await doc.get();
     final data = snapshot.data();
     final userName = data?["userName"];
     final userImageUrl = data?["iconUrl"];
     return [userName, userImageUrl];
+  }
+
+  Future<List<dynamic>> _posterInfo(String posterId) async {
+    final cached = _posterInfoCache[posterId];
+    if (cached != null) return cached;
+    final info = await getUserData(posterId);
+    _posterInfoCache[posterId] = info;
+    return info;
+  }
+
+  Future<void> refreshCommentCountsInBackground() async {
+    if (_disposed || postsList.isEmpty) return;
+    var changed = false;
+    await Future.wait(
+      postsList.map((post) async {
+        try {
+          final c = await getCommentCount(post.id);
+          if (post.commentCount != c) {
+            post.commentCount = c;
+            changed = true;
+          }
+        } catch (_) {}
+      }),
+    );
+    if (changed && !_disposed) notifyListeners();
   }
 
   // プレイリストを取得する関数
@@ -417,10 +447,17 @@ class TimelineModel extends ChangeNotifier {
     return query.orderBy('createdAt', descending: true);
   }
 
-  Future<List<Post>> _postsFromDocs(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
+  Future<List<Post>> _postsFromDocs(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs, {
+    bool loadCommentCounts = false,
+  }) async {
     if (docs.isEmpty) return [];
-    final userInfo = await Future.wait(docs.map((doc) => getUserData(doc["posterId"])));
-    final commentCount = await Future.wait(docs.map((doc) => getCommentCount(doc.id)));
+    final userInfo = await Future.wait(
+      docs.map((doc) => _posterInfo(doc['posterId'] as String? ?? '')),
+    );
+    final commentCount = loadCommentCounts
+        ? await Future.wait(docs.map((doc) => getCommentCount(doc.id)))
+        : List<int>.filled(docs.length, 0);
     return docs.asMap().entries.map((entry) {
       final index = entry.key;
       final doc = entry.value;
@@ -458,7 +495,7 @@ class TimelineModel extends ChangeNotifier {
   }
 
   // 最初に１０件を取得する
-  Future<void> loadLikedPostIds() async {
+  Future<void> loadLikedPostIds({bool notify = true}) async {
     if (uid == null) return;
     final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
     final results = await Future.wait([
@@ -472,7 +509,7 @@ class TimelineModel extends ChangeNotifier {
       ..clear()
       ..addAll(likedPostIds)
       ..addAll(results[1].docs.map((doc) => doc.id));
-    notifyListeners();
+    if (notify && !_disposed) notifyListeners();
   }
 
   bool isVisibleInSwipeDeck(Post post) {
@@ -493,50 +530,63 @@ class TimelineModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future getFirstPostData() async {
-    await loadLikedPostIds();
+  Future<void>? _getFirstPostDataInflight;
+
+  Future<void> getFirstPostData() async {
+    final existing = _getFirstPostDataInflight;
+    if (existing != null) return existing;
+    final run = _getFirstPostDataBody();
+    _getFirstPostDataInflight = run;
+    try {
+      await run;
+    } finally {
+      if (_getFirstPostDataInflight == run) {
+        _getFirstPostDataInflight = null;
+      }
+    }
+  }
+
+  Future<void> _getFirstPostDataBody() async {
     _filterBackgroundCancelled = true;
     filterPrefetching = false;
     sortLoadError = null;
     filterLoadError = null;
     filterClientGenreFallback = false;
-    if (filter.isActive) {
-      try {
-        await _reloadFilteredFeed();
+    try {
+      if (filter.isActive) {
+        await Future.wait([
+          loadLikedPostIds(notify: false),
+          _reloadFilteredFeed(),
+        ]);
         _startFilteredBackgroundPrefetch();
-      } on FirebaseException catch (e, st) {
-        debugPrint('Timeline initial load failed: ${e.code} ${e.message}\n$st');
-        final message = _feedLoadErrorMessage(
-          e,
-          forFilter: true,
-          forLikedSort: sortOrder == TimelineSortOrder.mostLiked,
-        );
+      } else {
+        _serverGenreFilter = null;
+        await Future.wait([
+          loadLikedPostIds(notify: false),
+          _reloadPostsFromCurrentQuery(),
+        ]);
+      }
+      debugPrint('投稿を読み込みました');
+      if (!_disposed) notifyListeners();
+      unawaited(refreshCommentCountsInBackground());
+    } on FirebaseException catch (e, st) {
+      debugPrint('Timeline initial load failed: ${e.code} ${e.message}\n$st');
+      final message = _feedLoadErrorMessage(
+        e,
+        forFilter: filter.isActive,
+        forLikedSort: sortOrder == TimelineSortOrder.mostLiked,
+      );
+      if (filter.isActive) {
         if (sortOrder == TimelineSortOrder.mostLiked) sortLoadError = message;
         filterLoadError = message;
-        postsList = [];
-        postsReady = true;
-        hasMorePosts = false;
-        notifyListeners();
-        return;
+      } else if (sortOrder == TimelineSortOrder.mostLiked) {
+        sortLoadError = message;
       }
-    } else {
-      _serverGenreFilter = null;
-      try {
-        await _reloadPostsFromCurrentQuery();
-      } on FirebaseException catch (e, st) {
-        debugPrint('Timeline initial load failed: ${e.code} ${e.message}\n$st');
-        if (sortOrder == TimelineSortOrder.mostLiked) {
-          sortLoadError = _feedLoadErrorMessage(e, forFilter: false, forLikedSort: true);
-        }
-        postsList = [];
-        postsReady = true;
-        hasMorePosts = false;
-        notifyListeners();
-        return;
-      }
+      postsList = [];
+      postsReady = true;
+      hasMorePosts = false;
+      if (!_disposed) notifyListeners();
     }
-    debugPrint("投稿を読み込みました");
-    notifyListeners();
   }
 
   Future<void> loadMorePosts() async {

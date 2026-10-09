@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/common/app_avatar.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
@@ -50,8 +51,6 @@ class _MyPageState extends ConsumerState<MyPage> {
     final model = ref.watch(myPageProvider);
     final playlistModel = ref.watch(playlistProvider);
     final playlistCount = playlistModel.ready ? '${playlistModel.playlists.length}' : '—';
-    final hasAvatar =
-        model.userImageURL != null && model.userImageURL != '' && model.userImageURL != 'null';
     final postCount = model.postsReady ? '${model.userPostsList.length}' : '—';
     final likedCount = model.likedCountReady ? '${model.likedPostsCount}' : '—';
 
@@ -94,13 +93,11 @@ class _MyPageState extends ConsumerState<MyPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    CircleAvatar(
+                    AppAvatar(
+                      imageUrl: model.userImageURL,
                       radius: 40,
-                      backgroundColor: const Color(0xFFE7E9EA),
-                      backgroundImage: hasAvatar ? NetworkImage(model.userImageURL!) : null,
-                      child: hasAvatar
-                          ? null
-                          : const Icon(CupertinoIcons.person_fill, size: 40, color: _secondaryText),
+                      iconSize: 40,
+                      iconColor: _secondaryText,
                     ),
                     const SizedBox(height: 12),
                     Text(

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
 import 'package:str_gram_beta/auth/account_switch_providers.dart';
 import 'package:str_gram_beta/auth/saved_account.dart';
-import 'package:str_gram_beta/common/network_image_utils.dart';
+import 'package:str_gram_beta/common/app_avatar.dart';
 import 'package:str_gram_beta/auth/saved_accounts_store.dart';
 import 'package:str_gram_beta/auth/user_session_refresh.dart';
 import 'package:str_gram_beta/login/login_page.dart';
@@ -58,8 +58,6 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
     final savedAccounts = ref.watch(savedAccountsProvider);
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     final version = Platform.isIOS ? widget.model.iosVersion : widget.model.androidVersion;
-    final hasAvatar = isUsableNetworkImageUrl(widget.model.userImageURL);
-
     return Drawer(
       backgroundColor: ProfileMenuDrawer._bg,
       surfaceTintColor: Colors.transparent,
@@ -91,14 +89,12 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  AppAvatar(
+                    imageUrl: widget.model.userImageURL,
                     radius: 28,
                     backgroundColor: ProfileMenuDrawer._separator,
-                    backgroundImage:
-                        hasAvatar ? NetworkImage(normalizeNetworkImageUrl(widget.model.userImageURL)!) : null,
-                    child: hasAvatar
-                        ? null
-                        : const Icon(CupertinoIcons.person_fill, size: 28, color: ProfileMenuDrawer._secondary),
+                    iconColor: ProfileMenuDrawer._secondary,
+                    iconSize: 28,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -446,9 +442,6 @@ class _AccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = normalizeNetworkImageUrl(account.iconUrl);
-    final hasAvatar = avatarUrl != null;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -461,13 +454,12 @@ class _AccountTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  AppAvatar(
+                    imageUrl: account.iconUrl,
                     radius: 16,
                     backgroundColor: ProfileMenuDrawer._separator,
-                    backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
-                    child: hasAvatar
-                        ? null
-                        : const Icon(CupertinoIcons.person_fill, size: 16, color: ProfileMenuDrawer._secondary),
+                    iconColor: ProfileMenuDrawer._secondary,
+                    iconSize: 16,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

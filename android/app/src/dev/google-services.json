@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:685958858748:android:6df7a3bb5af817a7ee1479",
         "android_client_info": {
-          "package_name": "com.yuto.mabe.kashide"
+          "package_name": "com.yuto.mabe.kashide.dev"
         }
       },
       "oauth_client": [
@@ -29,13 +29,6 @@
             {
               "client_id": "685958858748-qhigitpv6ga29o6o3hq6rghsf02pdt8f.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "685958858748-vhgeopkr0cdd7lnb73lup1r228u8ujie.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.strGramBeta"
-              }
             }
           ]
         }

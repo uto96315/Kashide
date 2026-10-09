@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:str_gram_beta/common/app_avatar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/providers.dart';
 import '../../domain/comment_domain.dart';
@@ -20,7 +21,6 @@ class CommentArea extends ConsumerWidget {
     }
     return Column(
       children: commentsList.map((comment) {
-        final hasImage = comment.commenterImageUrl.isNotEmpty && comment.commenterImageUrl != 'null';
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: DecoratedBox(
@@ -34,11 +34,12 @@ class CommentArea extends ConsumerWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
+                  AppAvatar(
+                    imageUrl: comment.commenterImageUrl,
                     radius: 16,
                     backgroundColor: const Color(0xFFE5E5EA),
-                    backgroundImage: hasImage ? NetworkImage(comment.commenterImageUrl) : null,
-                    child: hasImage ? null : const Icon(Icons.person, size: 16, color: Color(0xFF8E8E93)),
+                    iconColor: const Color(0xFF8E8E93),
+                    iconSize: 16,
                   ),
                   const SizedBox(width: 10),
                   Expanded(

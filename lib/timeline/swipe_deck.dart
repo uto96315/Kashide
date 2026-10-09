@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:str_gram_beta/common/app_avatar.dart';
 import 'package:str_gram_beta/common/swipe_card_scene.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
@@ -412,15 +413,12 @@ class _LyricCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    CircleAvatar(
+                    AppAvatar(
+                      imageUrl: post.userImageUrl,
                       radius: 14,
                       backgroundColor: const Color(0xFFFFE4EC),
-                      backgroundImage: post.userImageUrl.isEmpty || post.userImageUrl == 'null'
-                          ? null
-                          : NetworkImage(post.userImageUrl),
-                      child: post.userImageUrl.isEmpty || post.userImageUrl == 'null'
-                          ? const Icon(Icons.person, size: 16, color: mainColor)
-                          : null,
+                      iconColor: mainColor,
+                      iconSize: 16,
                     ),
                     const SizedBox(width: 8),
                     Expanded(

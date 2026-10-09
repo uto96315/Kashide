@@ -4,6 +4,7 @@ import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:str_gram_beta/element/comment/comment_area.dart';
+import 'package:str_gram_beta/common/app_avatar.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
@@ -22,7 +23,6 @@ class PostDetailPage extends ConsumerWidget {
     final model = ref.watch(postDetailProvider(id));
     final loading = !model.postReady;
     final icon = model.userIconUrl;
-    final hasIcon = icon != null && icon.isNotEmpty && icon != 'null';
     final genres = model.genreList.whereType<String>().where((g) => g.isNotEmpty);
 
     return GestureDetector(
@@ -53,11 +53,11 @@ class PostDetailPage extends ConsumerWidget {
                                 children: [
                                   Row(
                                     children: [
-                                      CircleAvatar(
+                                      AppAvatar(
+                                        imageUrl: icon,
                                         radius: 18,
                                         backgroundColor: const Color(0xFFE5E5EA),
-                                        backgroundImage: hasIcon ? NetworkImage(icon) : null,
-                                        child: hasIcon ? null : const Icon(Icons.person, color: Color(0xFF8E8E93)),
+                                        iconColor: const Color(0xFF8E8E93),
                                       ),
                                       const SizedBox(width: 10),
                                       Expanded(
@@ -263,7 +263,6 @@ class _CommentComposerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = userImageUrl != null && userImageUrl!.isNotEmpty && userImageUrl != 'null';
     final len = controller.text.length;
     final showLimit = len >= 160;
 
@@ -279,11 +278,12 @@ class _CommentComposerBar extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: CircleAvatar(
+              child: AppAvatar(
+                imageUrl: userImageUrl,
                 radius: 18,
                 backgroundColor: const Color(0xFFE5E5EA),
-                backgroundImage: hasImage ? NetworkImage(userImageUrl!) : null,
-                child: hasImage ? null : const Icon(Icons.person, size: 18, color: Color(0xFF8E8E93)),
+                iconColor: const Color(0xFF8E8E93),
+                iconSize: 18,
               ),
             ),
             const SizedBox(width: 10),

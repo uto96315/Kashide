@@ -19,13 +19,31 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    buildFeatures {
+        resValues = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("prod") {
+            dimension = "environment"
+            applicationId = "com.yuto.mabe.kashide"
+            resValue("string", "app_name", "Kashide")
+        }
+        create("dev") {
+            dimension = "environment"
+            applicationId = "com.yuto.mabe.kashide.dev"
+            resValue("string", "app_name", "Kashide Dev")
+        }
+    }
+
     defaultConfig {
-        applicationId = "com.yuto.mabe.kashide"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

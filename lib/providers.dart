@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -116,10 +118,10 @@ final timelineProvider = ChangeNotifierProvider.autoDispose<TimelineModel>((ref)
   ref.listen<BlockListModel>(blockListProvider, (_, next) {
     timeline.purgeBlockedPosts(next.blockedIds);
   });
-  return timeline
-    ..getFirstPostData()
-    ..loadMasterGenres()
-    ..getPlayListData();
+  unawaited(timeline.getFirstPostData());
+  unawaited(timeline.loadMasterGenres());
+  unawaited(timeline.getPlayListData());
+  return timeline;
 });
 
 final searchProvider = ChangeNotifierProvider.autoDispose<SearchModel>((ref) {

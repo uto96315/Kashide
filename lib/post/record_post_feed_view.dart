@@ -25,7 +25,9 @@ class _RecordPostFeedViewState extends State<RecordPostFeedView> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _record());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(const Duration(milliseconds: 500), _record);
+    });
   }
 
   Future<void> _record() async {

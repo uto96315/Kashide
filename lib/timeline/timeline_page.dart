@@ -16,6 +16,7 @@ import '../common/lyric_post_card.dart';
 import '../providers.dart';
 import 'swipe_deck.dart';
 import 'timeline_filter_sheet.dart';
+import 'timeline_model.dart';
 import 'timeline_sort.dart';
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
@@ -36,6 +37,14 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
 
   Future<void> _playCardPreview(Post post) async {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
+  }
+
+  Future<void> _refreshTimeline(TimelineModel model) async {
+    try {
+      await model.getFirstPostData();
+    } catch (e, st) {
+      debugPrint('Timeline refresh failed: $e\n$st');
+    }
   }
 
   @override
@@ -121,110 +130,126 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               ),
             ),
           Expanded(
-            child: _deck
-                ? SwipeDeck(
-                    posts: [
-                      for (final post in posts)
-                        if (model.isVisibleInSwipeDeck(post)) post,
-                    ],
-                    likedIds: model.likedPostIds,
-                    loadingMore: model.loadingMore,
-                    hasMore: model.hasMorePosts,
-                    onLike: (post) => model.likePost(post.id),
-                    onDismiss: (id) => unawaited(model.markSwipeSeen(id)),
-                    onOpen: (post) async {
-                      await Navigator.push<void>(
-                        context,
-                        MaterialPageRoute(builder: (_) => PostDetailPage(post.id, false)),
-                      );
-                      await model.refreshViewCountForPost(post.id);
-                    },
-                    onOpenUser: (post) {
-                      openUserProfile(context, posterId: post.posterId, userName: post.userName);
-                    },
-                    onPlay: _playCardPreview,
-                    onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
-                    onNeedMore: model.loadMorePosts,
-                    onStopPreview: () => ref.read(cardPreviewPlayerProvider).stop(),
-                    onForegroundCard: (post) async {
-                      await model.recordViewForPost(post);
-                      if (!ref.read(cardAutoplaySettingsProvider).enabled) return;
-                      await _playCardPreview(post);
-                    },
-                  )
-                : NotificationListener<ScrollNotification>(
-                    onNotification: (notification) {
-                      final metrics = notification.metrics;
-                      if (metrics.pixels > metrics.maxScrollExtent - 480) {
-                        model.loadMorePosts();
-                      }
-                      return false;
-                    },
-                    child: RefreshIndicator(
-                      color: mainColor,
-                      onRefresh: () async {
-                        await model.getFirstPostData();
+            child: RefreshIndicator(
+              color: mainColor,
+              onRefresh: () => _refreshTimeline(model),
+              child: _deck
+                  ? CustomScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      slivers: [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: SwipeDeck(
+                            posts: [
+                              for (final post in posts)
+                                if (model.isVisibleInSwipeDeck(post)) post,
+                            ],
+                            likedIds: model.likedPostIds,
+                            loadingMore: model.loadingMore,
+                            hasMore: model.hasMorePosts,
+                            onLike: (post) => model.likePost(post.id),
+                            onDismiss: (id) => unawaited(model.markSwipeSeen(id)),
+                            onOpen: (post) async {
+                              await Navigator.push<void>(
+                                context,
+                                MaterialPageRoute(builder: (_) => PostDetailPage(post.id, false)),
+                              );
+                              await model.refreshViewCountForPost(post.id);
+                            },
+                            onOpenUser: (post) {
+                              openUserProfile(context, posterId: post.posterId, userName: post.userName);
+                            },
+                            onPlay: _playCardPreview,
+                            onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
+                            onNeedMore: model.loadMorePosts,
+                            onStopPreview: () => ref.read(cardPreviewPlayerProvider).stop(),
+                            onForegroundCard: (post) async {
+                              await model.recordViewForPost(post);
+                              if (!ref.read(cardAutoplaySettingsProvider).enabled) return;
+                              await _playCardPreview(post);
+                            },
+                          ),
+                        ),
+                      ],
+                    )
+                  : NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        final metrics = notification.metrics;
+                        if (metrics.pixels > metrics.maxScrollExtent - 480) {
+                          model.loadMorePosts();
+                        }
+                        return false;
                       },
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            if (!model.postsReady)
-                              const Padding(
-                                padding: EdgeInsets.only(top: 80),
-                                child: CircularProgressIndicator(color: mainColor),
-                              )
-                            else if (posts.isEmpty)
-                              EmptyState(
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        slivers: [
+                          if (!model.postsReady)
+                            const SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: Center(child: CircularProgressIndicator(color: mainColor)),
+                            )
+                          else if (posts.isEmpty)
+                            SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: EmptyState(
                                 message: model.filterLoadError != null
                                     ? '絞り込みを読み込めませんでした'
                                     : model.filter.isActive
                                         ? '条件に合う投稿がありません'
                                         : 'まだ歌詞の投稿がありません',
                                 detail: model.filterLoadError,
-                              )
-                            else
-                              Column(
-                                children: [
-                                  if (model.filter.isActive || model.sortOrder != TimelineSortOrder.newest)
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                                      child: Text(
-                                        model.filter.isActive
-                                            ? model.filterBannerText(posts.length)
-                                            : '${posts.length}件 · ${model.sortOrder.label}',
-                                        style: const TextStyle(fontSize: 13, color: Color(0xFF536471)),
-                                      ),
-                                    ),
-                                  for (final post in posts)
-                                    LyricPostCard(
-                                      post: post,
-                                      onAfterDetailVisit: model.refreshViewCountForPost,
-                                      trackFeedView: true,
-                                      onPlaylist: () => _pickPlaylist(context, model, post),
-                                      menuItems: post.posterId == model.uid
-                                          ? const [
-                                              PopupMenuItem(value: 'edit', child: Text('編集する')),
-                                              PopupMenuItem(value: 'delete', child: Text('削除する')),
-                                            ]
-                                          : const [
-                                              PopupMenuItem(value: 'report', child: Text('報告する')),
-                                              PopupMenuItem(value: 'block', child: Text('ブロックする')),
-                                            ],
-                                      onMenu: (value) => _onPostMenu(context, model, post, value),
-                                    ),
-                                ],
                               ),
-                            if (model.loadingMore)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                child: CircularProgressIndicator(color: mainColor),
+                            )
+                          else ...[
+                            if (model.filter.isActive || model.sortOrder != TimelineSortOrder.newest)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                                  child: Text(
+                                    model.filter.isActive
+                                        ? model.filterBannerText(posts.length)
+                                        : '${posts.length}件 · ${model.sortOrder.label}',
+                                    style: const TextStyle(fontSize: 13, color: Color(0xFF536471)),
+                                  ),
+                                ),
                               ),
-                            const SizedBox(height: 24),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final post = posts[index];
+                                  return LyricPostCard(
+                                    post: post,
+                                    onAfterDetailVisit: model.refreshViewCountForPost,
+                                    trackFeedView: true,
+                                    onPlaylist: () => _pickPlaylist(context, model, post),
+                                    menuItems: post.posterId == model.uid
+                                        ? const [
+                                            PopupMenuItem(value: 'edit', child: Text('編集する')),
+                                            PopupMenuItem(value: 'delete', child: Text('削除する')),
+                                          ]
+                                        : const [
+                                            PopupMenuItem(value: 'report', child: Text('報告する')),
+                                            PopupMenuItem(value: 'block', child: Text('ブロックする')),
+                                          ],
+                                    onMenu: (value) => _onPostMenu(context, model, post, value),
+                                  );
+                                },
+                                childCount: posts.length,
+                              ),
+                            ),
                           ],
-                        ),
+                          if (model.loadingMore)
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Center(child: CircularProgressIndicator(color: mainColor)),
+                              ),
+                            ),
+                          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                        ],
                       ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),
