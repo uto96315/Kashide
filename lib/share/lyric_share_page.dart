@@ -12,6 +12,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/providers.dart';
 
+const _kashideAppStoreUrl =
+    'https://apps.apple.com/jp/app/kashide/id6444030139';
+
 class LyricShareData {
   const LyricShareData({
     required this.lyrics,
@@ -40,8 +43,6 @@ class LyricSharePage extends ConsumerStatefulWidget {
 }
 
 class _LyricSharePageState extends ConsumerState<LyricSharePage> {
-  static const _appStoreUrl =
-      'https://apps.apple.com/jp/app/kashide/id6444030139';
   static const _taglines = [
     'その歌詞が、好きだ',
     '歌詞重視派のあなたへ',
@@ -182,7 +183,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
             title: 'Kashideで見つけた歌詞',
             text: [
               [title, artist].where((value) => value.isNotEmpty).join(' / '),
-              _appStoreUrl,
+              _kashideAppStoreUrl,
             ].where((value) => value.isNotEmpty).join('\n'),
             files: [XFile.fromData(bytes, mimeType: 'image/png')],
             fileNameOverrides: const ['kashide_lyric.png'],
@@ -428,10 +429,19 @@ class _LyricShareCard extends StatelessWidget {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: Image.asset(
-                              'icon/kashide_logo_new.png',
+                              'images/kashide_app_icon.png',
                               width: 36,
                               height: 36,
                               fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                color: mainColor,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.graphic_eq_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -467,7 +477,7 @@ class _LyricShareCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: QrImageView(
-                        data: _appStoreUrl,
+                        data: _kashideAppStoreUrl,
                         version: QrVersions.auto,
                         size: 54,
                         padding: EdgeInsets.zero,
