@@ -331,10 +331,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                     style: OutlinedButton.styleFrom(foregroundColor: mainColor),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    '文字サイズ ${_fontSize.round()}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  Text('文字の大きさ', style: const TextStyle(fontSize: 12)),
                   Expanded(
                     child: Slider(
                       value: _fontSize,
@@ -342,6 +339,8 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                       max: 30,
                       divisions: 18,
                       activeColor: mainColor,
+                      semanticFormatterCallback: (value) =>
+                          '文字の大きさ ${value.round()}',
                       onChanged: (value) => setState(() => _fontSize = value),
                     ),
                   ),
