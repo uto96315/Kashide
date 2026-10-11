@@ -7,6 +7,7 @@ import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
+import 'package:str_gram_beta/share/lyric_share_page.dart';
 
 /// X（Twitter）タイムライン風：左アバター・右本文・アクションは下段で均等タップ領域。
 class LyricPostCard extends StatelessWidget {
@@ -292,6 +293,15 @@ class _PostCardContent extends StatelessWidget {
                       onTap: onPlaylist!,
                     )
                   : const _TimelineActionPlaceholder(),
+            ),
+            Expanded(
+              child: _TimelineAction(
+                icon: Icons.ios_share_rounded,
+                onTap: () => openLyricShare(
+                  context,
+                  LyricShareData(lyrics: post.text, title: post.singName, artist: post.artist),
+                ),
+              ),
             ),
           ],
         ),

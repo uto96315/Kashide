@@ -48,6 +48,14 @@ class SongSearchService {
     return _nonEmptyUrl(hit.previewUrl ?? '');
   }
 
+  Future<String?> lookupArtworkUrl({
+    required String artist,
+    required String title,
+  }) async {
+    final hit = await _lookupBestHit(artist: artist, title: title);
+    return _nonEmptyUrl(hit?.artworkUrl ?? '')?.replaceFirst('100x100', '600x600');
+  }
+
   Future<SongHit?> _lookupBestHit({
     required String artist,
     required String title,
