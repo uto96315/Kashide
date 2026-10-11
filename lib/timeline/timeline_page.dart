@@ -19,6 +19,7 @@ import 'swipe_deck.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
 import 'timeline_controls_tutorial.dart';
+
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
 
@@ -54,12 +55,15 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     final previewPlayer = ref.watch(cardPreviewPlayerProvider);
     final posts = model.visiblePosts;
 
-    final notificationUnread = ref.watch(notificationInboxProvider.select((m) => m.unreadCount));
+    final notificationUnread = ref.watch(
+      notificationInboxProvider.select((m) => m.unreadCount),
+    );
 
     if (!_tutorialCheckScheduled) {
       _tutorialCheckScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(TimelineControlsTutorial.showIfNeeded(
+        unawaited(
+          TimelineControlsTutorial.showIfNeeded(
           context,
           uid: model.uid,
           targets: [
@@ -68,7 +72,8 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             _filterTutorialKey,
             _viewTutorialKey,
           ],
-        ));
+          ),
+        );
       });
     }
 
@@ -89,7 +94,8 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                       final settings = ref.read(cardAutoplaySettingsProvider);
                       final next = !settings.enabled;
                       await settings.setEnabled(next);
-                      if (!next) await ref.read(cardPreviewPlayerProvider).stop();
+                      if (!next)
+                        await ref.read(cardPreviewPlayerProvider).stop();
                     },
                   ),
                 _SortButton(
@@ -119,7 +125,12 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                 ),
                 IconButton(
                   onPressed: () async {
-                    await Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationPage()));
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationPage(),
+                      ),
+                    );
                     if (!mounted) return;
                     await ref.read(notificationInboxProvider).load();
                   },
@@ -151,6 +162,56 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ),
+          if (model.filter.songArtist?.trim().isNotEmpty == true ||
+              model.filter.genres.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Material(
+                color: const Color(0xFFFFF1F5),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.music_note_rounded,
+                        color: mainColor,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          model.filter.songArtist?.trim().isNotEmpty == true
+                              ? '歌手「${model.filter.songArtist}」で絞り込み中'
+                              : 'ジャンル「${model.filter.genres.join('・')}」で絞り込み中',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF59434B),
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => model.setFilter(
+                          model.filter.copyWith(
+                            genres: const {},
+                            clearSongArtist: true,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: mainColor,
+                          minimumSize: const Size(52, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text('解除'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           Expanded(
             child: _deck
                 ? SwipeDeck(
@@ -166,14 +227,33 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     onOpen: (post) async {
                       await Navigator.push<void>(
                         context,
-                        MaterialPageRoute(builder: (_) => PostDetailPage(post.id, false)),
+                        MaterialPageRoute(
+                          builder: (_) => PostDetailPage(post.id, false),
+                        ),
                       );
                     },
                     onOpenUser: (post) {
-                      openUserProfile(context, posterId: post.posterId, userName: post.userName);
+                      openUserProfile(
+                        context,
+                        posterId: post.posterId,
+                        userName: post.userName,
+                      );
                     },
+                    onFilterArtist: (artist) => model.setFilter(
+                      model.filter.copyWith(
+                        genres: const {},
+                        songArtist: artist,
+                      ),
+                    ),
+                    onFilterGenre: (genre) => model.setFilter(
+                      model.filter.copyWith(
+                        genres: {genre},
+                        clearSongArtist: true,
+                      ),
+                    ),
                     onPlay: _playCardPreview,
-                    onShare: (post) => unawaited(openLyricShare(
+                    onShare: (post) => unawaited(
+                      openLyricShare(
                       context,
                       LyricShareData(
                         lyrics: post.text,
@@ -181,12 +261,16 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                         artist: post.artist,
                         genres: post.genres.whereType<String>().toList(),
                       ),
-                    )),
-                    onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
+                      ),
+                    ),
+                    onAddToPlaylist: (post) =>
+                        _pickPlaylist(context, model, post),
                     onNeedMore: model.loadMorePosts,
-                    onStopPreview: () => ref.read(cardPreviewPlayerProvider).stop(),
+                    onStopPreview: () =>
+                        ref.read(cardPreviewPlayerProvider).stop(),
                     onForegroundCard: (post) async {
-                      if (!ref.read(cardAutoplaySettingsProvider).enabled) return;
+                      if (!ref.read(cardAutoplaySettingsProvider).enabled)
+                        return;
                       await _playCardPreview(post);
                     },
                   )
@@ -209,7 +293,9 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                             if (!model.postsReady)
                               const Padding(
                                 padding: EdgeInsets.only(top: 80),
-                                child: CircularProgressIndicator(color: mainColor),
+                                child: CircularProgressIndicator(
+                                  color: mainColor,
+                                ),
                               )
                             else if (posts.isEmpty)
                               EmptyState(
@@ -223,14 +309,26 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                             else
                               Column(
                                 children: [
-                                  if (model.filter.isActive || model.sortOrder != TimelineSortOrder.newest)
+                                  if (model.filter.isActive ||
+                                      model.sortOrder !=
+                                          TimelineSortOrder.newest)
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        8,
+                                        16,
+                                        4,
+                                      ),
                                       child: Text(
                                         model.filter.isActive
-                                            ? model.filterBannerText(posts.length)
+                                            ? model.filterBannerText(
+                                                posts.length,
+                                              )
                                             : '${posts.length}件 · ${model.sortOrder.label}',
-                                        style: const TextStyle(fontSize: 13, color: Color(0xFF536471)),
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF536471),
+                                        ),
                                       ),
                                     ),
                                   for (final post in posts)
@@ -238,26 +336,48 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                       post: post,
                                       showPostTime: false,
                                       onPlay: _toggleTimelinePreview,
-                                      isPlaying: previewPlayer.playingPostId == post.id &&
+                                      isPlaying:
+                                          previewPlayer.playingPostId ==
+                                              post.id &&
                                           previewPlayer.isPlaying,
-                                      onPlaylist: () => _pickPlaylist(context, model, post),
+                                      onPlaylist: () =>
+                                          _pickPlaylist(context, model, post),
                                       menuItems: post.posterId == model.uid
                                           ? const [
-                                              PopupMenuItem(value: 'edit', child: Text('編集する')),
-                                              PopupMenuItem(value: 'delete', child: Text('削除する')),
+                                              PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('編集する'),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('削除する'),
+                                              ),
                                             ]
                                           : const [
-                                              PopupMenuItem(value: 'report', child: Text('報告する')),
-                                              PopupMenuItem(value: 'block', child: Text('ブロックする')),
+                                              PopupMenuItem(
+                                                value: 'report',
+                                                child: Text('報告する'),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'block',
+                                                child: Text('ブロックする'),
+                                              ),
                                             ],
-                                      onMenu: (value) => _onPostMenu(context, model, post, value),
+                                      onMenu: (value) => _onPostMenu(
+                                        context,
+                                        model,
+                                        post,
+                                        value,
+                                      ),
                                     ),
                                 ],
                               ),
                             if (model.loadingMore)
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 16),
-                                child: CircularProgressIndicator(color: mainColor),
+                                child: CircularProgressIndicator(
+                                  color: mainColor,
+                                ),
                               ),
                             const SizedBox(height: 24),
                           ],
@@ -271,34 +391,84 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     );
   }
 
-  Future<void> _onPostMenu(BuildContext context, dynamic model, dynamic post, String value) async {
+  Future<void> _onPostMenu(
+    BuildContext context,
+    dynamic model,
+    dynamic post,
+    String value,
+  ) async {
     if (value == 'delete') {
-      final ok = await showAppConfirm(context, title: '投稿を削除', message: 'この投稿を削除しますか？', confirm: '削除する', destructive: true);
+      final ok = await showAppConfirm(
+        context,
+        title: '投稿を削除',
+        message: 'この投稿を削除しますか？',
+        confirm: '削除する',
+        destructive: true,
+      );
       if (ok) await model.deletePosts(post.id);
     } else if (value == 'block') {
-      final ok = await showAppConfirm(context, title: 'ブロック', message: 'このユーザーをブロックしますか？', confirm: 'ブロックする', destructive: true);
+      final ok = await showAppConfirm(
+        context,
+        title: 'ブロック',
+        message: 'このユーザーをブロックしますか？',
+        confirm: 'ブロックする',
+        destructive: true,
+      );
       if (!ok || !context.mounted) return;
       await ref.read(blockListProvider).blockUser(post.posterId);
       ref.read(timelineProvider).removePostsByPoster(post.posterId);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ブロックしました')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ブロックしました')));
     } else if (value == 'report') {
-      final ok = await showAppConfirm(context, title: '報告', message: 'この投稿を報告しますか？', confirm: '報告する', destructive: true);
+      final ok = await showAppConfirm(
+        context,
+        title: '報告',
+        message: 'この投稿を報告しますか？',
+        confirm: '報告する',
+        destructive: true,
+      );
       if (!ok || !context.mounted) return;
       await model.reportPosts(post.id);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('報告しました')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('報告しました')));
     } else if (value == 'edit') {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => EditPostPage(post.id, post.text, post.artist, post.singName, post.genres, post.explanation, post.youtubeLink)));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditPostPage(
+            post.id,
+            post.text,
+            post.artist,
+            post.singName,
+            post.genres,
+            post.explanation,
+            post.youtubeLink,
+          ),
+        ),
+      );
     }
   }
 
-  Future<bool> _pickPlaylist(BuildContext context, dynamic model, dynamic post) {
+  Future<bool> _pickPlaylist(
+    BuildContext context,
+    dynamic model,
+    dynamic post,
+  ) {
     return showPlaylistPickerSheet(
       context,
       playlists: model.playList,
       onSelect: (playlistId) async {
-        await model.addToPlaylist(playlistId, post.artist, post.singName, post.youtubeLink, post.id);
+        await model.addToPlaylist(
+          playlistId,
+          post.artist,
+          post.singName,
+          post.youtubeLink,
+          post.id,
+        );
       },
       onCreate: (name) async {
         model.addPlaylistController.text = name;
@@ -341,7 +511,12 @@ class _NotificationBellIcon extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               unread > 99 ? '99+' : '$unread',
-              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white, height: 1),
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                height: 1,
+              ),
             ),
           ),
         ),
@@ -406,7 +581,11 @@ class _SortButton extends StatelessWidget {
 }
 
 class _FilterButton extends StatelessWidget {
-  const _FilterButton({super.key, required this.active, required this.onPressed});
+  const _FilterButton({
+    super.key,
+    required this.active,
+    required this.onPressed,
+  });
 
   final bool active;
   final VoidCallback onPressed;
@@ -418,7 +597,10 @@ class _FilterButton extends StatelessWidget {
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
-          Icon(Icons.tune_rounded, color: active ? mainColor : const Color(0xFF1C1C1E)),
+          Icon(
+            Icons.tune_rounded,
+            color: active ? mainColor : const Color(0xFF1C1C1E),
+          ),
           if (active)
             Positioned(
               right: -1,
@@ -426,7 +608,10 @@ class _FilterButton extends StatelessWidget {
               child: Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(color: mainColor, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: mainColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
         ],
@@ -472,7 +657,11 @@ class _ViewToggle extends StatelessWidget {
           color: selected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, size: 18, color: selected ? mainColor : const Color(0xFF536471)),
+        child: Icon(
+          icon,
+          size: 18,
+          color: selected ? mainColor : const Color(0xFF536471),
+        ),
       ),
     );
   }
