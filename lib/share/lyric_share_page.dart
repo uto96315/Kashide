@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/providers.dart';
@@ -38,6 +40,16 @@ class LyricSharePage extends ConsumerStatefulWidget {
 }
 
 class _LyricSharePageState extends ConsumerState<LyricSharePage> {
+  static const _appStoreUrl =
+      'https://apps.apple.com/jp/app/kashide/id6444030139';
+  static const _taglines = [
+    'その歌詞が、好きだ',
+    '歌詞重視派のあなたへ',
+    '好きな曲には、好きな言葉がある',
+    'あの歌詞が、忘れられない',
+    '歌詞と音楽を、もっと好きに',
+  ];
+
   static const _backgroundOptions = <String, String>{
     'images/card_love.jpg': '夕焼け',
     'images/card_sad.jpg': '夕暮れ',
@@ -47,6 +59,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
 
   final _previewKey = GlobalKey();
   late final Future<String?> _artworkUrlFuture;
+  late final String _tagline;
   late double _fontSize;
   var _backgroundAsset = 'images/card_love.jpg';
   String? _backgroundFilePath;
@@ -56,6 +69,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
   void initState() {
     super.initState();
     _artworkUrlFuture = _loadArtworkUrl();
+    _tagline = _taglines[math.Random().nextInt(_taglines.length)];
     final lyricLength = widget.data.lyrics.trim().runes.length;
     _fontSize = switch (lyricLength) {
       <= 36 => 21.0,
@@ -167,9 +181,9 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
           ShareParams(
             title: 'Kashideで見つけた歌詞',
             text: [
-              title,
-              artist,
-            ].where((value) => value.isNotEmpty).join(' / '),
+              [title, artist].where((value) => value.isNotEmpty).join(' / '),
+              _appStoreUrl,
+            ].where((value) => value.isNotEmpty).join('\n'),
             files: [XFile.fromData(bytes, mimeType: 'image/png')],
             fileNameOverrides: const ['kashide_lyric.png'],
           ),
@@ -196,11 +210,12 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
         backgroundColor: const Color(0xFFF3F3F7),
         foregroundColor: const Color(0xFF222222),
         elevation: 0,
+        toolbarHeight: 44,
       ),
       body: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
           child: Column(
             children: [
               Expanded(
@@ -215,6 +230,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                         backgroundAsset: _backgroundAsset,
                         backgroundFilePath: _backgroundFilePath,
                         fontSize: _fontSize,
+                        tagline: _tagline,
                       ),
                     ),
                   ),
@@ -228,31 +244,24 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                     label: const Text('背景'),
                     style: OutlinedButton.styleFrom(foregroundColor: mainColor),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
+                  Text(
+                    '文字サイズ ${_fontSize.round()}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '文字サイズ ${_fontSize.round()}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        Slider(
-                          value: _fontSize,
-                          min: 12,
-                          max: 30,
-                          divisions: 18,
-                          activeColor: mainColor,
-                          onChanged: (value) =>
-                              setState(() => _fontSize = value),
-                        ),
-                      ],
+                    child: Slider(
+                      value: _fontSize,
+                      min: 12,
+                      max: 30,
+                      divisions: 18,
+                      activeColor: mainColor,
+                      onChanged: (value) => setState(() => _fontSize = value),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -270,7 +279,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                   style: FilledButton.styleFrom(
                     backgroundColor: mainColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
@@ -289,6 +298,7 @@ class _LyricShareCard extends StatelessWidget {
     required this.backgroundAsset,
     required this.backgroundFilePath,
     required this.fontSize,
+    required this.tagline,
   });
 
   final LyricShareData data;
@@ -296,6 +306,7 @@ class _LyricShareCard extends StatelessWidget {
   final String backgroundAsset;
   final String? backgroundFilePath;
   final double fontSize;
+  final String tagline;
 
   @override
   Widget build(BuildContext context) {
@@ -406,23 +417,70 @@ class _LyricShareCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(flex: 2),
-                Image.asset(
-                  'images/logo_white.png',
-                  width: 118,
-                  height: 38,
-                  fit: BoxFit.contain,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: constraints.maxWidth * 0.48,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              'icon/kashide_logo_new.png',
+                              width: 36,
+                              height: 36,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Kashide',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            tagline,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: QrImageView(
+                        data: _appStoreUrl,
+                        version: QrVersions.auto,
+                        size: 54,
+                        padding: EdgeInsets.zero,
+                        semanticsLabel: 'KashideをApp Storeで開くQRコード',
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 2),
                 const Text(
-                  '歌詞と音楽を、もっと好きに。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                  ),
+                  'App Store',
+                  style: TextStyle(color: Colors.white70, fontSize: 8),
                 ),
-                const SizedBox(height: 6),
               ],
             ),
           ),
