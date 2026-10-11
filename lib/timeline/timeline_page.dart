@@ -128,6 +128,16 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               ],
             ),
           ),
+          _TimelineGenreTabs(
+            genres: model.availableFilterGenres.toList(growable: false),
+            selectedGenre: model.filter.genres.length == 1
+                ? model.filter.genres.first
+                : null,
+            allSelected: model.filter.genres.isEmpty,
+            onSelected: (genre) =>
+                unawaited(_selectTimelineGenre(model, genre)),
+            onSwipe: (direction) => _stepTimelineGenre(model, direction),
+          ),
           if (model.filter.isActive && model.filterApplying)
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
@@ -264,11 +274,37 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                         ),
                       ),
                     ),
-                  ),
+                ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _selectTimelineGenre(dynamic model, String? genre) async {
+    if (genre == null && model.filter.genres.isEmpty) return;
+    if (genre != null &&
+        model.filter.genres.length == 1 &&
+        model.filter.genres.contains(genre)) {
+      return;
+    }
+    await model.setFilter(
+      model.filter.copyWith(genres: genre == null ? <String>{} : {genre}),
+    );
+  }
+
+  void _stepTimelineGenre(dynamic model, int direction) {
+    final genres = model.availableFilterGenres.toList(growable: false);
+    final tabs = <String?>[null, ...genres];
+    final current = model.filter.genres.length == 1
+        ? model.filter.genres.first
+        : null;
+    final currentIndex = tabs.indexOf(current);
+    final nextIndex = (currentIndex + direction)
+        .clamp(0, tabs.length - 1)
+        .toInt();
+    if (nextIndex == currentIndex) return;
+    unawaited(_selectTimelineGenre(model, tabs[nextIndex]));
   }
 
   Future<void> _onPostMenu(BuildContext context, dynamic model, dynamic post, String value) async {
@@ -346,6 +382,140 @@ class _NotificationBellIcon extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TimelineGenreTabs extends StatefulWidget {
+  const _TimelineGenreTabs({
+    required this.genres,
+    required this.selectedGenre,
+    required this.allSelected,
+    required this.onSelected,
+    required this.onSwipe,
+  });
+
+  final List<String> genres;
+  final String? selectedGenre;
+  final bool allSelected;
+  final ValueChanged<String?> onSelected;
+  final ValueChanged<int> onSwipe;
+
+  @override
+  State<_TimelineGenreTabs> createState() => _TimelineGenreTabsState();
+}
+
+class _TimelineGenreTabsState extends State<_TimelineGenreTabs> {
+  final _scrollController = ScrollController();
+  final _pointerStarts = <int, Offset>{};
+
+  double _tabWidth(String? genre) =>
+      ((genre?.length ?? 3) * 14.0 + 28).clamp(72.0, 190.0).toDouble();
+
+  void _keepSelectedVisible() {
+    if (!_scrollController.hasClients) return;
+    final selected = widget.allSelected ? null : widget.selectedGenre;
+    final genreIndex = selected == null ? -1 : widget.genres.indexOf(selected);
+    if (selected != null && genreIndex < 0) return;
+    final index = selected == null ? 0 : genreIndex + 1;
+    final tabs = <String?>[null, ...widget.genres];
+    var leadingWidth = 0.0;
+    for (var i = 0; i < index; i++) {
+      leadingWidth += _tabWidth(tabs[i]);
+    }
+    final target = leadingWidth + _tabWidth(tabs[index]) / 2 -
+        _scrollController.position.viewportDimension / 2;
+    _scrollController.animateTo(
+      target.clamp(0.0, _scrollController.position.maxScrollExtent).toDouble(),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _TimelineGenreTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedGenre != widget.selectedGenre ||
+        oldWidget.allSelected != widget.allSelected ||
+        oldWidget.genres.length != widget.genres.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _keepSelectedVisible();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = <String?>[null, ...widget.genres];
+    return Container(
+      height: 46,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFECECF0))),
+      ),
+      child: Listener(
+        onPointerDown: (event) => _pointerStarts[event.pointer] = event.position,
+        onPointerCancel: (event) => _pointerStarts.remove(event.pointer),
+        onPointerUp: (event) {
+          final start = _pointerStarts.remove(event.pointer);
+          if (start == null) return;
+          final delta = event.position - start;
+          if (delta.dx.abs() > 48 && delta.dx.abs() > delta.dy.abs() * 1.25) {
+            widget.onSwipe(delta.dx < 0 ? 1 : -1);
+          }
+        },
+        child: ListView.builder(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          itemCount: tabs.length,
+          itemBuilder: (context, index) {
+            final genre = tabs[index];
+            final selected = genre == null
+                ? widget.allSelected
+                : genre == widget.selectedGenre;
+            return InkWell(
+              onTap: () => widget.onSelected(genre),
+              child: SizedBox(
+                width: _tabWidth(genre),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOut,
+                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 2),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: selected ? mainColor : Colors.transparent,
+                        width: 3,
+                      ),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    genre ?? 'すべて',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: selected
+                          ? const Color(0xFF25242A)
+                          : const Color(0xFF777781),
+                      fontSize: 14,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
