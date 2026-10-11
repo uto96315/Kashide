@@ -18,6 +18,7 @@ import '../share/lyric_share_page.dart';
 import 'swipe_deck.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
+import 'timeline_controls_tutorial.dart';
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key});
 
@@ -28,6 +29,11 @@ class TimelinePage extends ConsumerStatefulWidget {
 class _TimelinePageState extends ConsumerState<TimelinePage> {
   /// デフォルトはカード（スワイプ）表示。
   var _deck = true;
+  var _tutorialCheckScheduled = false;
+  final _autoplayTutorialKey = GlobalKey();
+  final _sortTutorialKey = GlobalKey();
+  final _filterTutorialKey = GlobalKey();
+  final _viewTutorialKey = GlobalKey();
 
   Future<void> _playCardPreview(Post post) async {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
@@ -50,6 +56,22 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
 
     final notificationUnread = ref.watch(notificationInboxProvider.select((m) => m.unreadCount));
 
+    if (!_tutorialCheckScheduled) {
+      _tutorialCheckScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(TimelineControlsTutorial.showIfNeeded(
+          context,
+          uid: model.uid,
+          targets: [
+            _autoplayTutorialKey,
+            _sortTutorialKey,
+            _filterTutorialKey,
+            _viewTutorialKey,
+          ],
+        ));
+      });
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -61,6 +83,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               children: [
                 if (_deck)
                   _CardPreviewToggle(
+                    key: _autoplayTutorialKey,
                     enabled: ref.watch(cardAutoplaySettingsProvider).enabled,
                     onToggle: () async {
                       final settings = ref.read(cardAutoplaySettingsProvider);
@@ -70,10 +93,12 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     },
                   ),
                 _SortButton(
+                  key: _sortTutorialKey,
                   sortOrder: model.sortOrder,
                   onSelected: (order) => model.setSortOrder(order),
                 ),
                 _FilterButton(
+                  key: _filterTutorialKey,
                   active: model.filter.isActive,
                   onPressed: () async {
                     final next = await showTimelineFilterSheet(
@@ -85,6 +110,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                   },
                 ),
                 _ViewToggle(
+                  key: _viewTutorialKey,
                   deck: _deck,
                   onChanged: (deck) {
                     if (!deck) ref.read(cardPreviewPlayerProvider).stop();
@@ -326,6 +352,7 @@ class _NotificationBellIcon extends StatelessWidget {
 
 class _CardPreviewToggle extends StatelessWidget {
   const _CardPreviewToggle({
+    super.key,
     required this.enabled,
     required this.onToggle,
   });
@@ -348,6 +375,7 @@ class _CardPreviewToggle extends StatelessWidget {
 
 class _SortButton extends StatelessWidget {
   const _SortButton({
+    super.key,
     required this.sortOrder,
     required this.onSelected,
   });
@@ -378,7 +406,7 @@ class _SortButton extends StatelessWidget {
 }
 
 class _FilterButton extends StatelessWidget {
-  const _FilterButton({required this.active, required this.onPressed});
+  const _FilterButton({super.key, required this.active, required this.onPressed});
 
   final bool active;
   final VoidCallback onPressed;
@@ -408,7 +436,7 @@ class _FilterButton extends StatelessWidget {
 }
 
 class _ViewToggle extends StatelessWidget {
-  const _ViewToggle({required this.deck, required this.onChanged});
+  const _ViewToggle({super.key, required this.deck, required this.onChanged});
 
   final bool deck;
   final ValueChanged<bool> onChanged;
