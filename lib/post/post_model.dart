@@ -194,7 +194,6 @@ class PostModel extends ChangeNotifier {
         "singName": singName ?? "不明",
         "createdAt": DateTime.now(),
         "youtubeLink": youtubeLink ?? "",
-        "viewCount": 0,
       });
     } finally {
       posting = false;

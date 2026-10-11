@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
-import 'package:str_gram_beta/post/post_view_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
@@ -92,7 +91,6 @@ class LikedPostsModel extends ChangeNotifier {
         commentCount[index],
         data['explanation'] ?? '',
         data['youtubeLink'] ?? '',
-        viewCount: viewCountFromFirestore(data),
         textSegments: lyricSegmentsFromFirestore(data),
       );
     }).toList();

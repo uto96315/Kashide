@@ -192,17 +192,6 @@ class PostDetailPage extends ConsumerWidget {
                                           ],
                                         ),
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.bar_chart_rounded, size: 22, color: Color(0xFF8E8E93)),
-                                            const SizedBox(width: 6),
-                                            Text('${model.viewCount}', style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93))),
-                                          ],
-                                        ),
-                                      ),
                                       const SizedBox(width: 8),
                                       FavoriteButton(id, model.likedCount ?? 0),
                                     ],

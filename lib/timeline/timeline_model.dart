@@ -1,6 +1,5 @@
 import 'package:in_app_review/in_app_review.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
-import 'package:str_gram_beta/post/post_view_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -82,26 +81,6 @@ class TimelineModel extends ChangeNotifier {
   Future<void> loadMasterGenres() async {
     masterGenreOptions = await fetchDefaultGenres();
     notifyListeners();
-  }
-
-  Future<void> refreshViewCountForPost(String postId) async {
-    await refreshViewCountInList(postsList, postId);
-    if (!_disposed) notifyListeners();
-  }
-
-  Future<void> recordViewForPost(Post post) async {
-    final viewer = uid;
-    if (viewer == null) return;
-    final updated = await PostViewService().recordDetailView(
-      postId: post.id,
-      viewerUid: viewer,
-    );
-    final i = postsList.indexWhere((p) => p.id == post.id);
-    if (i >= 0) {
-      postsList[i].viewCount = updated;
-    }
-    post.viewCount = updated;
-    if (!_disposed) notifyListeners();
   }
 
   static bool canUseServerGenreQuery(TimelineFilterState f) {
@@ -388,7 +367,6 @@ class TimelineModel extends ChangeNotifier {
           commentCount[index],
           doc["explanation"] ?? "",
           doc["youtubeLink"] ?? "",
-          viewCount: viewCountFromFirestore(doc.data()),
           textSegments: lyricSegmentsFromFirestore(doc.data()),
       );
     }).toList();
@@ -437,7 +415,6 @@ class TimelineModel extends ChangeNotifier {
         doc["explanation"] ?? "",
         doc["youtubeLink"] ?? "",
         createdAtMillis: created.millisecondsSinceEpoch,
-        viewCount: viewCountFromFirestore(doc.data()),
         textSegments: lyricSegmentsFromFirestore(doc.data()),
       );
     }).where((post) => !blockList.isBlocked(post.posterId)).toList();

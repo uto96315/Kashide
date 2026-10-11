@@ -174,7 +174,6 @@ class _MyPageState extends ConsumerState<MyPage> {
                     return LyricPostCard(
                       post: post,
                       showAuthor: false,
-                      onAfterDetailVisit: model.refreshViewCountForPost,
                       menuItems: const [
                         PopupMenuItem(value: 'edit', child: Text('編集する')),
                         PopupMenuItem(value: 'delete', child: Text('削除する')),

@@ -9,19 +9,16 @@ import 'package:timeago/timeago.dart' as timeAgo;
 
 import '../domain/comment_domain.dart';
 import '../post/post_lyrics.dart';
-import '../post/post_view_service.dart';
 
 class PostDetailModel extends ChangeNotifier {
-  PostDetailModel(this._postId, commentButtonTapped, this._postViews);
+  PostDetailModel(this._postId, commentButtonTapped);
 
   static const _loadTimeout = Duration(seconds: 25);
 
   final String _postId;
-  final PostViewService _postViews;
+  final commentController = TextEditingController();
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
-
-  final commentController = TextEditingController();
 
   /// 投稿本体の読み込みが終わった（成功・失敗どちらでも true）。UI のスピナー制御用。
   bool postReady = false;
@@ -34,7 +31,6 @@ class PostDetailModel extends ChangeNotifier {
   String? singerName;
   List genreList = [];
   int? likedCount;
-  int viewCount = 0;
   String? explanation;
   String? youtubeLink;
 
@@ -71,7 +67,6 @@ class PostDetailModel extends ChangeNotifier {
       singerName = data['artist'] as String?;
       genreList = data['genres'] ?? [];
       likedCount = (data['likedCount'] as num?)?.toInt();
-      viewCount = viewCountFromFirestore(data);
       explanation = data['explanation'] as String?;
       youtubeLink = data['youtubeLink'] as String? ?? '';
 
@@ -88,25 +83,6 @@ class PostDetailModel extends ChangeNotifier {
     } finally {
       postText ??= '';
       postReady = true;
-      notifyListeners();
-      unawaited(_safeCountView());
-    }
-  }
-
-  Future<void> _safeCountView() async {
-    try {
-      await _countViewIfNeeded();
-    } catch (e, st) {
-      debugPrint('_countViewIfNeeded failed: $e\n$st');
-    }
-  }
-
-  Future<void> _countViewIfNeeded() async {
-    final viewerUid = uid;
-    if (viewerUid == null) return;
-    final updated = await _postViews.recordDetailView(postId: _postId, viewerUid: viewerUid);
-    if (viewCount != updated) {
-      viewCount = updated;
       notifyListeners();
     }
   }
