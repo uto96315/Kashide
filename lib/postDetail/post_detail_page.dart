@@ -9,6 +9,7 @@ import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/providers.dart';
+import 'package:str_gram_beta/share/lyric_share_page.dart';
 import '../element/favorite/favorite_button.dart';
 
 class PostDetailPage extends ConsumerWidget {
@@ -194,6 +195,19 @@ class PostDetailPage extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 8),
                                       FavoriteButton(id, model.likedCount ?? 0),
+                                      const SizedBox(width: 4),
+                                      IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () => openLyricShare(
+                                          context,
+                                          LyricShareData(
+                                            lyrics: model.postText ?? '',
+                                            title: model.singName ?? '',
+                                            artist: model.singerName ?? '',
+                                          ),
+                                        ),
+                                        icon: const Icon(Icons.ios_share_rounded, color: Color(0xFF8E8E93)),
+                                      ),
                                     ],
                                   ),
                                 ],

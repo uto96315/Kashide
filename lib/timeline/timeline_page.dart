@@ -14,6 +14,7 @@ import '../common/playlist_picker_sheet.dart';
 import '../common/screen_top.dart';
 import '../common/lyric_post_card.dart';
 import '../providers.dart';
+import '../share/lyric_share_page.dart';
 import 'swipe_deck.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
@@ -27,12 +28,6 @@ class TimelinePage extends ConsumerStatefulWidget {
 class _TimelinePageState extends ConsumerState<TimelinePage> {
   /// デフォルトはカード（スワイプ）表示。
   var _deck = true;
-
-  @override
-  void dispose() {
-    ref.read(cardPreviewPlayerProvider).stop();
-    super.dispose();
-  }
 
   Future<void> _playCardPreview(Post post) async {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
@@ -152,6 +147,10 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                       openUserProfile(context, posterId: post.posterId, userName: post.userName);
                     },
                     onPlay: _playCardPreview,
+                    onShare: (post) => unawaited(openLyricShare(
+                      context,
+                      LyricShareData(lyrics: post.text, title: post.singName, artist: post.artist),
+                    )),
                     onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
                     onNeedMore: model.loadMorePosts,
                     onStopPreview: () => ref.read(cardPreviewPlayerProvider).stop(),
