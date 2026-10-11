@@ -20,6 +20,7 @@ class LyricPostCard extends StatelessWidget {
     this.onPlay,
     this.isPlaying = false,
     this.showAuthor = true,
+    this.showPostTime = true,
   });
 
   final Post post;
@@ -29,6 +30,7 @@ class LyricPostCard extends StatelessWidget {
   final Future<void> Function(Post post)? onPlay;
   final bool isPlaying;
   final bool showAuthor;
+  final bool showPostTime;
 
   static const _actionGray = Color(0xFF536471);
   static const _cardPadding = EdgeInsets.fromLTRB(16, 12, 16, 8);
@@ -48,6 +50,7 @@ class LyricPostCard extends StatelessWidget {
       onPlay: onPlay == null ? null : () => onPlay!(post),
       isPlaying: isPlaying,
       showAuthor: showAuthor,
+      showPostTime: showPostTime,
       onOpenUser: () => _openUser(context),
       onOpenPost: (comments) => _openPost(context, comments),
     );
@@ -105,6 +108,7 @@ class _PostCardContent extends StatelessWidget {
     required this.onPlay,
     required this.isPlaying,
     required this.showAuthor,
+    required this.showPostTime,
     required this.onOpenUser,
     required this.onOpenPost,
   });
@@ -117,6 +121,7 @@ class _PostCardContent extends StatelessWidget {
   final VoidCallback? onPlay;
   final bool isPlaying;
   final bool showAuthor;
+  final bool showPostTime;
   final VoidCallback onOpenUser;
   final void Function(bool comments) onOpenPost;
 
@@ -151,19 +156,21 @@ class _PostCardContent extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 5),
-                        child: Text(
-                          '·',
-                          style: TextStyle(fontSize: 15, height: 1.2, color: Color(0xFF536471)),
+                      if (showPostTime)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 5),
+                          child: Text(
+                            '·',
+                            style: TextStyle(fontSize: 15, height: 1.2, color: Color(0xFF536471)),
+                          ),
                         ),
-                      ),
                     ],
-                    Text(
-                      post.createdAt,
-                      maxLines: 1,
-                      style: const TextStyle(fontSize: 14, height: 1.2, color: Color(0xFF536471)),
-                    ),
+                    if (showPostTime)
+                      Text(
+                        post.createdAt,
+                        maxLines: 1,
+                        style: const TextStyle(fontSize: 14, height: 1.2, color: Color(0xFF536471)),
+                      ),
                   ],
                 ),
               ),
@@ -299,7 +306,12 @@ class _PostCardContent extends StatelessWidget {
                 icon: Icons.ios_share_rounded,
                 onTap: () => openLyricShare(
                   context,
-                  LyricShareData(lyrics: post.text, title: post.singName, artist: post.artist),
+                  LyricShareData(
+                    lyrics: post.text,
+                    title: post.singName,
+                    artist: post.artist,
+                    genres: post.genres.whereType<String>().toList(),
+                  ),
                 ),
               ),
             ),
