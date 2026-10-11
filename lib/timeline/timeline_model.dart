@@ -182,6 +182,10 @@ class TimelineModel extends ChangeNotifier {
             ? ' · 下へスクロールでさらに表示'
             : ' · ここまで全件';
     final sortLabel = sortOrder.label;
+    final songArtist = filter.songArtist?.trim();
+    if (songArtist != null && songArtist.isNotEmpty) {
+      return '$fallbackNote$visibleCount件 · 歌手「$songArtist」 · $sortLabel$suffix';
+    }
     if (filterUsesServerGenre) {
       final g = _serverGenreFilter!;
       return '$fallbackNote$visibleCount件（ジャンル「$g」· $sortLabel）$suffix';

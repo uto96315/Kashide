@@ -1,16 +1,8 @@
 import 'package:str_gram_beta/domain/post_domain.dart';
 
-enum TimelineCommentFilter {
-  all,
-  withComments,
-  withoutComments,
-}
+enum TimelineCommentFilter { all, withComments, withoutComments }
 
-enum TimelineTriFilter {
-  all,
-  yes,
-  no,
-}
+enum TimelineTriFilter { all, yes, no }
 
 class TimelineFilterState {
   const TimelineFilterState({
@@ -18,30 +10,36 @@ class TimelineFilterState {
     this.commentFilter = TimelineCommentFilter.all,
     this.youtubeFilter = TimelineTriFilter.all,
     this.explanationFilter = TimelineTriFilter.all,
+    this.songArtist,
   });
 
   final Set<String> genres;
   final TimelineCommentFilter commentFilter;
   final TimelineTriFilter youtubeFilter;
   final TimelineTriFilter explanationFilter;
+  final String? songArtist;
 
   bool get isActive =>
       genres.isNotEmpty ||
       commentFilter != TimelineCommentFilter.all ||
       youtubeFilter != TimelineTriFilter.all ||
-      explanationFilter != TimelineTriFilter.all;
+      explanationFilter != TimelineTriFilter.all ||
+      (songArtist?.trim().isNotEmpty ?? false);
 
   TimelineFilterState copyWith({
     Set<String>? genres,
     TimelineCommentFilter? commentFilter,
     TimelineTriFilter? youtubeFilter,
     TimelineTriFilter? explanationFilter,
+    String? songArtist,
+    bool clearSongArtist = false,
   }) {
     return TimelineFilterState(
       genres: genres ?? this.genres,
       commentFilter: commentFilter ?? this.commentFilter,
       youtubeFilter: youtubeFilter ?? this.youtubeFilter,
       explanationFilter: explanationFilter ?? this.explanationFilter,
+      songArtist: clearSongArtist ? null : songArtist ?? this.songArtist,
     );
   }
 
@@ -49,9 +47,19 @@ class TimelineFilterState {
 }
 
 List<Post> applyTimelineFilter(List<Post> posts, TimelineFilterState filter) {
-  return posts.where((post) {
+  return posts
+      .where((post) {
+        final songArtist = filter.songArtist?.trim();
+        if (songArtist != null &&
+            songArtist.isNotEmpty &&
+            post.artist.trim() != songArtist) {
+          return false;
+        }
     if (filter.genres.isNotEmpty) {
-      final postGenres = post.genres.whereType<String>().where((g) => g.isNotEmpty).toSet();
+          final postGenres = post.genres
+              .whereType<String>()
+              .where((g) => g.isNotEmpty)
+              .toSet();
       if (!filter.genres.any(postGenres.contains)) return false;
     }
     switch (filter.commentFilter) {
@@ -79,7 +87,8 @@ List<Post> applyTimelineFilter(List<Post> posts, TimelineFilterState filter) {
         if (post.explanation.trim().isNotEmpty) return false;
     }
     return true;
-  }).toList(growable: false);
+      })
+      .toList(growable: false);
 }
 
 Set<String> genresInPosts(List<Post> posts) {

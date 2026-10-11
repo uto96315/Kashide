@@ -19,6 +19,8 @@ class SwipeDeck extends StatefulWidget {
     required this.onDismiss,
     required this.onOpen,
     required this.onOpenUser,
+    required this.onFilterArtist,
+    required this.onFilterGenre,
     required this.onPlay,
     required this.onShare,
     required this.onAddToPlaylist,
@@ -35,13 +37,17 @@ class SwipeDeck extends StatefulWidget {
   final void Function(String id) onDismiss;
   final void Function(Post post) onOpen;
   final void Function(Post post) onOpenUser;
+  final void Function(String artist) onFilterArtist;
+  final void Function(String genre) onFilterGenre;
   final void Function(Post post) onPlay;
   final void Function(Post post) onShare;
+
   /// プレイリストに追加できたら true。
   final Future<bool> Function(Post post) onAddToPlaylist;
   final VoidCallback onNeedMore;
   final bool loadingMore;
   final bool hasMore;
+
   /// 手前のカードが変わったとき（自動再生など）。
   final Future<void> Function(Post post)? onForegroundCard;
   final VoidCallback? onStopPreview;
@@ -68,12 +74,16 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
 
   Post? get _post => widget.posts.isEmpty ? null : widget.posts.first;
 
-  double get _dx => _flying ? _from + (_to - _from) * Curves.easeOutCubic.transform(_fly.value) : _drag;
+  double get _dx => _flying
+      ? _from + (_to - _from) * Curves.easeOutCubic.transform(_fly.value)
+      : _drag;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _notifyForegroundIfNeeded());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _notifyForegroundIfNeeded(),
+    );
   }
 
   void _notifyForegroundIfNeeded() {
@@ -95,7 +105,9 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       _drag = 0;
       _flying = false;
       if (oldId != null) widget.onStopPreview?.call();
-      WidgetsBinding.instance.addPostFrameCallback((_) => _notifyForegroundIfNeeded());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _notifyForegroundIfNeeded(),
+      );
     }
   }
 
@@ -153,7 +165,10 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       return Center(
         child: widget.loadingMore || widget.hasMore
             ? const CircularProgressIndicator(color: mainColor)
-            : const Text('歌詞はここまでです', style: TextStyle(color: Color(0xFF8E8E93))),
+            : const Text(
+                '歌詞はここまでです',
+                style: TextStyle(color: Color(0xFF8E8E93)),
+              ),
       );
     }
 
@@ -190,6 +205,8 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
                         dx: _dx,
                         liked: widget.likedIds.contains(post.id),
                         onOpenUser: () => widget.onOpenUser(post),
+                        onFilterArtist: widget.onFilterArtist,
+                        onFilterGenre: widget.onFilterGenre,
                         onPlay: () => widget.onPlay(post),
                       ),
                     ),
@@ -252,7 +269,6 @@ class _LikeAction extends StatelessWidget {
       builder: (context, child) {
         final t = celebrate.value;
         final pop = t > 0 ? 1 + 0.14 * math.sin(t * math.pi) : 1.0;
-        final fill = filled ? 1.0 : Curves.easeOutCubic.transform(t);
         final heartFilled = filled || t > 0.25;
         return SizedBox(
           width: 72,
@@ -280,8 +296,10 @@ class _LikeAction extends StatelessWidget {
               Transform.scale(
                 scale: pop,
                 child: _RoundAction(
-                  icon: heartFilled ? Icons.favorite_rounded : Icons.favorite_border,
-                  color: Color.lerp(const Color(0xFFC7C7CC), mainColor, fill)!,
+                  icon: heartFilled
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border,
+                  color: mainColor,
                   onTap: onTap,
                 ),
               ),
@@ -299,6 +317,8 @@ class _LyricCard extends StatelessWidget {
     required this.dx,
     required this.liked,
     required this.onOpenUser,
+    required this.onFilterArtist,
+    required this.onFilterGenre,
     required this.onPlay,
   });
 
@@ -306,18 +326,28 @@ class _LyricCard extends StatelessWidget {
   final double dx;
   final bool liked;
   final VoidCallback onOpenUser;
+  final void Function(String artist) onFilterArtist;
+  final void Function(String genre) onFilterGenre;
   final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
     final swipe = (dx.abs() / 160).clamp(0.0, 1.0);
-    final genres = post.genres.whereType<String>().where((genre) => genre.isNotEmpty).take(3).toList();
+    final genres = post.genres
+        .whereType<String>()
+        .where((genre) => genre.isNotEmpty)
+        .take(3)
+        .toList();
     final scene = swipeCardSceneFor(genres);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         boxShadow: const [
-          BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 10)),
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
         ],
       ),
       child: ClipRRect(
@@ -327,7 +357,11 @@ class _LyricCard extends StatelessWidget {
           children: [
             ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 1.2, sigmaY: 1.2),
-              child: Image.asset(scene, fit: BoxFit.cover, alignment: Alignment.center),
+              child: Image.asset(
+                scene,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -345,7 +379,11 @@ class _LyricCard extends StatelessWidget {
             ),
             if (swipe > 0)
               ColoredBox(
-                color: (dx >= 0 ? const Color(0xFFFF749E) : const Color(0xFF8E8E93)).withValues(alpha: swipe * 0.28),
+                color:
+                    (dx >= 0
+                            ? const Color(0xFFFF749E)
+                            : const Color(0xFF8E8E93))
+                        .withValues(alpha: swipe * 0.28),
               ),
             Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
@@ -356,78 +394,137 @@ class _LyricCard extends StatelessWidget {
                   children: [
                     Opacity(
                       opacity: dx < 0 ? (-dx / 120).clamp(0, 1) : 0,
-                      child: const Text('次へ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        child: const Text(
+                          '次へ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                     ),
                     const Spacer(),
                     Opacity(
                       opacity: dx > 0 ? (dx / 120).clamp(0, 1) : 0,
-                      child: const Text('好き', style: TextStyle(color: mainColor, fontWeight: FontWeight.w700)),
+                        child: const Text(
+                          '好き',
+                          style: TextStyle(
+                            color: mainColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                     ),
                   ],
                 ),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        PostLyricsText.fromPost(post, style: _lyricStyle),
-                        const SizedBox(height: 14),
+                      child: PostLyricsText.fromPost(post, style: _lyricStyle),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.24),
+                  ),
+                  const SizedBox(height: 8),
                         Text(
                           post.singName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: _titleStyle,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
+                  const SizedBox(height: 3),
+                  Tooltip(
+                    message: 'この歌手の投稿に絞り込む',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => onFilterArtist(post.artist),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
                           post.artist,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: _subStyle,
+                                  style: _subStyle.copyWith(color: Colors.white),
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                size: 16,
+                                color: Colors.white.withValues(alpha: 0.72),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                         ),
                         if (post.explanation.trim().isNotEmpty) ...[
-                          const SizedBox(height: 12),
+                    const SizedBox(height: 7),
                           Text(
                             post.explanation,
-                            maxLines: 4,
+                      maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: _subStyle,
                           ),
                         ],
                         if (genres.isNotEmpty) ...[
-                          const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                           Wrap(
                             spacing: 6,
                             runSpacing: 6,
                             children: [
                               for (final genre in genres)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
+                          Material(
                                     color: Colors.white.withValues(alpha: 0.22),
                                     borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(genre, style: const TextStyle(fontSize: 12, color: Colors.white)),
+                            child: InkWell(
+                              onTap: () => onFilterGenre(genre),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
                                 ),
-                            ],
+                                child: Text(
+                                  genre,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
                           ),
-                        ],
-                      ],
                     ),
                   ),
+                      ],
                 ),
-                const SizedBox(height: 12),
+                  ],
+                  const SizedBox(height: 9),
                 Row(
                   children: [
                     CircleAvatar(
                       radius: 14,
                       backgroundColor: const Color(0xFFFFE4EC),
-                      backgroundImage: post.userImageUrl.isEmpty || post.userImageUrl == 'null'
+                        backgroundImage:
+                            post.userImageUrl.isEmpty ||
+                                post.userImageUrl == 'null'
                           ? null
                           : NetworkImage(post.userImageUrl),
-                      child: post.userImageUrl.isEmpty || post.userImageUrl == 'null'
-                          ? const Icon(Icons.person, size: 16, color: mainColor)
+                        child:
+                            post.userImageUrl.isEmpty ||
+                                post.userImageUrl == 'null'
+                            ? const Icon(
+                                Icons.person,
+                                size: 16,
+                                color: mainColor,
+                              )
                           : null,
                     ),
                     const SizedBox(width: 8),
@@ -438,7 +535,11 @@ class _LyricCard extends StatelessWidget {
                           post.userName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13, color: Colors.white, shadows: _ink),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white,
+                              shadows: _ink,
+                            ),
                         ),
                       ),
                     ),
@@ -457,20 +558,30 @@ class _LyricCard extends StatelessWidget {
                             customBorder: const CircleBorder(),
                             child: const Padding(
                               padding: EdgeInsets.all(6),
-                              child: Icon(Icons.play_circle_outline_rounded, color: mainColor, size: 28),
+                                child: Icon(
+                                  Icons.play_circle_outline_rounded,
+                                  color: mainColor,
+                                  size: 28,
+                                ),
                             ),
                           ),
                         );
                       },
                     ),
-                    if (liked)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.favorite_rounded, color: mainColor, size: 16),
+                      const SizedBox(width: 6),
+                      Icon(
+                        liked ? Icons.favorite_rounded : Icons.favorite_border,
+                        color: mainColor,
+                        size: 16,
+                      ),
                           const SizedBox(width: 4),
-                          Text('いいね済み', style: TextStyle(fontSize: 12, color: mainColor, shadows: _ink)),
-                        ],
+                      Text(
+                        '${post.likedCount}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          shadows: _ink,
+                        ),
                       ),
                   ],
                 ),
@@ -536,7 +647,11 @@ class _RoundAction extends StatelessWidget {
             color: Colors.white,
             border: Border.all(color: const Color(0xFFE5E5EA), width: 1.5),
             boxShadow: const [
-              BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2)),
+              BoxShadow(
+                color: Color(0x0F000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
             ],
           ),
           child: SizedBox(

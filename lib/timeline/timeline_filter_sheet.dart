@@ -49,6 +49,7 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
         commentFilter: _comments,
         youtubeFilter: _youtube,
         explanationFilter: _explanation,
+    songArtist: widget.initial.songArtist,
       );
 
   List<String> get _orderedGenres {
@@ -86,11 +87,17 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                     child: Container(
                       width: 36,
                       height: 4,
-                      decoration: BoxDecoration(color: const Color(0xFFE5E5EA), borderRadius: BorderRadius.circular(2)),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5E5EA),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text('絞り込み', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  const Text(
+                    '絞り込み',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -99,12 +106,19 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 48),
                             side: const BorderSide(color: Color(0xFFE5E5EA)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                           ),
-                          onPressed: () => Navigator.pop(context, TimelineFilterState.empty),
+                          ),
+                          onPressed: () =>
+                              Navigator.pop(context, TimelineFilterState.empty),
                           child: const Text(
                             'クリア',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF536471)),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF536471),
+                            ),
                           ),
                         ),
                       ),
@@ -114,10 +128,18 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                           style: FilledButton.styleFrom(
                             backgroundColor: mainColor,
                             minimumSize: const Size(0, 48),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           onPressed: () => Navigator.pop(context, _draft),
-                          child: const Text('適用', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                          child: const Text(
+                            '適用',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -163,9 +185,13 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton(
-                onPressed: () => setState(() => _showAllGenres = !_showAllGenres),
+                          onPressed: () =>
+                              setState(() => _showAllGenres = !_showAllGenres),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 4,
+                            ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -174,10 +200,16 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                   children: [
                     Text(
                       _showAllGenres ? '閉じる' : '残りを表示',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: mainColor),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: mainColor,
+                                ),
                     ),
                     Icon(
-                      _showAllGenres ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                                _showAllGenres
+                                    ? Icons.expand_less_rounded
+                                    : Icons.expand_more_rounded,
                       size: 20,
                       color: mainColor,
                     ),
@@ -241,7 +273,14 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF3A3A3C)));
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF3A3A3C),
+      ),
+    );
   }
 }
 
@@ -262,7 +301,10 @@ class _SegmentRow<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(color: const Color(0xFFF2F2F7), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
           for (final value in values)
@@ -273,17 +315,27 @@ class _SegmentRow<T> extends StatelessWidget {
                   duration: const Duration(milliseconds: 160),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: selected == value ? Colors.white : Colors.transparent,
+                    color: selected == value
+                        ? Colors.white
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: selected == value ? const [BoxShadow(color: Color(0x14000000), blurRadius: 4)] : null,
+                    boxShadow: selected == value
+                        ? const [
+                            BoxShadow(color: Color(0x14000000), blurRadius: 4),
+                          ]
+                        : null,
                   ),
                   child: Text(
                     label(value),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: selected == value ? FontWeight.w700 : FontWeight.w500,
-                      color: selected == value ? mainColor : const Color(0xFF536471),
+                      fontWeight: selected == value
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: selected == value
+                          ? mainColor
+                          : const Color(0xFF536471),
                     ),
                   ),
                 ),
