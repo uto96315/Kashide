@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/providers.dart';
@@ -20,11 +19,28 @@ class LyricShareData {
     required this.lyrics,
     required this.title,
     required this.artist,
+    this.genres = const [],
   });
 
   final String lyrics;
   final String title;
   final String artist;
+  final List<String> genres;
+}
+
+class _ShareBackground {
+  const _ShareBackground(this.assetPath, this.label, this.genreKeywords)
+    : filePath = null;
+
+  const _ShareBackground.file(this.filePath)
+    : assetPath = null,
+      label = '写真',
+      genreKeywords = const [];
+
+  final String? assetPath;
+  final String? filePath;
+  final String label;
+  final List<String> genreKeywords;
 }
 
 Future<void> openLyricShare(BuildContext context, LyricShareData data) {
@@ -51,24 +67,102 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
     '歌詞と音楽を、もっと好きに',
   ];
 
-  static const _backgroundOptions = <String, String>{
-    'images/card_love.jpg': '夕焼け',
-    'images/card_sad.jpg': '夕暮れ',
-    'images/card_youth.jpg': '夜景',
-    'images/card_jpop.jpg': '雨の街',
-  };
+  static const _backgroundOptions = <_ShareBackground>[
+    _ShareBackground('images/card_with_dog.png', '大切な人と', [
+      'ペット',
+      '家族',
+      '親子',
+      '人生',
+      '恋愛',
+      'アイドル',
+    ]),
+    _ShareBackground('images/card_nostalsic.png', 'ひとりの夕景', [
+      '失恋',
+      '懐メロ',
+      'LGBTQ',
+      '女性目線',
+      '男性目線',
+      'ロック',
+    ]),
+    _ShareBackground('images/card_river.png', '川辺の夕景', [
+      '青春',
+      '勇気',
+      '元気',
+      'JPOP',
+      '自作',
+      '男性目線',
+    ]),
+    _ShareBackground('images/card_river2.png', '花咲く川辺', [
+      '青春',
+      '勇気',
+      '元気',
+      'JPOP',
+      '人生',
+      '親子',
+    ]),
+    _ShareBackground('images/card_room.png', '部屋で聴く音楽', [
+      '恋愛',
+      '懐メロ',
+      '洋楽',
+      'JPOP',
+      'アイドル',
+      'R&B ソウル',
+      'ジャニーズ',
+    ]),
+    _ShareBackground('images/card_countryride.png', 'ふるさとの夕景', [
+      '人生',
+      '懐メロ',
+      '家族',
+      '親子',
+      '青春',
+      'クリスマスソング',
+    ]),
+    _ShareBackground('images/card_abroad.png', '旅先の夕景', [
+      '洋楽',
+      '恋愛',
+      'クリスマスソング',
+      'LGBTQ',
+      '勇気',
+      'JPOP',
+    ]),
+    _ShareBackground('images/card_love.jpg', '恋愛', ['恋愛', '女性目線', '男性目線']),
+    _ShareBackground('images/card_sad.jpg', '失恋', ['失恋', 'LGBTQ']),
+    _ShareBackground('images/card_youth.jpg', '青春', [
+      '青春',
+      '勇気',
+      '元気',
+      '人生',
+      '自作',
+    ]),
+    _ShareBackground('images/card_jpop.jpg', 'J-POP', [
+      'JPOP',
+      'アイドル',
+      'ジャニーズ',
+    ]),
+    _ShareBackground('images/card_western.jpg', '洋楽', ['洋楽', 'R&B ソウル']),
+    _ShareBackground('images/card_retro.jpg', '懐メロ', ['懐メロ', '失恋', '恋愛', '人生']),
+    _ShareBackground('images/card_life.jpg', '人生', ['人生', '家族', '親子']),
+    _ShareBackground('images/card_pet.jpg', 'ペット', ['ペット']),
+    _ShareBackground('images/card_rock.jpg', 'ロック', ['ロック']),
+    _ShareBackground('images/card_rnb.jpg', 'R&B', ['R&B']),
+  ];
 
   final _previewKey = GlobalKey();
+  late final PageController _backgroundController;
   late final Future<String?> _artworkUrlFuture;
   late final String _tagline;
   late double _fontSize;
-  var _backgroundAsset = 'images/card_love.jpg';
-  String? _backgroundFilePath;
+  late int _selectedBackgroundIndex;
+  final List<_ShareBackground> _backgrounds = [..._backgroundOptions];
   bool _sharing = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedBackgroundIndex = _recommendedBackgroundIndex();
+    _backgroundController = PageController(
+      initialPage: _selectedBackgroundIndex,
+    );
     _artworkUrlFuture = _loadArtworkUrl();
     _tagline = _taglines[math.Random().nextInt(_taglines.length)];
     final lyricLength = widget.data.lyrics.trim().runes.length;
@@ -80,57 +174,38 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
     };
   }
 
-  Future<void> _chooseBackground() async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('写真を追加'),
-              onTap: () => Navigator.pop(sheetContext, '__gallery__'),
-            ),
-            for (final option in _backgroundOptions.entries)
-              ListTile(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    option.key,
-                    width: 42,
-                    height: 56,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                title: Text(option.value),
-                trailing:
-                    _backgroundFilePath == null &&
-                        _backgroundAsset == option.key
-                    ? const Icon(Icons.check_rounded, color: mainColor)
-                    : null,
-                onTap: () => Navigator.pop(sheetContext, option.key),
-              ),
-          ],
-        ),
-      ),
-    );
-
-    if (selected == null || !mounted) return;
-    if (selected == '__gallery__') {
-      final image = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 95,
-      );
-      if (image != null && mounted) {
-        setState(() => _backgroundFilePath = image.path);
+  int _recommendedBackgroundIndex() {
+    final candidates = <int>[];
+    for (var index = 0; index < _backgroundOptions.length; index++) {
+      final option = _backgroundOptions[index];
+      if (widget.data.genres.any(
+        (genre) =>
+            option.genreKeywords.any((keyword) => genre.contains(keyword)),
+      )) {
+        candidates.add(index);
       }
-      return;
     }
+    if (candidates.isEmpty) return 0;
+    return candidates[math.Random().nextInt(candidates.length)];
+  }
+
+  Future<void> _uploadBackground() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 95,
+    );
+    if (image == null || !mounted) return;
     setState(() {
-      _backgroundAsset = selected;
-      _backgroundFilePath = null;
+      _backgrounds.add(_ShareBackground.file(image.path));
+      _selectedBackgroundIndex = _backgrounds.length - 1;
     });
+    _backgroundController.jumpToPage(_selectedBackgroundIndex);
+  }
+
+  @override
+  void dispose() {
+    _backgroundController.dispose();
+    super.dispose();
   }
 
   Future<String?> _loadArtworkUrl() async {
@@ -216,22 +291,29 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
       body: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Column(
             children: [
               Expanded(
                 child: Center(
                   child: AspectRatio(
                     aspectRatio: 9 / 16,
-                    child: RepaintBoundary(
-                      key: _previewKey,
-                      child: _LyricShareCard(
-                        data: widget.data,
-                        artworkUrlFuture: _artworkUrlFuture,
-                        backgroundAsset: _backgroundAsset,
-                        backgroundFilePath: _backgroundFilePath,
-                        fontSize: _fontSize,
-                        tagline: _tagline,
+                    child: PageView.builder(
+                      controller: _backgroundController,
+                      itemCount: _backgrounds.length,
+                      onPageChanged: (index) =>
+                          setState(() => _selectedBackgroundIndex = index),
+                      itemBuilder: (context, index) => RepaintBoundary(
+                        key: index == _selectedBackgroundIndex
+                            ? _previewKey
+                            : null,
+                        child: _LyricShareCard(
+                          data: widget.data,
+                          artworkUrlFuture: _artworkUrlFuture,
+                          background: _backgrounds[index],
+                          fontSize: _fontSize,
+                          tagline: _tagline,
+                        ),
                       ),
                     ),
                   ),
@@ -240,9 +322,12 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
               Row(
                 children: [
                   OutlinedButton.icon(
-                    onPressed: _chooseBackground,
-                    icon: const Icon(Icons.wallpaper_outlined, size: 18),
-                    label: const Text('背景'),
+                    onPressed: _uploadBackground,
+                    icon: const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      size: 18,
+                    ),
+                    label: const Text('写真を追加'),
                     style: OutlinedButton.styleFrom(foregroundColor: mainColor),
                   ),
                   const SizedBox(width: 6),
@@ -260,6 +345,30 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                       onChanged: (value) => setState(() => _fontSize = value),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                _backgrounds[_selectedBackgroundIndex].label,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF777780)),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  for (var index = 0; index < _backgrounds.length; index++)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      width: index == _selectedBackgroundIndex ? 16 : 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: index == _selectedBackgroundIndex
+                            ? mainColor
+                            : const Color(0xFFC8C8CE),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -296,16 +405,14 @@ class _LyricShareCard extends StatelessWidget {
   const _LyricShareCard({
     required this.data,
     required this.artworkUrlFuture,
-    required this.backgroundAsset,
-    required this.backgroundFilePath,
+    required this.background,
     required this.fontSize,
     required this.tagline,
   });
 
   final LyricShareData data;
   final Future<String?> artworkUrlFuture;
-  final String backgroundAsset;
-  final String? backgroundFilePath;
+  final _ShareBackground background;
   final double fontSize;
   final String tagline;
 
@@ -316,9 +423,9 @@ class _LyricShareCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Positioned.fill(
-            child: backgroundFilePath == null
-                ? Image.asset(backgroundAsset, fit: BoxFit.cover)
-                : Image.file(File(backgroundFilePath!), fit: BoxFit.cover),
+            child: background.filePath == null
+                ? Image.asset(background.assetPath!, fit: BoxFit.cover)
+                : Image.file(File(background.filePath!), fit: BoxFit.cover),
           ),
           const DecoratedBox(
             decoration: BoxDecoration(
@@ -418,8 +525,8 @@ class _LyricShareCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(flex: 2),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
                       width: constraints.maxWidth * 0.48,
@@ -469,27 +576,7 @@ class _LyricShareCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: QrImageView(
-                        data: _kashideAppStoreUrl,
-                        version: QrVersions.auto,
-                        size: 54,
-                        padding: EdgeInsets.zero,
-                        semanticsLabel: 'KashideをApp Storeで開くQRコード',
-                      ),
-                    ),
                   ],
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'App Store',
-                  style: TextStyle(color: Colors.white70, fontSize: 8),
                 ),
               ],
             ),

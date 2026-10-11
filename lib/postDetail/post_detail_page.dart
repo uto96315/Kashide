@@ -204,6 +204,7 @@ class PostDetailPage extends ConsumerWidget {
                                             lyrics: model.postText ?? '',
                                             title: model.singName ?? '',
                                             artist: model.singerName ?? '',
+                                            genres: genres.toList(),
                                           ),
                                         ),
                                         icon: const Icon(Icons.ios_share_rounded, color: Color(0xFF8E8E93)),

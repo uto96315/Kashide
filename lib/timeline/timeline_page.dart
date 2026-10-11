@@ -149,7 +149,12 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     onPlay: _playCardPreview,
                     onShare: (post) => unawaited(openLyricShare(
                       context,
-                      LyricShareData(lyrics: post.text, title: post.singName, artist: post.artist),
+                      LyricShareData(
+                        lyrics: post.text,
+                        title: post.singName,
+                        artist: post.artist,
+                        genres: post.genres.whereType<String>().toList(),
+                      ),
                     )),
                     onAddToPlaylist: (post) => _pickPlaylist(context, model, post),
                     onNeedMore: model.loadMorePosts,
@@ -205,6 +210,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                   for (final post in posts)
                                     LyricPostCard(
                                       post: post,
+                                      showPostTime: false,
                                       onPlay: _toggleTimelinePreview,
                                       isPlaying: previewPlayer.playingPostId == post.id &&
                                           previewPlayer.isPlaying,
