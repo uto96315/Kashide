@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
-import 'package:str_gram_beta/post/post_view_service.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
 
@@ -67,7 +66,6 @@ class SearchResultModel extends ChangeNotifier {
           commentCount[index] ?? 0,
           postData["explanation"],
           postData["youtubeLink"],
-          viewCount: viewCountFromFirestore(postData.data()),
           textSegments: lyricSegmentsFromFirestore(postData.data()),
       );
     }).toList();
@@ -114,7 +112,6 @@ class SearchResultModel extends ChangeNotifier {
         commentCount[index] ?? 0,
         postData["explanation"],
         postData["youtubeLink"],
-        viewCount: viewCountFromFirestore(postData.data()),
         textSegments: lyricSegmentsFromFirestore(postData.data()),
       );
     }).toList();

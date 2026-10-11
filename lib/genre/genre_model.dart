@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
-import 'package:str_gram_beta/post/post_view_service.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,11 +20,6 @@ class GenreModel extends ChangeNotifier {
   String? newPlaylistName;
 
   var uid = FirebaseAuth.instance.currentUser?.uid;
-
-  Future<void> refreshViewCountForPost(String postId) async {
-    await refreshViewCountInList(genrePostsList, postId);
-    notifyListeners();
-  }
 
   String? profileUserName;
   String? profileImageUrl;
@@ -100,7 +94,6 @@ class GenreModel extends ChangeNotifier {
         commentCount[index],
         doc["explanation"],
         doc["youtubeLink"],
-        viewCount: viewCountFromFirestore(doc.data()),
         textSegments: lyricSegmentsFromFirestore(doc.data()),
       );
     }).toList();

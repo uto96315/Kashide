@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 import '../../domain/post_domain.dart';
 import '../../post/post_lyrics.dart';
-import '../../post/post_view_service.dart';
 
 class LyricsSearchModel extends ChangeNotifier {
   LyricsSearchModel(this.searchWord);
@@ -51,7 +50,6 @@ class LyricsSearchModel extends ChangeNotifier {
         commentCount[index] ?? 0,
         postData["explanation"],
         postData["youtubeLink"],
-        viewCount: viewCountFromFirestore(postData.data()),
         textSegments: lyricSegmentsFromFirestore(postData.data()),
       );
     }).toList();

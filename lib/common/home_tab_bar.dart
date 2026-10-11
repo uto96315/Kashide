@@ -22,7 +22,7 @@ class HomeTabBar extends StatelessWidget {
   static const _icons = [
     Icons.home_rounded,
     Icons.search_rounded,
-    Icons.science_rounded,
+    Icons.queue_music_rounded,
     Icons.person_rounded,
   ];
 

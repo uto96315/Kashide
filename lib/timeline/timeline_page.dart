@@ -137,7 +137,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                         context,
                         MaterialPageRoute(builder: (_) => PostDetailPage(post.id, false)),
                       );
-                      await model.refreshViewCountForPost(post.id);
                     },
                     onOpenUser: (post) {
                       openUserProfile(context, posterId: post.posterId, userName: post.userName);
@@ -147,7 +146,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                     onNeedMore: model.loadMorePosts,
                     onStopPreview: () => ref.read(cardPreviewPlayerProvider).stop(),
                     onForegroundCard: (post) async {
-                      await model.recordViewForPost(post);
                       if (!ref.read(cardAutoplaySettingsProvider).enabled) return;
                       await _playCardPreview(post);
                     },
@@ -198,8 +196,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                   for (final post in posts)
                                     LyricPostCard(
                                       post: post,
-                                      onAfterDetailVisit: model.refreshViewCountForPost,
-                                      trackFeedView: true,
                                       onPlaylist: () => _pickPlaylist(context, model, post),
                                       menuItems: post.posterId == model.uid
                                           ? const [
