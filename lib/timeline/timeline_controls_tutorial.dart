@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,10 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 
 class TimelineControlsTutorial {
   static const _steps = <_TutorialStep>[
+    _TutorialStep(
+      'カードをスワイプ',
+      'カードを左右に動かすと、次の歌詞に進めます。',
+    ),
     _TutorialStep('曲を自動で再生', 'カードを見ていると、曲が自動で流れます。'),
     _TutorialStep('並び順を変える', '新着順か、いいねが多い順を選べます。'),
     _TutorialStep('見たい投稿を探す', 'ジャンルなどで絞って、投稿を探せます。'),
@@ -90,8 +95,25 @@ class _TutorialOverlay extends StatefulWidget {
   State<_TutorialOverlay> createState() => _TutorialOverlayState();
 }
 
-class _TutorialOverlayState extends State<_TutorialOverlay> {
+class _TutorialOverlayState extends State<_TutorialOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _swipeDemo = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 680),
+  );
   var _step = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _swipeDemo.forward();
+  }
+
+  @override
+  void dispose() {
+    _swipeDemo.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +179,84 @@ class _TutorialOverlayState extends State<_TutorialOverlay> {
                                 color: Color(0xFF3A3A3C),
                               ),
                             ),
+                            if (_step == 0) ...[
+                              const SizedBox(height: 14),
+                              SizedBox(
+                                height: 56,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Container(
+                                      height: 46,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF4F4F7),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    AnimatedBuilder(
+                                      animation: _swipeDemo,
+                                      child: Container(
+                                        width: (cardWidth - 88)
+                                            .clamp(150.0, 230.0)
+                                            .toDouble(),
+                                        height: 46,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF59434B),
+                                              Color(0xFF292326),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(14),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Color(0x26000000),
+                                              blurRadius: 8,
+                                              offset: Offset(0, 3),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Row(
+                                          children: [
+                                            Icon(
+                                              Icons.music_note_rounded,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              '歌詞カード',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      builder: (context, child) {
+                                        final progress = Curves.easeInOut
+                                            .transform(_swipeDemo.value);
+                                        final offset =
+                                            math.sin(progress * math.pi * 2) *
+                                            15;
+                                        return Transform.translate(
+                                          offset: Offset(offset, 0),
+                                          child: Transform.rotate(
+                                            angle: offset * 0.002,
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 12),
                             SizedBox(
                               width: cardWidth - 40,

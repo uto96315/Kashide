@@ -167,7 +167,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
   late final String _tagline;
   late double _fontSize;
   late int _selectedBackgroundIndex;
-  _ShareAspectRatio _selectedAspectRatio = _ShareAspectRatio.feed45;
+  _ShareAspectRatio _selectedAspectRatio = _ShareAspectRatio.feed34;
   final List<_ShareBackground> _backgrounds = [..._backgroundOptions];
   bool _sharing = false;
 

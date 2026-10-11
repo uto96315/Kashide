@@ -88,7 +88,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     final sessionKey = ref.watch(sessionRefreshKeyProvider);
     final notificationUnread = ref.watch(notificationInboxProvider.select((m) => m.unreadCount));
     final pages = [
-      TimelinePage(key: ValueKey('home-timeline-$sessionKey')),
+      TimelinePage(
+        key: ValueKey('home-timeline-$sessionKey'),
+        isActive: tabIndex == 0,
+      ),
       SearchPage(key: ValueKey('home-search-$sessionKey')),
       PlaylistPage(key: ValueKey('home-playlist-$sessionKey')),
       MyPage(key: ValueKey('home-mypage-$sessionKey')),

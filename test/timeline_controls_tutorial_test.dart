@@ -6,11 +6,11 @@ import 'package:str_gram_beta/timeline/timeline_controls_tutorial.dart';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('shows four highlighted tips and remembers completion', (
+  testWidgets('shows swipe tip and four highlighted controls, then remembers completion', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    final targets = List.generate(4, (_) => GlobalKey());
+    final targets = List.generate(5, (_) => GlobalKey());
     late BuildContext context;
     await tester.pumpWidget(
       MaterialApp(
@@ -38,7 +38,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    const titles = ['曲を自動で再生', '並び順を変える', '見たい投稿を探す', '表示を切り替える'];
+    const titles = [
+      'カードをスワイプ',
+      '曲を自動で再生',
+      '並び順を変える',
+      '見たい投稿を探す',
+      '表示を切り替える',
+    ];
     for (var index = 0; index < titles.length; index++) {
       final title = titles[index];
       expect(find.text(title), findsOneWidget);
@@ -61,12 +67,12 @@ void main() {
       targets: targets,
     );
     await tester.pumpAndSettle();
-    expect(find.text('曲を自動で再生'), findsNothing);
+    expect(find.text('カードをスワイプ'), findsNothing);
     semantics.dispose();
   });
 
   testWidgets('skip dismisses and remembers the tutorial', (tester) async {
-    final targets = List.generate(4, (_) => GlobalKey());
+    final targets = List.generate(5, (_) => GlobalKey());
     late BuildContext context;
     await tester.pumpWidget(
       MaterialApp(
@@ -103,6 +109,6 @@ void main() {
       targets: targets,
     );
     await tester.pumpAndSettle();
-    expect(find.text('曲を自動で再生'), findsNothing);
+    expect(find.text('カードをスワイプ'), findsNothing);
   });
 }
