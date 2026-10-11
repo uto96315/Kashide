@@ -389,7 +389,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Text('文字サイズ', style: TextStyle(fontSize: 12)),
+                  Text('文字の大きさ', style: const TextStyle(fontSize: 12)),
                   Expanded(
                     child: Slider(
                       value: _fontSize,
@@ -398,6 +398,8 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                       divisions: 18,
                       activeColor: mainColor,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
+                      semanticFormatterCallback: (value) =>
+                          '文字の大きさ ${value.round()}',
                       onChanged: (value) => setState(() => _fontSize = value),
                     ),
                   ),
