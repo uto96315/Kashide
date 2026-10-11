@@ -38,9 +38,19 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
   }
 
+  Future<void> _toggleTimelinePreview(Post post) async {
+    final player = ref.read(cardPreviewPlayerProvider);
+    if (player.playingPostId == post.id && player.isPlaying) {
+      await player.stop();
+      return;
+    }
+    await player.playForPost(post);
+  }
+
   @override
   Widget build(BuildContext context) {
     final model = ref.watch(timelineProvider);
+    final previewPlayer = ref.watch(cardPreviewPlayerProvider);
     final posts = model.visiblePosts;
 
     final notificationUnread = ref.watch(notificationInboxProvider.select((m) => m.unreadCount));
@@ -196,6 +206,9 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                   for (final post in posts)
                                     LyricPostCard(
                                       post: post,
+                                      onPlay: _toggleTimelinePreview,
+                                      isPlaying: previewPlayer.playingPostId == post.id &&
+                                          previewPlayer.isPlaying,
                                       onPlaylist: () => _pickPlaylist(context, model, post),
                                       menuItems: post.posterId == model.uid
                                           ? const [

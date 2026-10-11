@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:str_gram_beta/element/favorite/favorite_button.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
@@ -17,6 +16,8 @@ class LyricPostCard extends StatelessWidget {
     required this.menuItems,
     required this.onMenu,
     this.onPlaylist,
+    this.onPlay,
+    this.isPlaying = false,
     this.showAuthor = true,
   });
 
@@ -24,6 +25,8 @@ class LyricPostCard extends StatelessWidget {
   final List<PopupMenuEntry<String>> menuItems;
   final Future<void> Function(String value) onMenu;
   final VoidCallback? onPlaylist;
+  final Future<void> Function(Post post)? onPlay;
+  final bool isPlaying;
   final bool showAuthor;
 
   static const _actionGray = Color(0xFF536471);
@@ -41,10 +44,11 @@ class LyricPostCard extends StatelessWidget {
       menuItems: menuItems,
       onMenu: onMenu,
       onPlaylist: onPlaylist,
+      onPlay: onPlay == null ? null : () => onPlay!(post),
+      isPlaying: isPlaying,
       showAuthor: showAuthor,
       onOpenUser: () => _openUser(context),
       onOpenPost: (comments) => _openPost(context, comments),
-      onOpenListen: _openListen,
     );
 
     return DecoratedBox(
@@ -88,12 +92,6 @@ class LyricPostCard extends StatelessWidget {
     Navigator.push(context, MaterialPageRoute(builder: (_) => PostDetailPage(post.id, comments)));
   }
 
-  Future<void> _openListen(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 }
 
 class _PostCardContent extends StatelessWidget {
@@ -103,10 +101,11 @@ class _PostCardContent extends StatelessWidget {
     required this.menuItems,
     required this.onMenu,
     required this.onPlaylist,
+    required this.onPlay,
+    required this.isPlaying,
     required this.showAuthor,
     required this.onOpenUser,
     required this.onOpenPost,
-    required this.onOpenListen,
   });
 
   final Post post;
@@ -114,10 +113,11 @@ class _PostCardContent extends StatelessWidget {
   final List<PopupMenuEntry<String>> menuItems;
   final Future<void> Function(String value) onMenu;
   final VoidCallback? onPlaylist;
+  final VoidCallback? onPlay;
+  final bool isPlaying;
   final bool showAuthor;
   final VoidCallback onOpenUser;
   final void Function(bool comments) onOpenPost;
-  final Future<void> Function(String url) onOpenListen;
 
   @override
   Widget build(BuildContext context) {
@@ -262,13 +262,13 @@ class _PostCardContent extends StatelessWidget {
                 artist: post.artist,
                 singName: post.singName,
                 builder: (context, listenUrl) {
-                  if (listenUrl == null || listenUrl.isEmpty) {
+                  if (listenUrl == null || listenUrl.isEmpty || onPlay == null) {
                     return const _TimelineActionPlaceholder();
                   }
                   return _TimelineAction(
-                    icon: Icons.play_circle_outline_rounded,
+                    icon: isPlaying ? Icons.stop_circle_outlined : Icons.play_circle_outline_rounded,
                     iconColor: mainColor,
-                    onTap: () => onOpenListen(listenUrl),
+                    onTap: onPlay!,
                   );
                 },
               ),

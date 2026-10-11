@@ -98,7 +98,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       bottomNavigationBar: HomeTabBar(
         index: tabIndex,
         notificationUnreadCount: notificationUnread,
-        onChanged: (index) => ref.read(homeTabIndexProvider.notifier).setTab(index),
+        onChanged: (index) async {
+          if (index != tabIndex) {
+            await ref.read(cardPreviewPlayerProvider).stop();
+          }
+          ref.read(homeTabIndexProvider.notifier).setTab(index);
+        },
         onPost: () {
           Navigator.push(
             context,
