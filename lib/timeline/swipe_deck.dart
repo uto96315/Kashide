@@ -20,6 +20,7 @@ class SwipeDeck extends StatefulWidget {
     required this.onOpen,
     required this.onOpenUser,
     required this.onPlay,
+    required this.onShare,
     required this.onAddToPlaylist,
     required this.onNeedMore,
     required this.loadingMore,
@@ -35,6 +36,7 @@ class SwipeDeck extends StatefulWidget {
   final void Function(Post post) onOpen;
   final void Function(Post post) onOpenUser;
   final void Function(Post post) onPlay;
+  final void Function(Post post) onShare;
   /// プレイリストに追加できたら true。
   final Future<bool> Function(Post post) onAddToPlaylist;
   final VoidCallback onNeedMore;
@@ -211,7 +213,13 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
                 color: mainColor,
                 onTap: _flying ? null : () => _onPlaylistTap(post),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
+              _RoundAction(
+                icon: Icons.ios_share_rounded,
+                color: const Color(0xFF8E8E93),
+                onTap: _flying ? null : () => widget.onShare(post),
+              ),
+              const SizedBox(width: 12),
               _LikeAction(
                 filled: widget.likedIds.contains(post.id),
                 celebrate: _celebrate,
