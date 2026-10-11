@@ -21,7 +21,10 @@ import 'timeline_sort.dart';
 import 'timeline_controls_tutorial.dart';
 
 class TimelinePage extends ConsumerStatefulWidget {
-  const TimelinePage({super.key});
+  const TimelinePage({super.key, this.isActive = true});
+
+  /// HomePage は IndexedStack に全タブを保持するため、選択中のときだけ true。
+  final bool isActive;
 
   @override
   ConsumerState<TimelinePage> createState() => _TimelinePageState();
@@ -35,6 +38,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   final _sortTutorialKey = GlobalKey();
   final _filterTutorialKey = GlobalKey();
   final _viewTutorialKey = GlobalKey();
+  final _cardTutorialKey = GlobalKey();
 
   Future<void> _playCardPreview(Post post) async {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
@@ -59,19 +63,25 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       notificationInboxProvider.select((m) => m.unreadCount),
     );
 
-    if (!_tutorialCheckScheduled) {
+    if (widget.isActive && _deck && !_tutorialCheckScheduled) {
       _tutorialCheckScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (!widget.isActive || !_deck) {
+          _tutorialCheckScheduled = false;
+          return;
+        }
         unawaited(
           TimelineControlsTutorial.showIfNeeded(
-          context,
-          uid: model.uid,
-          targets: [
-            _autoplayTutorialKey,
-            _sortTutorialKey,
-            _filterTutorialKey,
-            _viewTutorialKey,
-          ],
+            context,
+            uid: ref.read(timelineProvider).uid,
+            targets: [
+              _cardTutorialKey,
+              _autoplayTutorialKey,
+              _sortTutorialKey,
+              _filterTutorialKey,
+              _viewTutorialKey,
+            ],
           ),
         );
       });
@@ -215,6 +225,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
           Expanded(
             child: _deck
                 ? SwipeDeck(
+                    key: _cardTutorialKey,
                     posts: [
                       for (final post in posts)
                         if (model.isVisibleInSwipeDeck(post)) post,
