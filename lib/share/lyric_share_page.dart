@@ -14,6 +14,20 @@ import 'package:str_gram_beta/providers.dart';
 const _kashideAppStoreUrl =
     'https://apps.apple.com/jp/app/kashide/id6444030139';
 
+enum _ShareAspectRatio {
+  feed45('4:5', 4 / 5, 1080),
+  feed34('3:4', 3 / 4, 1080),
+  story916('9:16', 9 / 16, 1080);
+
+  const _ShareAspectRatio(this.label, this.value, this.width);
+
+  final String label;
+  final double value;
+  final int width;
+
+  int get height => (width / value).round();
+}
+
 class LyricShareData {
   const LyricShareData({
     required this.lyrics,
@@ -153,6 +167,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
   late final String _tagline;
   late double _fontSize;
   late int _selectedBackgroundIndex;
+  _ShareAspectRatio _selectedAspectRatio = _ShareAspectRatio.feed45;
   final List<_ShareBackground> _backgrounds = [..._backgroundOptions];
   bool _sharing = false;
 
@@ -240,7 +255,9 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
         throw StateError('シェア画像を作成できませんでした');
       }
 
-      final image = await renderObject.toImage(pixelRatio: 3);
+      final image = await renderObject.toImage(
+        pixelRatio: _selectedAspectRatio.width / renderObject.size.width,
+      );
       try {
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         if (byteData == null) throw StateError('画像データを作成できませんでした');
@@ -297,7 +314,7 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
               Expanded(
                 child: Center(
                   child: AspectRatio(
-                    aspectRatio: 9 / 16,
+                    aspectRatio: _selectedAspectRatio.value,
                     child: PageView.builder(
                       controller: _backgroundController,
                       itemCount: _backgrounds.length,
@@ -321,20 +338,58 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
               ),
               Row(
                 children: [
+                  const Text(
+                    '画像の比率',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF68636B),
+                    ),
+                  ),
+                  const Spacer(),
+                  SegmentedButton<_ShareAspectRatio>(
+                    showSelectedIcon: false,
+                    segments: [
+                      for (final ratio in _ShareAspectRatio.values)
+                        ButtonSegment(
+                          value: ratio,
+                          label: Text(ratio.label),
+                          tooltip: '${ratio.width} × ${ratio.height}px',
+                        ),
+                    ],
+                    selected: {_selectedAspectRatio},
+                    onSelectionChanged: (selection) =>
+                        setState(() => _selectedAspectRatio = selection.first),
+                    style: ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                      padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      textStyle: const WidgetStatePropertyAll(
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
                   OutlinedButton.icon(
                     onPressed: _uploadBackground,
                     icon: const Icon(
                       Icons.add_photo_alternate_outlined,
                       size: 18,
                     ),
-                    label: const Text('写真を追加'),
-                    style: OutlinedButton.styleFrom(foregroundColor: mainColor),
+                    label: const Text('写真を背景に'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: mainColor,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      textStyle: const TextStyle(fontSize: 12),
+                    ),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    '文字サイズ ${_fontSize.round()}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  const Text('文字サイズ', style: TextStyle(fontSize: 12)),
                   Expanded(
                     child: Slider(
                       value: _fontSize,
@@ -342,15 +397,11 @@ class _LyricSharePageState extends ConsumerState<LyricSharePage> {
                       max: 30,
                       divisions: 18,
                       activeColor: mainColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       onChanged: (value) => setState(() => _fontSize = value),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _backgrounds[_selectedBackgroundIndex].label,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF777780)),
               ),
               const SizedBox(height: 4),
               Row(
