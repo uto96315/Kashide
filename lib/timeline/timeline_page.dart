@@ -149,16 +149,17 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               ],
             ),
           ),
-          _TimelineGenreTabs(
-            genres: model.availableFilterGenres.toList(growable: false),
-            selectedGenre: model.filter.genres.length == 1
-                ? model.filter.genres.first
-                : null,
-            allSelected: model.filter.genres.isEmpty,
-            onSelected: (genre) =>
-                unawaited(_selectTimelineGenre(model, genre)),
-            onSwipe: (direction) => _stepTimelineGenre(model, direction),
-          ),
+          if (!_deck)
+            _TimelineGenreTabs(
+              genres: model.availableFilterGenres.toList(growable: false),
+              selectedGenre: model.filter.genres.length == 1
+                  ? model.filter.genres.first
+                  : null,
+              allSelected: model.filter.genres.isEmpty,
+              onSelected: (genre) =>
+                  unawaited(_selectTimelineGenre(model, genre)),
+              onSwipe: (direction) => _stepTimelineGenre(model, direction),
+            ),
           if (model.filter.isActive && model.filterApplying)
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
