@@ -21,12 +21,13 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> with WidgetsBindingObserver {
   StreamSubscription<RemoteMessage>? _fcmForegroundSub;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fcmForegroundSub = FirebaseMessaging.onMessage.listen((_) {
       ref.read(notificationInboxProvider).load();
     });
@@ -38,8 +39,16 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fcmForegroundSub?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(ref.read(homeProvider).refreshLatestVersions());
+    }
   }
 
   @override
