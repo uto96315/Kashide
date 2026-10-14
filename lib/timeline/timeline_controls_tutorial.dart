@@ -1,51 +1,75 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/timeline/swipe_deck_swipe_cue.dart';
+import 'package:str_gram_beta/timeline/timeline_view_tutorial_cue.dart';
 
 class TimelineControlsTutorial {
   static const _steps = <_TutorialStep>[
     _TutorialStep(
       'カードをスワイプ',
-      'カードを左右に動かすと、次の歌詞に進めます。',
+      '右はいいね、左は次の歌詞へ。下のボタンでも同じ操作ができます。',
     ),
     _TutorialStep('曲を自動で再生', 'カードを見ていると、曲が自動で流れます。'),
     _TutorialStep('並び順を変える', '新着順か、いいねが多い順を選べます。'),
     _TutorialStep('見たい投稿を探す', 'ジャンルなどで絞って、投稿を探せます。'),
-    _TutorialStep('表示を切り替える', 'カード表示と一覧表示を切り替えられます。'),
+    _TutorialStep(
+      '表示を切り替える',
+      '右上の切替で、スワイプのカードと縦の一覧を行き来できます。',
+    ),
   ];
 
+  static const _viewStepIndex = 4;
+
   static String _key(String? uid) =>
-      'timeline_controls_tutorial_v1_${uid ?? 'local'}';
+      'timeline_controls_tutorial_v3_${uid ?? 'local'}';
 
   static Future<void> showIfNeeded(
     BuildContext context, {
     required String? uid,
     required List<GlobalKey> targets,
+    SwipeDeckSwipeCue? swipeCue,
+    TimelineViewTutorialCue? viewCue,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_key(uid)) ?? false) return;
-    if (!context.mounted) return;
-    if (targets.length != _steps.length) return;
+    await run(
+      context,
+      uid: uid,
+      targets: targets,
+      swipeCue: swipeCue,
+      viewCue: viewCue,
+      markComplete: true,
+    );
+  }
+
+  /// マイページなどから再表示（完了済みでも表示する）。
+  static Future<bool> run(
+    BuildContext context, {
+    required String? uid,
+    required List<GlobalKey> targets,
+    SwipeDeckSwipeCue? swipeCue,
+    TimelineViewTutorialCue? viewCue,
+    bool markComplete = false,
+  }) async {
+    if (!context.mounted) return false;
+    if (targets.length != _steps.length) return false;
 
     final rects = <Rect>[];
     for (final target in targets) {
       final renderObject = target.currentContext?.findRenderObject();
-      if (renderObject is! RenderBox || !renderObject.hasSize) return;
+      if (renderObject is! RenderBox || !renderObject.hasSize) return false;
       rects.add(renderObject.localToGlobal(Offset.zero) & renderObject.size);
     }
 
     final overlay = Overlay.of(context, rootOverlay: true);
-    if (!overlay.mounted) return;
+    if (!overlay.mounted) return false;
     final overlayRenderObject = overlay.context.findRenderObject();
     if (overlayRenderObject is! RenderBox || !overlayRenderObject.hasSize) {
-      return;
+      return false;
     }
-    // Read the finite app viewport from the page context. OverlayEntry's own
-    // builder can receive loose constraints, so its LayoutBuilder size is not
-    // a safe source for the card width.
     final overlaySize = MediaQuery.sizeOf(context);
     final overlayOrigin = overlayRenderObject.localToGlobal(Offset.zero);
     final overlayRects = rects
@@ -59,6 +83,8 @@ class TimelineControlsTutorial {
           steps: _steps,
           targetRects: overlayRects,
           overlaySize: overlaySize,
+          swipeCue: swipeCue,
+          viewCue: viewCue,
           onFinished: completed.complete,
         ),
       ),
@@ -67,7 +93,15 @@ class TimelineControlsTutorial {
     await completed.future;
     entry.remove();
     entry.dispose();
-    await prefs.setBool(_key(uid), true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      swipeCue?.reset();
+      viewCue?.reset();
+    });
+    if (markComplete) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_key(uid), true);
+    }
+    return true;
   }
 }
 
@@ -83,12 +117,16 @@ class _TutorialOverlay extends StatefulWidget {
     required this.steps,
     required this.targetRects,
     required this.overlaySize,
+    required this.swipeCue,
+    required this.viewCue,
     required this.onFinished,
   });
 
   final List<_TutorialStep> steps;
   final List<Rect> targetRects;
   final Size overlaySize;
+  final SwipeDeckSwipeCue? swipeCue;
+  final TimelineViewTutorialCue? viewCue;
   final VoidCallback onFinished;
 
   @override
@@ -96,23 +134,108 @@ class _TutorialOverlay extends StatefulWidget {
 }
 
 class _TutorialOverlayState extends State<_TutorialOverlay>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _swipeDemo = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 680),
+    duration: const Duration(milliseconds: 2400),
+  );
+  late final AnimationController _viewDemo = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2800),
   );
   var _step = 0;
 
   @override
   void initState() {
     super.initState();
-    _swipeDemo.forward();
+    _swipeDemo.addListener(_syncSwipeCue);
+    _viewDemo.addListener(_syncViewCue);
+    _applyStepAnimations();
   }
 
   @override
   void dispose() {
+    _swipeDemo.removeListener(_syncSwipeCue);
+    _viewDemo.removeListener(_syncViewCue);
     _swipeDemo.dispose();
+    _viewDemo.dispose();
+    widget.swipeCue?.reset(notify: false);
+    widget.viewCue?.reset(notify: false);
     super.dispose();
+  }
+
+  void _applyStepAnimations() {
+    _swipeDemo.stop();
+    _viewDemo.stop();
+    widget.swipeCue?.reset(notify: false);
+    widget.viewCue?.reset(notify: false);
+    if (_step == 0 && widget.swipeCue != null) {
+      _swipeDemo
+        ..reset()
+        ..repeat();
+    } else if (_step == TimelineControlsTutorial._viewStepIndex &&
+        widget.viewCue != null) {
+      _viewDemo
+        ..reset()
+        ..repeat();
+    } else {
+      if (widget.swipeCue != null) {
+        _swipeDemo.forward(from: 0);
+      }
+      if (widget.viewCue != null) {
+        _viewDemo.forward(from: 0);
+      }
+    }
+  }
+
+  void _syncSwipeCue() {
+    if (widget.swipeCue == null || _step != 0) return;
+    widget.swipeCue!.dragDx = _tutorialDragOffset(_swipeDemo.value);
+  }
+
+  void _syncViewCue() {
+    if (widget.viewCue == null || _step != TimelineControlsTutorial._viewStepIndex) {
+      return;
+    }
+    widget.viewCue!.previewDeck(_tutorialDeckPreview(_viewDemo.value));
+  }
+
+  /// カード → 一覧 → カード（1周期の末尾は常にカード）。
+  static bool _tutorialDeckPreview(double t) {
+    if (t < 0.36) return true;
+    if (t < 0.58) return false;
+    return true;
+  }
+
+  void _endTutorialOnCardMode() {
+    widget.viewCue?.previewDeck(true);
+    widget.viewCue?.reset();
+  }
+
+  Rect _spotlightRect() {
+    final base = widget.targetRects[_step].inflate(8);
+    if (_step != TimelineControlsTutorial._viewStepIndex) return base;
+    final toggle = widget.targetRects[TimelineControlsTutorial._viewStepIndex];
+    final top = toggle.top - 4;
+    final bottom = widget.overlaySize.height - 200;
+    return Rect.fromLTRB(12, top, widget.overlaySize.width - 12, bottom);
+  }
+
+  /// 右→戻る→左→戻る のデモ（実カードに反映）。
+  static double _tutorialDragOffset(double t) {
+    if (t < 0.2) {
+      return Curves.easeOut.transform(t / 0.2) * 92;
+    }
+    if (t < 0.3) {
+      return 92 * (1 - Curves.easeIn.transform((t - 0.2) / 0.1));
+    }
+    if (t < 0.55) {
+      return -Curves.easeOut.transform((t - 0.3) / 0.25) * 92;
+    }
+    if (t < 0.65) {
+      return -92 * (1 - Curves.easeIn.transform((t - 0.55) / 0.1));
+    }
+    return 0;
   }
 
   @override
@@ -129,9 +252,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
             ExcludeSemantics(
               child: AbsorbPointer(
                 child: CustomPaint(
-                  painter: _SpotlightPainter(
-                    widget.targetRects[_step].inflate(8),
-                  ),
+                  painter: _SpotlightPainter(_spotlightRect()),
                 ),
               ),
             ),
@@ -179,84 +300,6 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
                                 color: Color(0xFF3A3A3C),
                               ),
                             ),
-                            if (_step == 0) ...[
-                              const SizedBox(height: 14),
-                              SizedBox(
-                                height: 56,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    Container(
-                                      height: 46,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF4F4F7),
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                    AnimatedBuilder(
-                                      animation: _swipeDemo,
-                                      child: Container(
-                                        width: (cardWidth - 88)
-                                            .clamp(150.0, 230.0)
-                                            .toDouble(),
-                                        height: 46,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFF59434B),
-                                              Color(0xFF292326),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(14),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Color(0x26000000),
-                                              blurRadius: 8,
-                                              offset: Offset(0, 3),
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Row(
-                                          children: [
-                                            Icon(
-                                              Icons.music_note_rounded,
-                                              color: Colors.white,
-                                              size: 18,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              '歌詞カード',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      builder: (context, child) {
-                                        final progress = Curves.easeInOut
-                                            .transform(_swipeDemo.value);
-                                        final offset =
-                                            math.sin(progress * math.pi * 2) *
-                                            15;
-                                        return Transform.translate(
-                                          offset: Offset(offset, 0),
-                                          child: Transform.rotate(
-                                            angle: offset * 0.002,
-                                            child: child,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
                             const SizedBox(height: 12),
                             SizedBox(
                               width: cardWidth - 40,
@@ -265,7 +308,10 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   TextButton(
-                                    onPressed: widget.onFinished,
+                                    onPressed: () {
+                                      _endTutorialOnCardMode();
+                                      widget.onFinished();
+                                    },
                                     child: const Text('スキップ'),
                                   ),
                                   FilledButton(
@@ -300,10 +346,18 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
 
   void _next() {
     if (_step == widget.steps.length - 1) {
+      _endTutorialOnCardMode();
       widget.onFinished();
       return;
     }
+    if (_step == 0) {
+      widget.swipeCue?.reset();
+    }
+    if (_step == TimelineControlsTutorial._viewStepIndex) {
+      _endTutorialOnCardMode();
+    }
     setState(() => _step++);
+    _applyStepAnimations();
   }
 }
 
