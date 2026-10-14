@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,7 +81,9 @@ final cardPreviewPlayerProvider = ChangeNotifierProvider<CardPreviewPlayer>((ref
 });
 
 final homeProvider = ChangeNotifierProvider.autoDispose<HomeModel>((ref) {
-  return HomeModel()..getLatestVersions();
+  final model = HomeModel();
+  unawaited(model.startVersionMonitoring());
+  return model;
 });
 
 /// ボトムタブ（0=ホーム）。詳細画面などからホームへ戻すときに使う。
