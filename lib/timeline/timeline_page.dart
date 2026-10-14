@@ -16,6 +16,8 @@ import '../common/lyric_post_card.dart';
 import '../providers.dart';
 import '../share/lyric_share_page.dart';
 import 'swipe_deck.dart';
+import 'swipe_deck_swipe_cue.dart';
+import 'timeline_view_tutorial_cue.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
 import 'timeline_controls_tutorial.dart';
@@ -34,14 +36,94 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   /// デフォルトはカード（スワイプ）表示。
   var _deck = true;
   var _tutorialCheckScheduled = false;
+  var _replayTutorialQueued = false;
+
+  bool get _showDeck => _viewTutorialCue.deckOverride ?? _deck;
   final _autoplayTutorialKey = GlobalKey();
   final _sortTutorialKey = GlobalKey();
   final _filterTutorialKey = GlobalKey();
   final _viewTutorialKey = GlobalKey();
   final _cardTutorialKey = GlobalKey();
+  final _swipeTutorialCue = SwipeDeckSwipeCue();
+  final _viewTutorialCue = TimelineViewTutorialCue();
+
+  @override
+  void initState() {
+    super.initState();
+    _viewTutorialCue.addListener(_onViewTutorialCueChanged);
+  }
+
+  void _onViewTutorialCueChanged() {
+    if (!mounted) return;
+    if (_viewTutorialCue.deckOverride == false) {
+      ref.read(cardPreviewPlayerProvider).stop();
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _viewTutorialCue.removeListener(_onViewTutorialCueChanged);
+    _swipeTutorialCue.dispose();
+    _viewTutorialCue.dispose();
+    super.dispose();
+  }
 
   Future<void> _playCardPreview(Post post) async {
     await ref.read(cardPreviewPlayerProvider).playForPost(post);
+  }
+
+  Future<void> _runControlsTutorial({required bool force}) async {
+    if (!mounted || !widget.isActive) return;
+    if (!_deck) {
+      ref.read(cardPreviewPlayerProvider).stop();
+      setState(() => _deck = true);
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      if (!mounted) return;
+    }
+    final targets = [
+      _cardTutorialKey,
+      _autoplayTutorialKey,
+      _sortTutorialKey,
+      _filterTutorialKey,
+      _viewTutorialKey,
+    ];
+    final uid = ref.read(timelineProvider).uid;
+    for (var attempt = 0; attempt < 5; attempt++) {
+      if (!mounted || !widget.isActive) return;
+      if (attempt > 0) {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+      }
+      if (!_targetsReady(targets)) continue;
+      if (force) {
+        await TimelineControlsTutorial.run(
+          context,
+          uid: uid,
+          targets: targets,
+          swipeCue: _swipeTutorialCue,
+          viewCue: _viewTutorialCue,
+        );
+      } else {
+        await TimelineControlsTutorial.showIfNeeded(
+          context,
+          uid: uid,
+          targets: targets,
+          swipeCue: _swipeTutorialCue,
+          viewCue: _viewTutorialCue,
+        );
+      }
+      return;
+    }
+  }
+
+  bool _targetsReady(List<GlobalKey> targets) {
+    for (final key in targets) {
+      final box = key.currentContext?.findRenderObject();
+      if (box is! RenderBox || !box.hasSize) return false;
+    }
+    return true;
   }
 
   Future<void> _toggleTimelinePreview(Post post) async {
@@ -63,6 +145,18 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       notificationInboxProvider.select((m) => m.unreadCount),
     );
 
+    final replayScheduled = ref.watch(timelineControlsTutorialReplayProvider);
+    if (replayScheduled && widget.isActive && !_replayTutorialQueued) {
+      _replayTutorialQueued = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _replayTutorialQueued = false;
+        if (!mounted || !widget.isActive) return;
+        if (!ref.read(timelineControlsTutorialReplayProvider)) return;
+        ref.read(timelineControlsTutorialReplayProvider.notifier).consume();
+        unawaited(_runControlsTutorial(force: true));
+      });
+    }
+
     if (widget.isActive && _deck && !_tutorialCheckScheduled) {
       _tutorialCheckScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -71,19 +165,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
           _tutorialCheckScheduled = false;
           return;
         }
-        unawaited(
-          TimelineControlsTutorial.showIfNeeded(
-            context,
-            uid: ref.read(timelineProvider).uid,
-            targets: [
-              _cardTutorialKey,
-              _autoplayTutorialKey,
-              _sortTutorialKey,
-              _filterTutorialKey,
-              _viewTutorialKey,
-            ],
-          ),
-        );
+        unawaited(_runControlsTutorial(force: false));
       });
     }
 
@@ -96,7 +178,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_deck)
+                if (_showDeck)
                   _CardPreviewToggle(
                     key: _autoplayTutorialKey,
                     enabled: ref.watch(cardAutoplaySettingsProvider).enabled,
@@ -127,10 +209,13 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                 ),
                 _ViewToggle(
                   key: _viewTutorialKey,
-                  deck: _deck,
+                  deck: _showDeck,
                   onChanged: (deck) {
                     if (!deck) ref.read(cardPreviewPlayerProvider).stop();
-                    setState(() => _deck = deck);
+                    setState(() {
+                      _deck = deck;
+                      _viewTutorialCue.reset();
+                    });
                   },
                 ),
                 IconButton(
@@ -149,7 +234,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               ],
             ),
           ),
-          if (!_deck)
+          if (!_showDeck)
             _TimelineGenreTabs(
               genres: model.availableFilterGenres.toList(growable: false),
               selectedGenre: model.filter.genres.length == 1
@@ -234,7 +319,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               ),
             ),
           Expanded(
-            child: _deck
+            child: _showDeck
                 ? SwipeDeck(
                     key: _cardTutorialKey,
                     posts: [
@@ -295,6 +380,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                         return;
                       await _playCardPreview(post);
                     },
+                    swipeCue: _swipeTutorialCue,
                   )
                 : NotificationListener<ScrollNotification>(
                     onNotification: (notification) {
@@ -810,39 +896,75 @@ class _ViewToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 32,
-      margin: const EdgeInsets.only(right: 4),
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE5E5EA),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _item(Icons.view_agenda_outlined, !deck, () => onChanged(false)),
-          _item(Icons.style_outlined, deck, () => onChanged(true)),
-        ],
+    // Apple Maps / Material 3 の「選択側を色で埋める」セグメントに寄せる（Kashide 色）
+    return Semantics(
+      label: deck ? '表示: カード' : '表示: 一覧',
+      child: Container(
+        height: 36,
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF1F5),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFFFD6E4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _item(
+              icon: Icons.format_list_bulleted_rounded,
+              tooltip: '一覧表示',
+              selected: !deck,
+              onTap: () => onChanged(false),
+            ),
+            const SizedBox(width: 2),
+            _item(
+              icon: Icons.swipe_rounded,
+              tooltip: 'カードでスワイプ',
+              selected: deck,
+              onTap: () => onChanged(true),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _item(IconData icon, bool selected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: 36,
-        height: 28,
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: selected ? mainColor : const Color(0xFF536471),
+  Widget _item({
+    required IconData icon,
+    required String tooltip,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          width: 44,
+          height: 30,
+          decoration: BoxDecoration(
+            color: selected ? mainColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: selected
+                ? const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 21,
+            color: selected ? Colors.white : const Color(0xFF6B6B70),
+          ),
         ),
       ),
     );

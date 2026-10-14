@@ -92,6 +92,24 @@ class HomeTabIndexNotifier extends Notifier<int> {
 
 final homeTabIndexProvider = NotifierProvider<HomeTabIndexNotifier, int>(HomeTabIndexNotifier.new);
 
+/// マイページ「タイムラインの使い方」からカード上の操作ガイドを再表示する。
+class TimelineControlsTutorialReplayNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void schedule() => state = true;
+
+  void consume() {
+    if (!state) return;
+    state = false;
+  }
+}
+
+final timelineControlsTutorialReplayProvider =
+    NotifierProvider<TimelineControlsTutorialReplayNotifier, bool>(
+  TimelineControlsTutorialReplayNotifier.new,
+);
+
 /// アカウント切替時にホームタブの子ウィジェットを作り直すためのキー。
 class SessionRefreshKeyNotifier extends Notifier<int> {
   @override

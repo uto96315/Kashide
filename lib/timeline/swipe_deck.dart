@@ -9,6 +9,7 @@ import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/common/post_lyrics_text.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
+import 'package:str_gram_beta/timeline/swipe_deck_swipe_cue.dart';
 
 class SwipeDeck extends StatefulWidget {
   const SwipeDeck({
@@ -29,6 +30,7 @@ class SwipeDeck extends StatefulWidget {
     required this.hasMore,
     this.onForegroundCard,
     this.onStopPreview,
+    this.swipeCue,
   });
 
   final List<Post> posts;
@@ -51,6 +53,7 @@ class SwipeDeck extends StatefulWidget {
   /// 手前のカードが変わったとき（自動再生など）。
   final Future<void> Function(Post post)? onForegroundCard;
   final VoidCallback? onStopPreview;
+  final SwipeDeckSwipeCue? swipeCue;
 
   @override
   State<SwipeDeck> createState() => _SwipeDeckState();
@@ -74,16 +77,27 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
 
   Post? get _post => widget.posts.isEmpty ? null : widget.posts.first;
 
+  Post? get _nextPost => widget.posts.length < 2 ? null : widget.posts[1];
+
   double get _dx => _flying
       ? _from + (_to - _from) * Curves.easeOutCubic.transform(_fly.value)
       : _drag;
 
+  double get _displayDx =>
+      _flying ? _dx : _dx + (widget.swipeCue?.dragDx ?? 0);
+
   @override
   void initState() {
     super.initState();
+    widget.swipeCue?.addListener(_onSwipeCueChanged);
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _notifyForegroundIfNeeded(),
     );
+  }
+
+  void _onSwipeCueChanged() {
+    if (_flying) return;
+    setState(() {});
   }
 
   void _notifyForegroundIfNeeded() {
@@ -97,6 +111,10 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
   @override
   void didUpdateWidget(SwipeDeck oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.swipeCue != widget.swipeCue) {
+      oldWidget.swipeCue?.removeListener(_onSwipeCueChanged);
+      widget.swipeCue?.addListener(_onSwipeCueChanged);
+    }
     final oldId = oldWidget.posts.isEmpty ? null : oldWidget.posts.first.id;
     final newId = widget.posts.isEmpty ? null : widget.posts.first.id;
     if (oldId != newId) {
@@ -113,9 +131,40 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    widget.swipeCue?.removeListener(_onSwipeCueChanged);
     _fly.dispose();
     _celebrate.dispose();
     super.dispose();
+  }
+
+  Widget _buildLyricCard(Post post, {required double dx, required bool interactive}) {
+    return _LyricCard(
+      post: post,
+      dx: dx,
+      liked: widget.likedIds.contains(post.id),
+      onOpenUser: interactive ? () => widget.onOpenUser(post) : () {},
+      onFilterArtist: interactive ? widget.onFilterArtist : (_) {},
+      onFilterGenre: interactive ? widget.onFilterGenre : (_) {},
+      onPlay: interactive ? () => widget.onPlay(post) : () {},
+    );
+  }
+
+  Widget _buildBackCard(Post post, double frontDx, double deckWidth) {
+    final progress = (frontDx.abs() / deckWidth).clamp(0.0, 1.0);
+    final scale = 0.92 + progress * 0.06;
+    final dy = 12 * (1 - progress * 0.45);
+    return IgnorePointer(
+      child: Transform.translate(
+        offset: Offset(0, dy),
+        child: Transform.scale(
+          scale: scale,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(2, 6, 2, 10),
+            child: _buildLyricCard(post, dx: 0, interactive: false),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _triggerLikeButtonPulse() async {
@@ -184,47 +233,58 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       );
     }
 
+    final deckWidth = MediaQuery.sizeOf(context).width;
+    final nextPost = _nextPost;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Column(
         children: [
           Expanded(
-            child: GestureDetector(
-              onHorizontalDragUpdate: (details) {
-                if (_flying) return;
-                setState(() => _drag += details.delta.dx);
-              },
-              onHorizontalDragEnd: (details) {
-                final velocity = details.velocity.pixelsPerSecond.dx;
-                if (_drag > 90 || velocity > 800) {
-                  _settle(true);
-                } else if (_drag < -90 || velocity < -800) {
-                  _settle(false);
-                } else {
-                  _settle(null);
-                }
-              },
-              onTap: () => widget.onOpen(post),
-              child: Transform.translate(
-                offset: Offset(_dx, 0),
-                child: Transform.rotate(
-                  angle: _dx / 1400,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(2, 6, 2, 10),
-                    child: SizedBox.expand(
-                      child: _LyricCard(
-                        post: post,
-                        dx: _dx,
-                        liked: widget.likedIds.contains(post.id),
-                        onOpenUser: () => widget.onOpenUser(post),
-                        onFilterArtist: widget.onFilterArtist,
-                        onFilterGenre: widget.onFilterGenre,
-                        onPlay: () => widget.onPlay(post),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                if (nextPost != null)
+                  Positioned.fill(
+                    child: _buildBackCard(nextPost, _displayDx, deckWidth),
+                  ),
+                Positioned.fill(
+                  child: GestureDetector(
+                    onHorizontalDragUpdate: (details) {
+                      if (_flying) return;
+                      setState(() => _drag += details.delta.dx);
+                    },
+                    onHorizontalDragEnd: (details) {
+                      final velocity = details.velocity.pixelsPerSecond.dx;
+                      if (_drag > 90 || velocity > 800) {
+                        _settle(true);
+                      } else if (_drag < -90 || velocity < -800) {
+                        _settle(false);
+                      } else {
+                        _settle(null);
+                      }
+                    },
+                    onTap: () => widget.onOpen(post),
+                    child: Transform.translate(
+                      offset: Offset(_displayDx, 0),
+                      child: Transform.rotate(
+                        angle: _displayDx / 1400,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(2, 6, 2, 10),
+                          child: SizedBox.expand(
+                            child: _buildLyricCard(
+                              post,
+                              dx: _displayDx,
+                              interactive: true,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 10),
