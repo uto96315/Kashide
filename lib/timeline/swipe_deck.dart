@@ -133,15 +133,27 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
     if (like == true) unawaited(_triggerLikeButtonPulse());
     await _fly.forward(from: 0);
     if (!mounted) return;
-    setState(() {
-      _drag = 0;
-      _flying = false;
-    });
-    if (like == null) return;
+    if (like == null) {
+      _fly.reset();
+      setState(() {
+        _drag = 0;
+        _flying = false;
+      });
+      return;
+    }
+    // スワイプ確定後は画面外のままリスト更新を待つ（中央に戻すと一瞬前のカードが見える）。
     if (like) {
-      await widget.onLike(post);
+      unawaited(widget.onLike(post));
     } else {
       widget.onDismiss(post.id);
+    }
+    if (!mounted) return;
+    if (_post?.id == post.id) {
+      _fly.reset();
+      setState(() {
+        _drag = 0;
+        _flying = false;
+      });
     }
     if (widget.posts.length <= 2 && widget.hasMore) widget.onNeedMore();
   }

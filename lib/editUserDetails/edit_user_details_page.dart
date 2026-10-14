@@ -43,7 +43,7 @@ class EditUserDetailsPage extends ConsumerWidget {
                           model.startLoading();
                           try {
                             await model.updateUserData();
-                            if (context.mounted) Navigator.pushNamed(context, "/home");
+                            if (context.mounted) Navigator.pop(context);
                           } catch (e) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(

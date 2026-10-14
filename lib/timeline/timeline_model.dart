@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:in_app_review/in_app_review.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -461,14 +463,27 @@ class TimelineModel extends ChangeNotifier {
   Future<void> markSwipeSeen(String id) async {
     if (seenSwipeIds.contains(id)) return;
     seenSwipeIds.add(id);
+    notifyListeners();
     final userId = uid;
-    if (userId != null) {
-      await FirebaseFirestore.instance.collection('users').doc(userId).collection('cardSkipped').doc(id).set({
+    if (userId == null) return;
+    unawaited(_persistSwipeSeen(id, userId));
+  }
+
+  Future<void> _persistSwipeSeen(String id, String userId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('cardSkipped')
+          .doc(id)
+          .set({
         'postId': id,
         'skippedAt': FieldValue.serverTimestamp(),
       });
+    } catch (e, st) {
+      // 保存失敗でもカードデッキは進めたまま（再表示しない）。次回起動で未保存なら出る可能性あり。
+      debugPrint('markSwipeSeen failed: $e\n$st');
     }
-    notifyListeners();
   }
 
   Future getFirstPostData() async {
@@ -532,43 +547,62 @@ class TimelineModel extends ChangeNotifier {
   }
 
   Future<void> likePost(String id) async {
-    if (uid == null) return;
-    final whoDoc = FirebaseFirestore.instance
-        .collection("posts")
-        .doc(id)
-        .collection("likedUsers")
-        .doc(uid);
-    if ((await whoDoc.get()).exists) {
-      likedPostIds.add(id);
-      seenSwipeIds.add(id);
-      notifyListeners();
-      return;
-    }
-    final likedNumber = (await FirebaseFirestore.instance
-            .collection("posts")
-            .doc(id)
-            .collection("likedUsers")
-            .get())
-        .docs
-        .length;
-    final nextCount = likedNumber + 1;
-    await Future.wait([
-      FirebaseFirestore.instance.collection("users").doc(uid).collection("likePost").doc(id).set({
-        "postId": id,
-        "likedAt": DateTime.now(),
-      }),
-      FirebaseFirestore.instance.collection("posts").doc(id).update({"likedCount": nextCount}),
-      whoDoc.set({"likedAt": DateTime.now(), "likedUser": uid}),
-    ]);
-    for (final post in postsList) {
-      if (post.id == id) {
-        post.likedCount = nextCount;
-        break;
-      }
-    }
+    final userId = uid;
+    if (userId == null) return;
+    if (likedPostIds.contains(id)) return;
+
     likedPostIds.add(id);
     seenSwipeIds.add(id);
     notifyListeners();
+    unawaited(_persistLikePost(id, userId));
+  }
+
+  Future<void> _persistLikePost(String id, String userId) async {
+    try {
+      final whoDoc = FirebaseFirestore.instance
+          .collection('posts')
+          .doc(id)
+          .collection('likedUsers')
+          .doc(userId);
+      if ((await whoDoc.get()).exists) return;
+
+      final likedNumber = (await FirebaseFirestore.instance
+              .collection('posts')
+              .doc(id)
+              .collection('likedUsers')
+              .get())
+          .docs
+          .length;
+      final nextCount = likedNumber + 1;
+      await Future.wait([
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('likePost')
+            .doc(id)
+            .set({
+          'postId': id,
+          'likedAt': DateTime.now(),
+        }),
+        FirebaseFirestore.instance
+            .collection('posts')
+            .doc(id)
+            .update({'likedCount': nextCount}),
+        whoDoc.set({'likedAt': DateTime.now(), 'likedUser': userId}),
+      ]);
+      for (final post in postsList) {
+        if (post.id == id) {
+          post.likedCount = nextCount;
+          break;
+        }
+      }
+      if (!_disposed) notifyListeners();
+    } catch (e, st) {
+      // いいねだけ無かったことにする。デッキは進めたまま（seenSwipeIds は維持）。
+      debugPrint('likePost failed: $e\n$st');
+      if (_disposed) return;
+      if (likedPostIds.remove(id)) notifyListeners();
+    }
   }
 
   // 投稿時間から〜分前に変換する

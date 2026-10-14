@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/primary_button.dart';
+import 'package:str_gram_beta/auth/user_session_refresh.dart';
 import 'package:str_gram_beta/providers.dart';
 
 class RegisterUserDetailsPage extends ConsumerWidget {
@@ -14,63 +15,107 @@ class RegisterUserDetailsPage extends ConsumerWidget {
     final model = ref.watch(registerUserDetailsProvider);
     final name = model.userNameController.text.trim();
 
-    return GestureDetector(
+    final addingAccount = ModalRoute.of(context)?.settings.arguments == true;
+
+    return PopScope(
+      canPop: false,
+      child: GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF7F8),
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-            child: Column(
-              children: [
-                const Spacer(),
-                _AvatarPicker(image: model.imageFile, onTap: model.pickImage),
-                const SizedBox(height: 28),
-                TextField(
-                  controller: model.userNameController,
-                  maxLength: 50,
-                  textAlign: TextAlign.center,
-                  autofocus: true,
-                  onChanged: model.setUserName,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
-                  cursorColor: mainColor,
-                  decoration: const InputDecoration(
-                    hintText: 'ユーザー名',
-                    hintStyle: TextStyle(color: Color(0xFF8E8E93), fontSize: 18, fontWeight: FontWeight.w600),
-                    counterText: '',
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      borderSide: BorderSide.none,
-                    ),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    children: [
+                      _AvatarPicker(
+                        image: model.imageFile,
+                        onTap: model.pickImage,
+                      ),
+                      const SizedBox(height: 28),
+                      TextField(
+                        controller: model.userNameController,
+                        maxLength: 50,
+                        textAlign: TextAlign.center,
+                        autofocus: true,
+                        onChanged: model.setUserName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1C1C1E),
+                        ),
+                        cursorColor: mainColor,
+                        decoration: const InputDecoration(
+                          hintText: 'ユーザー名',
+                          hintStyle: TextStyle(
+                            color: Color(0xFF8E8E93),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          counterText: '',
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(16)),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFFFD6E4),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: model.userIntroductionController,
+                        maxLength: 160,
+                        maxLines: 4,
+                        minLines: 3,
+                        onChanged: model.setUserIntroduction,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          height: 1.45,
+                          color: Color(0xFF1C1C1E),
+                        ),
+                        cursorColor: mainColor,
+                        decoration: const InputDecoration(
+                          hintText: '自己紹介を追加（任意）',
+                          hintStyle: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF8E8E93),
+                          ),
+                          counterText: '',
+                          isDense: true,
+                          contentPadding: EdgeInsets.fromLTRB(8, 4, 8, 8),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, thickness: 1, color: Color(0xFFFFD6E4)),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: model.userIntroductionController,
-                  maxLength: 160,
-                  maxLines: 4,
-                  minLines: 3,
-                  onChanged: model.setUserIntroduction,
-                  style: const TextStyle(fontSize: 17, height: 1.45, color: Color(0xFF1C1C1E)),
-                  cursorColor: mainColor,
-                  decoration: const InputDecoration(
-                    hintText: '自己紹介を追加（任意）',
-                    hintStyle: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: Color(0xFF8E8E93)),
-                    counterText: '',
-                    isDense: true,
-                    contentPadding: EdgeInsets.fromLTRB(8, 4, 8, 8),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  8,
+                  24,
+                  20 + MediaQuery.viewInsetsOf(context).bottom,
                 ),
-                const Spacer(),
-                PrimaryButton(
+                child: PrimaryButton(
                   label: 'Kashideの世界に入る',
                   loading: model.isLoading,
                   onPressed: name.isEmpty
@@ -80,7 +125,11 @@ class RegisterUserDetailsPage extends ConsumerWidget {
                           try {
                             await model.registerUserData();
                             if (!context.mounted) return;
-                            Navigator.pushNamed(context, '/home');
+                            refreshAfterAccountChange(
+                              ref,
+                              homeTabIndex: addingAccount ? 3 : 0,
+                            );
+                            Navigator.of(context).popUntil((route) => route.isFirst);
                           } catch (e) {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -91,11 +140,12 @@ class RegisterUserDetailsPage extends ConsumerWidget {
                           }
                         },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    ),
     );
   }
 }

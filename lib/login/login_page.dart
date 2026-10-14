@@ -148,7 +148,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
     await model.registerBlankData();
     if (!context.mounted) return;
-    await Navigator.pushNamed(context, '/registerUserDetails');
+    await Navigator.pushNamed(
+      context,
+      '/registerUserDetails',
+      arguments: widget.addingAccount,
+    );
   }
 }
 
