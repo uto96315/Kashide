@@ -3,49 +3,94 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class PlaylistDetailsModel extends ChangeNotifier{
+class PlaylistDetailsModel extends ChangeNotifier {
   PlaylistDetailsModel(this.playlistId);
 
-  var uid = FirebaseAuth.instance.currentUser?.uid;
+  String? uid;
   String playlistId;
-  List playlistSongs = [];
+  List<Map<String, dynamic>> playlistSongs = [];
   bool ready = false;
+  bool _disposed = false;
 
-  Future getPlaylistDetail()async{
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> getPlaylistDetail() async {
     ready = false;
-    notifyListeners();
+    _notify();
 
-    final doc = FirebaseFirestore.instance
-        .collection("users").doc(uid)
-        .collection("playlists").doc(playlistId)
-        .collection("songs").orderBy("addAt");
-    final snapshot = await doc.get();
-    final baseSongs = snapshot.docs.map((song) {
+    uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      playlistSongs = [];
+      ready = true;
+      _notify();
+      return;
+    }
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('playlists')
+        .doc(playlistId)
+        .collection('songs')
+        .get();
+
+    if (_disposed) return;
+
+    var baseSongs = snapshot.docs.map((song) {
+      final data = song.data();
       return {
-        "id": song.id,
-        "artist": song["artist"],
-        "postId": song["postId"],
-        "singName": song["singName"],
-        "youtubeUrl": song["youtubeUrl"],
-        "addAt": song["addAt"],
-        "lyricText": "",
+        'id': song.id,
+        'artist': data['artist'],
+        'postId': data['postId'],
+        'singName': data['singName'],
+        'youtubeUrl': data['youtubeUrl'],
+        'addAt': data['addAt'],
+        'lyricText': _nonEmpty(data['lyricText']) ?? _nonEmpty(data['text']) ?? '',
       };
     }).toList();
 
-    final enriched = await Future.wait(baseSongs.map(_attachLyricFromPost));
-    playlistSongs = enriched.where(_isDisplayable).toList();
+    baseSongs = baseSongs.where(_hasSongIdentity).toList();
+    baseSongs.sort(_compareByAddAt);
+
+    playlistSongs = baseSongs.cast<Map<String, dynamic>>();
     ready = true;
-    notifyListeners();
+    _notify();
+
+    final postIds = baseSongs
+        .map((s) => s['postId'])
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    if (postIds.isEmpty || _disposed) return;
+
+    final postTexts = await _fetchPostTextsBatch(postIds);
+    if (_disposed) return;
+
+    playlistSongs = baseSongs.map((song) {
+      final postId = song['postId'] as String?;
+      final fromPost = postId != null ? postTexts[postId] : null;
+      final lyric = _nonEmpty(song['lyricText']) ?? fromPost;
+      return {
+        ...song,
+        if (lyric != null) 'lyricText': lyric,
+      };
+    }).cast<Map<String, dynamic>>().toList();
+    _notify();
   }
 
-  bool _isDisplayable(Map<String, dynamic> song) {
-    final artist = _nonEmpty(song['artist']);
-    final singName = _nonEmpty(song['singName']);
-    final lyric = _nonEmpty(song['lyricText']);
-    return artist != null && singName != null && lyric != null && lyric.length >= postLyricsMinLength;
+  /// プレイリスト保存時点の曲情報があれば表示（歌詞は後追い取得・任意）。
+  bool _hasSongIdentity(Map<String, dynamic> song) {
+    return _nonEmpty(song['artist']) != null && _nonEmpty(song['singName']) != null;
   }
 
   String? _nonEmpty(dynamic value) {
@@ -54,40 +99,54 @@ class PlaylistDetailsModel extends ChangeNotifier{
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  Future<Map<String, dynamic>> _attachLyricFromPost(Map<String, dynamic> song) async {
-    final postId = song['postId'] as String?;
-    if (postId == null || postId.isEmpty) return song;
-    try {
-      final post = await FirebaseFirestore.instance.collection('posts').doc(postId).get();
-      final data = post.data();
-      if (data == null) return song;
-      final artist = _nonEmpty(song['artist']) ?? _nonEmpty(data['artist']);
-      final singName = _nonEmpty(song['singName']) ?? _nonEmpty(data['singName']);
-      final lyric = _nonEmpty(data['text']);
-      return {
-        ...song,
-        if (artist != null) 'artist': artist,
-        if (singName != null) 'singName': singName,
-        if (lyric != null) 'lyricText': lyric,
-      };
-    } catch (_) {
-      return song;
+  int _compareByAddAt(Map<String, dynamic> a, Map<String, dynamic> b) {
+    return _addAtMillis(a['addAt']).compareTo(_addAtMillis(b['addAt']));
+  }
+
+  int _addAtMillis(dynamic addAt) {
+    if (addAt is Timestamp) return addAt.millisecondsSinceEpoch;
+    if (addAt is DateTime) return addAt.millisecondsSinceEpoch;
+    return 0;
+  }
+
+  Future<Map<String, String>> _fetchPostTextsBatch(Set<String> postIds) async {
+    final result = <String, String>{};
+    final ids = postIds.toList();
+    const chunkSize = 30;
+    for (var start = 0; start < ids.length; start += chunkSize) {
+      final end = start + chunkSize > ids.length ? ids.length : start + chunkSize;
+      final chunk = ids.sublist(start, end);
+      final snap = await FirebaseFirestore.instance
+          .collection('posts')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .get();
+      for (final doc in snap.docs) {
+        final text = _nonEmpty(doc.data()['text']);
+        if (text != null) result[doc.id] = text;
+      }
     }
+    return result;
   }
 
-  // プレイリストから削除する処理
-  Future deleteFromPlaylist(String songId)async{
+  Future deleteFromPlaylist(String songId) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
     final doc = FirebaseFirestore.instance
-        .collection("users").doc(uid)
-        .collection("playlists").doc(playlistId)
-        .collection("songs").doc(songId);
+        .collection('users')
+        .doc(userId)
+        .collection('playlists')
+        .doc(playlistId)
+        .collection('songs')
+        .doc(songId);
 
-    try {await doc.delete();} catch(e) { print(e.toString()); }
+    try {
+      await doc.delete();
+    } catch (e) {
+      debugPrint(e.toString());
+    }
     await getPlaylistDetail();
-    notifyListeners();
   }
 
-  // Youtubeアプリを開く処理
   Future launchURL(String url) async {
     try {
       final uri = Uri.parse(url);
@@ -95,7 +154,7 @@ class PlaylistDetailsModel extends ChangeNotifier{
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
     }
   }
 }

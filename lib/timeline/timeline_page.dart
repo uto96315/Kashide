@@ -602,6 +602,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
           post.singName,
           post.youtubeLink,
           post.id,
+          lyricText: post.text,
         );
       },
       onCreate: (name) async {

@@ -56,6 +56,7 @@ class LyricsSearchPage extends ConsumerWidget {
                 post.singName,
                 post.youtubeLink,
                 post.id,
+                lyricText: post.text,
               ),
               onCreatePlaylist: (name) async {
                 timeline.addPlaylistController.text = name;

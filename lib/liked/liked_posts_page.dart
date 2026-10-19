@@ -59,6 +59,7 @@ class LikedPostsPage extends ConsumerWidget {
                               post.singName,
                               post.youtubeLink,
                               post.id,
+                              lyricText: post.text,
                             ),
                             onCreatePlaylist: (name) async {
                               final timeline = ref.read(timelineProvider);
