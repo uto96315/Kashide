@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:str_gram_beta/common/default_genres.dart';
+import 'package:str_gram_beta/playlist/default_playlists.dart';
 import 'package:str_gram_beta/domain/user_domain.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../domain/post_domain.dart';
@@ -327,6 +328,9 @@ class TimelineModel extends ChangeNotifier {
 
   // プレイリストを取得する関数
   Future getPlayListData()async{
+    if (uid != null) {
+      await DefaultPlaylists.ensureForUser(uid!);
+    }
     final doc = FirebaseFirestore.instance
         .collection("users").doc(uid).collection("playlists");
     final snapshot = await doc.get();

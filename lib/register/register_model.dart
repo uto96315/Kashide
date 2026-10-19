@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:str_gram_beta/playlist/default_playlists.dart';
 
 class RegisterModel extends ChangeNotifier {
   final registerEmailController = TextEditingController();
@@ -80,6 +81,7 @@ class RegisterModel extends ChangeNotifier {
         "createdAt": DateTime.now(),
         "iconUrl": "",
       });
+      await DefaultPlaylists.ensureForUser(uid);
     }
   }
 }
