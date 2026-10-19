@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
 import 'package:str_gram_beta/common/swipe_card_scene.dart';
@@ -172,6 +173,14 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
     if (mounted) _celebrate.reset();
   }
 
+  void _hapticForSettle(bool? like) {
+    if (like == true) {
+      HapticFeedback.mediumImpact();
+    } else if (like == false) {
+      HapticFeedback.selectionClick();
+    }
+  }
+
   Future<void> _settle(bool? like) async {
     if (_flying || _post == null) return;
     final post = _post!;
@@ -179,6 +188,7 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
     _from = _drag;
     _to = like == null ? 0 : (like ? width * 1.25 : -width * 1.25);
     _flying = true;
+    _hapticForSettle(like);
     if (like == true) unawaited(_triggerLikeButtonPulse());
     await _fly.forward(from: 0);
     if (!mounted) return;
