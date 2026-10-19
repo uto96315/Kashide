@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:str_gram_beta/playlist/default_playlists.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
 import 'package:str_gram_beta/post/post_validation.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
@@ -181,10 +182,9 @@ class PostModel extends ChangeNotifier {
       singName = singNameController.text;
       youtubeLink = youtubeLinkController.text;
 
-      final lyricFields = lyricFieldsForFirestore(
-        segments: lyricSegments.isNotEmpty ? lyricSegments : [lyrics ?? ''],
-      );
-      await doc.add({
+      final segments = lyricSegments.isNotEmpty ? lyricSegments : [lyrics ?? ''];
+      final lyricFields = lyricFieldsForFirestore(segments: segments);
+      final postRef = await doc.add({
         "explanation": explanation ?? "",
         "artist": singerName ?? "不明",
         "likedCount": 0,
@@ -195,6 +195,16 @@ class PostModel extends ChangeNotifier {
         "createdAt": DateTime.now(),
         "youtubeLink": youtubeLink ?? "",
       });
+      if (uid != null) {
+        await DefaultPlaylists.addOwnPost(
+          uid: uid,
+          postId: postRef.id,
+          artist: singerName ?? '不明',
+          singName: singName ?? '不明',
+          youtubeUrl: youtubeLink ?? '',
+          lyricText: combineLyricSegments(segments),
+        );
+      }
     } finally {
       posting = false;
       notifyListeners();

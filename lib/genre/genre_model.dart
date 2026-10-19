@@ -187,19 +187,31 @@ class GenreModel extends ChangeNotifier {
   }
 
   // プレイリストに追加する処理
-  Future addToPlaylist(String playlistId, String artist, String songName, String youtubeLink, String postId)async{
+  Future addToPlaylist(
+    String playlistId,
+    String artist,
+    String songName,
+    String youtubeLink,
+    String postId, {
+    String? lyricText,
+  }) async {
     final doc = FirebaseFirestore.instance
         .collection("users").doc(uid).collection("playlists")
         .doc(playlistId).collection("songs");
 
     try {
-      await doc.add({
+      final payload = <String, dynamic>{
         "singName": songName,
         "artist": artist,
         "youtubeUrl": youtubeLink,
         "postId": postId,
         "addAt": DateTime.now(),
-      });
+      };
+      final lyric = lyricText?.trim();
+      if (lyric != null && lyric.isNotEmpty) {
+        payload['lyricText'] = lyric;
+      }
+      await doc.add(payload);
       print("プレイリストに追加しました");
     } catch(e) {
       print(e.toString());

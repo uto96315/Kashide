@@ -128,6 +128,7 @@ class _GenreBody extends ConsumerWidget {
                 post.singName,
                 post.youtubeLink,
                 post.id,
+                lyricText: post.text,
               ),
               onCreatePlaylist: (name) async {
                 model.addPlaylistController.text = name;

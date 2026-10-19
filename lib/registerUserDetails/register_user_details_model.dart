@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:str_gram_beta/playlist/default_playlists.dart';
 
 
 
@@ -115,6 +116,7 @@ class RegisterUserDetailsModel extends ChangeNotifier {
         "iconUrl": storageURL,
         // "token": token
       });
+      await DefaultPlaylists.ensureForUser(uid!);
     }
   }
 

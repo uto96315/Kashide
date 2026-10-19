@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:str_gram_beta/playlist/default_playlists.dart';
 
 class PlaylistModel extends ChangeNotifier {
   final addPlaylistController = TextEditingController();
@@ -33,14 +34,25 @@ class PlaylistModel extends ChangeNotifier {
 
   // プレイリストを取得する
   Future getPlaylists()async{
+    uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      playlists = [];
+      ready = true;
+      notifyListeners();
+      return;
+    }
+    await DefaultPlaylists.ensureForUser(uid!);
+
     final doc = FirebaseFirestore.instance.collection("users")
         .doc(uid).collection("playlists");
     final snapshot = await doc.get();
 
     playlists = snapshot.docs.asMap().entries.map((playlist) {
+      final data = playlist.value.data();
       return {
         "id": playlist.value.id,
-        "playlistName": playlist.value["playlistName"],
+        "playlistName": data["playlistName"],
+        "systemKey": data["systemKey"],
       };
     }).toList();
     ready = true;
@@ -69,6 +81,14 @@ class PlaylistModel extends ChangeNotifier {
 
   // プレイリストを削除する
   Future deletePlaylist(String id)async{
+    for (final p in playlists) {
+      if (p is! Map) continue;
+      if (p['id'] != id) continue;
+      if (DefaultPlaylists.isSystemPlaylist(p['systemKey'] as String?)) {
+        return;
+      }
+      break;
+    }
     final doc = FirebaseFirestore.instance
         .collection("users").doc(uid)
         .collection("playlists").doc(id);

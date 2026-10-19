@@ -6,6 +6,7 @@ import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/primary_button.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/playlistDetails/playlist_details_page.dart';
+import 'package:str_gram_beta/playlist/default_playlists.dart';
 import 'package:str_gram_beta/providers.dart';
 
 class PlaylistPage extends ConsumerWidget {
@@ -32,6 +33,8 @@ class PlaylistPage extends ConsumerWidget {
                           separatorBuilder: (_, __) => const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final playlist = model.playlists[index];
+                            final systemKey = playlist['systemKey'] as String?;
+                            final isSystem = DefaultPlaylists.isSystemPlaylist(systemKey);
                             return Material(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
@@ -61,19 +64,20 @@ class PlaylistPage extends ConsumerWidget {
                                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                                         ),
                                       ),
-                                      IconButton(
-                                        onPressed: () async {
-                                          final ok = await showAppConfirm(
-                                            context,
-                                            title: 'プレイリストを削除',
-                                            message: '「${playlist['playlistName']}」を削除しますか？',
-                                            confirm: '削除する',
-                                            destructive: true,
-                                          );
-                                          if (ok) await model.deletePlaylist(playlist['id']);
-                                        },
-                                        icon: const Icon(Icons.delete_outline, color: Color(0xFF8E8E93)),
-                                      ),
+                                      if (!isSystem)
+                                        IconButton(
+                                          onPressed: () async {
+                                            final ok = await showAppConfirm(
+                                              context,
+                                              title: 'プレイリストを削除',
+                                              message: '「${playlist['playlistName']}」を削除しますか？',
+                                              confirm: '削除する',
+                                              destructive: true,
+                                            );
+                                            if (ok) await model.deletePlaylist(playlist['id']);
+                                          },
+                                          icon: const Icon(Icons.delete_outline, color: Color(0xFF8E8E93)),
+                                        ),
                                     ],
                                   ),
                                 ),
