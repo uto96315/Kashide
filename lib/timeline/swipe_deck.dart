@@ -268,7 +268,7 @@ class _SideActionRail extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _SideActionButton(
-          icon: Icons.chat_bubble_rounded,
+          icon: Icons.chat_bubble_outline_rounded,
           label: commentCount > 0 ? _countLabel(commentCount) : null,
           onTap: onComment,
         ),
@@ -325,13 +325,14 @@ class _SideActionButton extends StatelessWidget {
           ),
         ),
         if (label != null) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             label!,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
+              height: 1.1,
               shadows: _ink,
             ),
           ),
@@ -389,13 +390,14 @@ class _SideLikeButton extends StatelessWidget {
               ),
             ),
             if (label != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 label!,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
+                  height: 1.1,
                   shadows: _ink,
                 ),
               ),
