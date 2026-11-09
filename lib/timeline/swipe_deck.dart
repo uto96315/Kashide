@@ -37,6 +37,7 @@ class SwipeDeck extends StatefulWidget {
     this.onForegroundCard,
     this.onStopPreview,
     this.swipeCue,
+    this.onCreatePost,
   });
 
   final List<Post> posts;
@@ -62,6 +63,7 @@ class SwipeDeck extends StatefulWidget {
   final Future<void> Function(Post post)? onForegroundCard;
   final VoidCallback? onStopPreview;
   final SwipeDeckTutorialCue? swipeCue;
+  final VoidCallback? onCreatePost;
 
   @override
   State<SwipeDeck> createState() => _SwipeDeckState();
@@ -72,6 +74,7 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
   var _pageIndex = 0;
   String? _focusedPostId;
   String? _foregroundNotifiedId;
+  var _verticalDragAccum = 0.0;
 
   late final AnimationController _celebrate = AnimationController(
     vsync: this,
@@ -92,7 +95,7 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
 
   void _notifyForegroundIfNeeded() {
     final posts = widget.posts;
-    if (posts.isEmpty || widget.onForegroundCard == null) return;
+    if (posts.isEmpty || widget.onForegroundCard == null || _onEndPage) return;
     final index = _pageIndex.clamp(0, posts.length - 1);
     final post = posts[index];
     if (_foregroundNotifiedId == post.id) return;
@@ -124,11 +127,17 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       _focusedPostId = posts[targetIndex].id;
     }
 
+    final maxIndex = _pageCount - 1;
+    if (targetIndex > maxIndex) targetIndex = maxIndex;
+
     if (targetIndex != _pageIndex) {
       _pageIndex = targetIndex;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_pageController.hasClients) return;
-        _pageController.jumpToPage(targetIndex);
+        final jump = _pageIndex.clamp(0, _pageCount - 1);
+        if (_pageController.page?.round() != jump) {
+          _pageController.jumpToPage(jump);
+        }
       });
     }
   }
@@ -140,24 +149,67 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  int get _pageCount => widget.posts.length + 1;
+
+  bool get _onEndPage => _pageIndex >= widget.posts.length;
+
   void _onPageChanged(int index) {
     final posts = widget.posts;
-    if (index >= posts.length) return;
+    final prev = _pageIndex;
 
-    if (index > _pageIndex && widget.onScrollPast != null) {
-      for (var i = _pageIndex; i < index; i++) {
+    if (index < posts.length &&
+        index > prev &&
+        prev < posts.length &&
+        widget.onScrollPast != null) {
+      for (var i = prev; i < index; i++) {
         widget.onScrollPast!(posts[i].id);
       }
     }
+    if (index == posts.length && prev < posts.length && widget.onScrollPast != null) {
+      widget.onScrollPast!(posts[prev].id);
+    }
 
     _pageIndex = index;
-    _focusedPostId = posts[index].id;
-    _foregroundNotifiedId = null;
-    _notifyForegroundIfNeeded();
-
-    if (index >= posts.length - 2 && widget.hasMore && !widget.loadingMore) {
-      widget.onNeedMore();
+    if (index < posts.length) {
+      _focusedPostId = posts[index].id;
+      _foregroundNotifiedId = null;
+      _notifyForegroundIfNeeded();
+      if (index >= posts.length - 2 && widget.hasMore && !widget.loadingMore) {
+        widget.onNeedMore();
+      }
+    } else {
+      _focusedPostId = null;
+      widget.onStopPreview?.call();
     }
+  }
+
+  Future<void> _animateToPage(int index) async {
+    if (!_pageController.hasClients) return;
+    await _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  Future<void> _pageNext() async {
+    if (_pageIndex >= _pageCount - 1) return;
+    await _animateToPage(_pageIndex + 1);
+  }
+
+  Future<void> _pagePrevious() async {
+    if (_pageIndex <= 0) return;
+    await _animateToPage(_pageIndex - 1);
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (_verticalDragAccum < -52 || velocity < -520) {
+      unawaited(_pageNext());
+    } else if (_verticalDragAccum > 52 || velocity > 520) {
+      unawaited(_pagePrevious());
+    }
+    _verticalDragAccum = 0;
   }
 
   Future<void> _onLikeTap(Post post) async {
@@ -190,17 +242,24 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       );
     }
 
-    final deck = PageView.builder(
+    Widget deck = PageView.builder(
       scrollDirection: Axis.vertical,
-      physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+      physics: const NeverScrollableScrollPhysics(),
       controller: _pageController,
       onPageChanged: _onPageChanged,
-      itemCount: posts.length,
+      itemCount: _pageCount,
       itemBuilder: (context, index) {
+        if (index >= posts.length) {
+          return _DeckEndCard(
+            loadingMore: widget.loadingMore,
+            hasMore: widget.hasMore,
+            onCreatePost: widget.onCreatePost,
+          );
+        }
         final post = posts[index];
         final liked = widget.likedIds.contains(post.id);
         return GestureDetector(
-          behavior: HitTestBehavior.deferToChild,
+          behavior: HitTestBehavior.opaque,
           onTap: () => widget.onOpen(post),
           child: _LyricCard(
             post: post,
@@ -219,18 +278,120 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
       },
     );
 
-    final cue = widget.swipeCue;
-    if (cue == null) return deck;
-
-    return ListenableBuilder(
-      listenable: cue,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, cue.dragDy),
-          child: child,
-        );
+    deck = GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onVerticalDragUpdate: (details) {
+        _verticalDragAccum += details.delta.dy;
       },
+      onVerticalDragEnd: _onVerticalDragEnd,
       child: deck,
+    );
+
+    final cue = widget.swipeCue;
+    if (cue != null) {
+      deck = ListenableBuilder(
+        listenable: cue,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, cue.dragDy),
+            child: child,
+          );
+        },
+        child: deck,
+      );
+    }
+
+    return deck;
+  }
+}
+
+class _DeckEndCard extends StatelessWidget {
+  const _DeckEndCard({
+    required this.loadingMore,
+    required this.hasMore,
+    this.onCreatePost,
+  });
+
+  final bool loadingMore;
+  final bool hasMore;
+  final VoidCallback? onCreatePost;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF2C2C2E), Color(0xFF1C1C1E)],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.lyrics_outlined,
+                color: Colors.white70,
+                size: 48,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                hasMore || loadingMore
+                    ? '読み込み中…'
+                    : 'ここまで表示しました',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                hasMore || loadingMore
+                    ? '少し待ってから、もう一度スワイプしてみてください'
+                    : 'あなたの好きな歌詞も投稿して、みんなと共有しましょう',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontSize: 15,
+                  height: 1.45,
+                ),
+              ),
+              if (loadingMore) ...[
+                const SizedBox(height: 24),
+                const CircularProgressIndicator(color: mainColor),
+              ] else if (!hasMore && onCreatePost != null) ...[
+                const SizedBox(height: 28),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: mainColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                  ),
+                  onPressed: onCreatePost,
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('歌詞を投稿する'),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                '下にスワイプで前のカードに戻れます',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

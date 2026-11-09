@@ -21,6 +21,7 @@ import 'timeline_view_tutorial_cue.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
 import 'timeline_controls_tutorial.dart';
+import '../post/post_page.dart';
 
 class TimelinePage extends ConsumerStatefulWidget {
   const TimelinePage({super.key, this.isActive = true});
@@ -322,7 +323,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             child: _showDeck
                 ? SwipeDeck(
                     key: _cardTutorialKey,
-                    posts: model.deckFeedPosts,
+                    posts: model.visiblePosts,
                     likedIds: model.likedPostIds,
                     loadingMore: model.loadingMore,
                     hasMore: model.hasMorePosts,
@@ -386,6 +387,17 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                       await _playCardPreview(post);
                     },
                     swipeCue: _swipeTutorialCue,
+                    onCreatePost: () {
+                      Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PostPage(
+                            null,
+                            analyticsSource: 'timeline_deck_end',
+                          ),
+                        ),
+                      );
+                    },
                   )
                 : NotificationListener<ScrollNotification>(
                     onNotification: (notification) {
@@ -424,7 +436,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                 children: [
                                   if (model.filter.isActive ||
                                       model.sortOrder !=
-                                          TimelineSortOrder.newest)
+                                          TimelineSortOrder.random)
                                     Padding(
                                       padding: const EdgeInsets.fromLTRB(
                                         16,
@@ -833,7 +845,7 @@ class _SortButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final highlighted = sortOrder != TimelineSortOrder.newest;
+    final highlighted = sortOrder != TimelineSortOrder.random;
     return PopupMenuButton<TimelineSortOrder>(
       tooltip: '並び替え',
       onSelected: onSelected,

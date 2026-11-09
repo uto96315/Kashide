@@ -1,6 +1,8 @@
 import 'package:str_gram_beta/domain/post_domain.dart';
 
 enum TimelineSortOrder {
+  /// セッション内でランダム（並び替えから新着・いいね数に切替可能）。
+  random,
   newest,
   mostLiked,
 }
@@ -8,6 +10,8 @@ enum TimelineSortOrder {
 extension TimelineSortOrderLabel on TimelineSortOrder {
   String get label {
     switch (this) {
+      case TimelineSortOrder.random:
+        return 'おすすめ';
       case TimelineSortOrder.newest:
         return '新着順';
       case TimelineSortOrder.mostLiked:
@@ -20,6 +24,8 @@ List<Post> applyTimelineSort(List<Post> posts, TimelineSortOrder order) {
   if (posts.length <= 1) return posts;
   final sorted = posts.toList();
   switch (order) {
+    case TimelineSortOrder.random:
+      break;
     case TimelineSortOrder.newest:
       sorted.sort((a, b) => b.createdAtMillis.compareTo(a.createdAtMillis));
     case TimelineSortOrder.mostLiked:

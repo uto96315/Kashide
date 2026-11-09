@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:in_app_review/in_app_review.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
@@ -42,7 +43,8 @@ class TimelineModel extends ChangeNotifier {
   List playList = [];
   String? newPlaylistName;
   TimelineFilterState filter = TimelineFilterState.empty;
-  TimelineSortOrder sortOrder = TimelineSortOrder.newest;
+  TimelineSortOrder sortOrder = TimelineSortOrder.random;
+  final List<String> _randomFeedOrderIds = [];
   List<String> masterGenreOptions = List<String>.from(kFallbackDefaultGenres);
   String? _serverGenreFilter;
   /// Firestore 複合インデックス未作成時はサーバー側ジャンル絞り込みを使わない。
@@ -65,7 +67,33 @@ class TimelineModel extends ChangeNotifier {
     if (!_usesServerSortOrder) {
       result = applyTimelineSort(result, sortOrder);
     }
+    if (sortOrder == TimelineSortOrder.random) {
+      _syncRandomFeedOrder(result);
+      result = _orderPostsByRandomIds(result);
+    }
     return result;
+  }
+
+  void _syncRandomFeedOrder(List<Post> posts) {
+    final ids = posts.map((p) => p.id).toSet();
+    _randomFeedOrderIds.removeWhere((id) => !ids.contains(id));
+    final known = _randomFeedOrderIds.toSet();
+    final newcomers = ids.difference(known).toList()..shuffle(Random());
+    _randomFeedOrderIds.addAll(newcomers);
+    if (_randomFeedOrderIds.isEmpty && posts.isNotEmpty) {
+      final all = posts.map((p) => p.id).toList()..shuffle(Random());
+      _randomFeedOrderIds.addAll(all);
+    }
+  }
+
+  List<Post> _orderPostsByRandomIds(List<Post> posts) {
+    final byId = {for (final p in posts) p.id: p};
+    final ordered = <Post>[];
+    for (final id in _randomFeedOrderIds) {
+      final post = byId[id];
+      if (post != null) ordered.add(post);
+    }
+    return ordered;
   }
 
   /// 絞り込み結果を端末側でいいね数ソートする必要がある（複合条件など）。
@@ -74,6 +102,7 @@ class TimelineModel extends ChangeNotifier {
 
   /// Firestore の取得順がそのまま表示順になるか（クライアント側ソート不要か）。
   bool get _usesServerSortOrder {
+    if (sortOrder == TimelineSortOrder.random) return false;
     if (_needsClientMostLikedSort) return false;
     return true;
   }
@@ -102,6 +131,11 @@ class TimelineModel extends ChangeNotifier {
   Future<void> setSortOrder(TimelineSortOrder next) async {
     if (sortOrder == next) return;
     sortOrder = next;
+    if (next != TimelineSortOrder.random) {
+      _randomFeedOrderIds.clear();
+    } else {
+      _randomFeedOrderIds.clear();
+    }
     _likedSortSkipCreatedAtTiebreak = false;
     sortLoadError = null;
     _filterBackgroundCancelled = true;
