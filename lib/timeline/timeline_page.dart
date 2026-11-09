@@ -16,7 +16,7 @@ import '../common/lyric_post_card.dart';
 import '../providers.dart';
 import '../share/lyric_share_page.dart';
 import 'swipe_deck.dart';
-import 'swipe_deck_swipe_cue.dart';
+import 'swipe_deck_tutorial_cue.dart';
 import 'timeline_view_tutorial_cue.dart';
 import 'timeline_filter_sheet.dart';
 import 'timeline_sort.dart';
@@ -44,7 +44,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
   final _filterTutorialKey = GlobalKey();
   final _viewTutorialKey = GlobalKey();
   final _cardTutorialKey = GlobalKey();
-  final _swipeTutorialCue = SwipeDeckSwipeCue();
+  final _swipeTutorialCue = SwipeDeckTutorialCue();
   final _viewTutorialCue = TimelineViewTutorialCue();
 
   @override
@@ -322,20 +322,25 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             child: _showDeck
                 ? SwipeDeck(
                     key: _cardTutorialKey,
-                    posts: [
-                      for (final post in posts)
-                        if (model.isVisibleInSwipeDeck(post)) post,
-                    ],
+                    posts: model.deckFeedPosts,
                     likedIds: model.likedPostIds,
                     loadingMore: model.loadingMore,
                     hasMore: model.hasMorePosts,
                     onLike: (post) => model.likePost(post.id),
-                    onDismiss: (id) => unawaited(model.markSwipeSeen(id)),
+                    onScrollPast: (id) => unawaited(model.recordSwipePast(id)),
                     onOpen: (post) async {
                       await Navigator.push<void>(
                         context,
                         MaterialPageRoute(
                           builder: (_) => PostDetailPage(post.id, false),
+                        ),
+                      );
+                    },
+                    onComment: (post) async {
+                      await Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PostDetailPage(post.id, true),
                         ),
                       );
                     },

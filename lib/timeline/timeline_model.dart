@@ -25,8 +25,15 @@ class TimelineModel extends ChangeNotifier {
 
   var user = FirebaseAuth.instance.currentUser;
   var uid = FirebaseAuth.instance.currentUser?.uid;
+
+  void bindCurrentUser() {
+    user = FirebaseAuth.instance.currentUser;
+    uid = user?.uid;
+  }
   bool postsReady = false;
   List<Post> postsList = [];
+  /// カード表示用。スクロールで戻れるよう、通過してもここからは消さない。
+  List<Post> deckFeedPosts = [];
   final seenSwipeIds = <String>{};
   final likedPostIds = <String>{};
   DocumentSnapshot? _lastDoc;
@@ -120,6 +127,7 @@ class TimelineModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _reloadFilteredFeed();
+      _rebuildDeckFeed();
       _startFilteredBackgroundPrefetch();
     } on FirebaseException catch (e, st) {
       debugPrint('Timeline setFilter failed: ${e.code} ${e.message}\n$st');
@@ -129,6 +137,7 @@ class TimelineModel extends ChangeNotifier {
         forLikedSort: sortOrder == TimelineSortOrder.mostLiked,
       );
       postsList = [];
+      deckFeedPosts = [];
       postsReady = true;
       hasMorePosts = false;
       filterPrefetching = false;
@@ -439,6 +448,7 @@ class TimelineModel extends ChangeNotifier {
 
   // 最初に１０件を取得する
   Future<void> loadLikedPostIds() async {
+    bindCurrentUser();
     if (uid == null) return;
     final userRef = FirebaseFirestore.instance.collection('users').doc(uid);
     final results = await Future.wait([
@@ -460,10 +470,35 @@ class TimelineModel extends ChangeNotifier {
     return !seenSwipeIds.contains(post.id) && !likedPostIds.contains(post.id);
   }
 
+  void _rebuildDeckFeed() {
+    deckFeedPosts = postsList.where(isVisibleInSwipeDeck).toList(growable: true);
+  }
+
+  void _appendNewPostsToDeckFeed() {
+    final existing = deckFeedPosts.map((p) => p.id).toSet();
+    for (final post in postsList) {
+      if (existing.contains(post.id)) continue;
+      if (isVisibleInSwipeDeck(post)) {
+        deckFeedPosts.add(post);
+      }
+    }
+  }
+
+  /// 下にスクロールして通過した投稿（UI からは消さず、次回起動用に記録）。
+  Future<void> recordSwipePast(String id) async {
+    if (seenSwipeIds.contains(id)) return;
+    seenSwipeIds.add(id);
+    bindCurrentUser();
+    final userId = uid;
+    if (userId == null) return;
+    unawaited(_persistSwipeSeen(id, userId));
+  }
+
   Future<void> markSwipeSeen(String id) async {
     if (seenSwipeIds.contains(id)) return;
     seenSwipeIds.add(id);
     notifyListeners();
+    bindCurrentUser();
     final userId = uid;
     if (userId == null) return;
     unawaited(_persistSwipeSeen(id, userId));
@@ -487,6 +522,7 @@ class TimelineModel extends ChangeNotifier {
   }
 
   Future getFirstPostData() async {
+    bindCurrentUser();
     await loadLikedPostIds();
     _filterBackgroundCancelled = true;
     filterPrefetching = false;
@@ -507,6 +543,7 @@ class TimelineModel extends ChangeNotifier {
         if (sortOrder == TimelineSortOrder.mostLiked) sortLoadError = message;
         filterLoadError = message;
         postsList = [];
+        deckFeedPosts = [];
         postsReady = true;
         hasMorePosts = false;
         notifyListeners();
@@ -522,12 +559,14 @@ class TimelineModel extends ChangeNotifier {
           sortLoadError = _feedLoadErrorMessage(e, forFilter: false, forLikedSort: true);
         }
         postsList = [];
+        deckFeedPosts = [];
         postsReady = true;
         hasMorePosts = false;
         notifyListeners();
         return;
       }
     }
+    _rebuildDeckFeed();
     debugPrint("投稿を読み込みました");
     notifyListeners();
   }
@@ -538,6 +577,7 @@ class TimelineModel extends ChangeNotifier {
     notifyListeners();
     try {
       await _fetchNextPostsPage();
+      _appendNewPostsToDeckFeed();
     } on FirebaseException {
       // _fetchNextPostsPage 内で hasMorePosts を更新済み
     } finally {
@@ -547,6 +587,7 @@ class TimelineModel extends ChangeNotifier {
   }
 
   Future<void> likePost(String id) async {
+    bindCurrentUser();
     final userId = uid;
     if (userId == null) return;
     if (likedPostIds.contains(id)) return;

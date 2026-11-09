@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:str_gram_beta/common/lyric_line_break_tuning.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
 
@@ -12,6 +13,8 @@ class PostLyricsText extends StatelessWidget {
     this.textAlign,
     this.maxLines,
     this.overflow,
+    this.tuneLineBreaks = false,
+    this.layoutMaxWidth,
   });
 
   PostLyricsText.fromPost(
@@ -21,6 +24,8 @@ class PostLyricsText extends StatelessWidget {
     this.textAlign,
     this.maxLines,
     this.overflow,
+    this.tuneLineBreaks = false,
+    this.layoutMaxWidth,
   })  : text = post.text,
         segments = post.textSegments;
 
@@ -30,9 +35,51 @@ class PostLyricsText extends StatelessWidget {
   final TextAlign? textAlign;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool tuneLineBreaks;
+  final double? layoutMaxWidth;
+
+  Widget _textForBlock(String block, TextStyle base) {
+    final align = textAlign ?? TextAlign.start;
+    if (tuneLineBreaks && layoutMaxWidth != null && layoutMaxWidth! > 0) {
+      return LyricTextTunedForWidth(
+        text: block,
+        style: base,
+        maxWidth: layoutMaxWidth!,
+        textAlign: align,
+        maxLines: maxLines,
+        overflow: overflow,
+      );
+    }
+    return Text(
+      block,
+      style: base,
+      textAlign: align,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+  }
+
+  String _rawLyricsForCard() {
+    String raw;
+    if (segments.length > 1) {
+      raw = LyricLineBreakTuning.mergeShortSegments(segments).join('\n');
+    } else {
+      final trimmed = text.trim();
+      raw = trimmed.isNotEmpty
+          ? trimmed
+          : (segments.isEmpty ? '' : segments.first);
+    }
+    return LyricLineBreakTuning.mergeShortContinuationLines(raw);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final base = style ?? const TextStyle(fontSize: 16, height: 1.55);
+
+    if (tuneLineBreaks && layoutMaxWidth != null && layoutMaxWidth! > 0) {
+      return _textForBlock(_rawLyricsForCard(), base);
+    }
+
     final post = Post(
       '',
       '',
@@ -50,20 +97,18 @@ class PostLyricsText extends StatelessWidget {
       textSegments: segments,
     );
     final blocks = lyricBlocksForDisplay(post);
-    final base = style ?? const TextStyle(fontSize: 16, height: 1.55);
 
     if (blocks.length <= 1) {
-      return Text(
-        blocks.isEmpty ? text : blocks.first,
-        style: base,
-        textAlign: textAlign,
-        maxLines: maxLines,
-        overflow: overflow,
-      );
+      return _textForBlock(blocks.isEmpty ? text : blocks.first, base);
     }
 
+    final crossAlign = switch (textAlign) {
+      TextAlign.center => CrossAxisAlignment.center,
+      TextAlign.right || TextAlign.end => CrossAxisAlignment.end,
+      _ => CrossAxisAlignment.stretch,
+    };
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: crossAlign,
       children: [
         for (var i = 0; i < blocks.length; i++) ...[
           if (i > 0) ...[
@@ -71,13 +116,7 @@ class PostLyricsText extends StatelessWidget {
             Divider(height: 1, color: Color(0x33000000)),
             const SizedBox(height: 10),
           ],
-          Text(
-            blocks[i],
-            style: base,
-            textAlign: textAlign,
-            maxLines: maxLines,
-            overflow: overflow,
-          ),
+          _textForBlock(blocks[i], base),
         ],
       ],
     );

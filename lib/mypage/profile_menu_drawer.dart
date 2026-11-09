@@ -9,6 +9,8 @@ import 'package:str_gram_beta/auth/saved_account.dart';
 import 'package:str_gram_beta/common/network_image_utils.dart';
 import 'package:str_gram_beta/auth/saved_accounts_store.dart';
 import 'package:str_gram_beta/auth/user_session_refresh.dart';
+import 'package:str_gram_beta/auth/anonymous_user.dart';
+import 'package:str_gram_beta/auth/link_email_account_page.dart';
 import 'package:str_gram_beta/login/login_page.dart';
 import 'package:str_gram_beta/providers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -55,7 +57,14 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
   Widget build(BuildContext context) {
     final autoplay = ref.watch(cardAutoplaySettingsProvider);
     final savedAccounts = ref.watch(savedAccountsProvider);
-    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    final authUser = FirebaseAuth.instance.currentUser;
+    final currentUid = authUser?.uid;
+    final isAnonymous = authUser?.isAnonymous ?? false;
+    final currentAccount =
+        savedAccounts.accounts.where((a) => a.uid == currentUid).firstOrNull;
+    final profileName = isAnonymous && savedAccounts.ready && currentAccount != null
+        ? SavedAccount.listLabel(savedAccounts.accounts, currentAccount)
+        : displayUserName(widget.model.userName);
     final version = Platform.isIOS ? widget.model.iosVersion : widget.model.androidVersion;
     final hasAvatar = isUsableNetworkImageUrl(widget.model.userImageURL);
 
@@ -102,7 +111,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      widget.model.userName ?? '',
+                      profileName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -134,7 +143,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                   if (savedAccounts.accounts.isEmpty)
                     _Tile(
                       icon: CupertinoIcons.person_fill,
-                      title: widget.model.userName ?? '現在のアカウント',
+                      title: profileName,
                       showChevron: false,
                       onTap: () {},
                     )
@@ -142,6 +151,10 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                     for (var i = 0; i < savedAccounts.accounts.length; i++)
                       _AccountTile(
                         account: savedAccounts.accounts[i],
+                        title: SavedAccount.listLabel(
+                          savedAccounts.accounts,
+                          savedAccounts.accounts[i],
+                        ),
                         selected: savedAccounts.accounts[i].uid == currentUid,
                         showDivider: i < savedAccounts.accounts.length,
                         onTap: () => _switchAccount(context, ref, savedAccounts.accounts[i]),
@@ -159,6 +172,12 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
             ],
             _Section(
               children: [
+                if (isAnonymous)
+                  _Tile(
+                    icon: CupertinoIcons.envelope,
+                    title: 'メールアドレスを登録',
+                    onTap: () => _closeAndPush(context, const LinkEmailAccountPage()),
+                  ),
                 _Tile(
                   icon: CupertinoIcons.person_crop_circle,
                   title: 'プロフィール編集',
@@ -303,6 +322,14 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
     } on FirebaseAuthException catch (_) {
       ref.read(accountSwitchInProgressProvider.notifier).set(false);
       if (!context.mounted) return;
+      if (account.isAnonymousPlaceholder) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('匿名アカウントの切り替えに失敗しました。Functions のデプロイを確認してください。'),
+          ),
+        );
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -315,9 +342,10 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
     } catch (e) {
       ref.read(accountSwitchInProgressProvider.notifier).set(false);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('切り替えに失敗しました。パスワードを変更した場合は再度ログインしてください。')),
-      );
+      final message = account.isAnonymousPlaceholder
+          ? '匿名アカウントの切り替えに失敗しました。'
+          : '切り替えに失敗しました。パスワードを変更した場合は再度ログインしてください。';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -341,7 +369,12 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
   Future<bool> _ensureCurrentAccountPasswordSaved(BuildContext context, WidgetRef ref) async {
     final user = FirebaseAuth.instance.currentUser;
     final email = user?.email?.trim();
-    if (user == null || email == null || email.isEmpty) return true;
+    if (user == null) return false;
+    if (user.isAnonymous) {
+      await ref.read(savedAccountsProvider).persistAnonymous();
+      return true;
+    }
+    if (email == null || email.isEmpty) return true;
 
     await ref.read(savedAccountsProvider).ensureCurrentListed();
     final current = ref
@@ -430,6 +463,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
 class _AccountTile extends StatelessWidget {
   const _AccountTile({
     required this.account,
+    required this.title,
     required this.selected,
     required this.onTap,
     required this.onRemove,
@@ -437,6 +471,7 @@ class _AccountTile extends StatelessWidget {
   });
 
   final SavedAccount account;
+  final String title;
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback onRemove;
@@ -473,7 +508,7 @@ class _AccountTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          account.label,
+                          title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -482,7 +517,9 @@ class _AccountTile extends StatelessWidget {
                             color: ProfileMenuDrawer._label,
                           ),
                         ),
-                        if (account.displayName != null && account.displayName!.isNotEmpty)
+                        if (!account.isAnonymousPlaceholder &&
+                            account.displayName != null &&
+                            account.displayName!.isNotEmpty)
                           Text(
                             account.email,
                             maxLines: 1,

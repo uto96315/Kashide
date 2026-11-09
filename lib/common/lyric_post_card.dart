@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:str_gram_beta/auth/anonymous_user.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/element/favorite/favorite_button.dart';
@@ -89,7 +90,11 @@ class LyricPostCard extends StatelessWidget {
   }
 
   void _openUser(BuildContext context) {
-    openUserProfile(context, posterId: post.posterId, userName: post.userName);
+    openUserProfile(
+      context,
+      posterId: post.posterId,
+      userName: publicDisplayName(post.userName),
+    );
   }
 
   void _openPost(BuildContext context, bool comments) {
@@ -144,7 +149,7 @@ class _PostCardContent extends StatelessWidget {
                           onTap: onOpenUser,
                           behavior: HitTestBehavior.opaque,
                           child: Text(
-                            post.userName,
+                            publicDisplayName(post.userName),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

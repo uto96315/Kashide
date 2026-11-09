@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/auth/saved_account.dart';
 import 'package:str_gram_beta/common/network_image_utils.dart';
 import 'package:str_gram_beta/common/primary_button.dart';
 import 'package:str_gram_beta/providers.dart';
@@ -51,7 +52,7 @@ class TopPage extends ConsumerWidget {
                     (account) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _SavedAccountChip(
-                        label: account.label,
+                        label: SavedAccount.listLabel(saved.accounts, account),
                         iconUrl: account.iconUrl,
                         onTap: () => _signInSaved(context, ref, account.uid),
                       ),

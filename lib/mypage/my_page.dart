@@ -1,6 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/auth/anonymous_user.dart';
+import 'package:str_gram_beta/auth/link_email_account_page.dart';
+import 'package:str_gram_beta/auth/saved_account.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
@@ -8,6 +12,7 @@ import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/lyric_post_card.dart';
 import 'package:str_gram_beta/liked/liked_posts_page.dart';
 import 'package:str_gram_beta/playlist/playlist_page.dart';
+import 'package:str_gram_beta/mypage/my_model.dart';
 import 'package:str_gram_beta/mypage/profile_menu_drawer.dart';
 import 'package:str_gram_beta/auth/user_session_refresh.dart';
 import 'package:str_gram_beta/providers.dart';
@@ -20,6 +25,23 @@ class MyPage extends ConsumerStatefulWidget {
   ConsumerState<MyPage> createState() => _MyPageState();
 }
 
+String _myPageDisplayName({
+  required MyModel model,
+  required List<SavedAccount> savedAccounts,
+  required bool savedReady,
+  required bool isAnonymous,
+  required String? currentUid,
+}) {
+  if (model.userName == null) return '読み込み中...';
+  if (isAnonymous && savedReady && currentUid != null) {
+    final account = savedAccounts.where((a) => a.uid == currentUid).firstOrNull;
+    if (account != null) {
+      return SavedAccount.listLabel(savedAccounts, account);
+    }
+  }
+  return displayUserName(model.userName);
+}
+
 class _MyPageState extends ConsumerState<MyPage> {
   static const _bg = Color(0xFFF2F2F7);
   static const _primaryText = Color(0xFF0F1419);
@@ -27,6 +49,15 @@ class _MyPageState extends ConsumerState<MyPage> {
 
   final _scrollController = ScrollController();
   final _postsSectionKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(savedAccountsProvider).ensureCurrentListed();
+    });
+  }
 
   @override
   void dispose() {
@@ -47,9 +78,27 @@ class _MyPageState extends ConsumerState<MyPage> {
 
   @override
   Widget build(BuildContext context) {
+    final authUser = ref.watch(firebaseAuthUserProvider).asData?.value ??
+        FirebaseAuth.instance.currentUser;
     final model = ref.watch(myPageProvider);
+    final savedAccounts = ref.watch(savedAccountsProvider);
     final playlistModel = ref.watch(playlistProvider);
     final playlistCount = playlistModel.ready ? '${playlistModel.playlists.length}' : '—';
+    final currentUid = authUser?.uid;
+    final isAnonymous = authUser?.isAnonymous ?? false;
+
+    if (currentUid != null && model.uid != null && model.uid != currentUid) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.invalidate(myPageProvider);
+      });
+    }
+    final displayName = _myPageDisplayName(
+      model: model,
+      savedAccounts: savedAccounts.accounts,
+      savedReady: savedAccounts.ready,
+      isAnonymous: isAnonymous,
+      currentUid: currentUid,
+    );
     final hasAvatar =
         model.userImageURL != null && model.userImageURL != '' && model.userImageURL != 'null';
     final postCount = model.postsReady ? '${model.userPostsList.length}' : '—';
@@ -104,7 +153,7 @@ class _MyPageState extends ConsumerState<MyPage> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      model.userName ?? '読み込み中...',
+                      displayName,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -112,6 +161,53 @@ class _MyPageState extends ConsumerState<MyPage> {
                         letterSpacing: -0.3,
                       ),
                     ),
+                    if (isAnonymous) ...[
+                      const SizedBox(height: 14),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Material(
+                          color: const Color(0xFFFFF3F6),
+                          borderRadius: BorderRadius.circular(12),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LinkEmailAccountPage()),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: const [
+                                        Text(
+                                          'メールアドレスを登録',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1C1C1E),
+                                          ),
+                                        ),
+                                        SizedBox(height: 2),
+                                        Text(
+                                          'データを残して別の端末でも使えます',
+                                          style: TextStyle(fontSize: 12, color: Color(0xFF8E8E93)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(CupertinoIcons.chevron_right, size: 18, color: mainColor),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                     if ((model.userIntroduction ?? '').trim().isNotEmpty) ...[
                       const SizedBox(height: 10),
                       Padding(

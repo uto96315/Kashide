@@ -33,4 +33,10 @@ class SavedAccountsNotifier extends ChangeNotifier {
     ready = true;
     notifyListeners();
   }
+
+  Future<void> persistAnonymous() async {
+    accounts = await _service.persistAnonymousAccount();
+    ready = true;
+    notifyListeners();
+  }
 }

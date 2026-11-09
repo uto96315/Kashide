@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:str_gram_beta/auth/anonymous_user.dart';
 
 class AppNotification {
   AppNotification({
@@ -28,7 +29,7 @@ class AppNotification {
   }
 
   String get body {
-    final name = fromUserName.isNotEmpty ? fromUserName : '誰か';
+    final name = fromUserName.isNotEmpty ? publicDisplayName(fromUserName) : '誰か';
     if (type == 'like') {
       return '$nameさんがあなたの歌詞にいいねしました';
     }
@@ -57,7 +58,7 @@ class AppNotification {
       type: _normalizeType(data),
       postId: data['postId'] as String? ?? '',
       fromUserId: data['fromUserId'] as String? ?? '',
-      fromUserName: data['fromUserName'] as String? ?? '',
+      fromUserName: publicDisplayName(data['fromUserName'] as String?),
       createdAt: created is Timestamp ? created.toDate() : null,
       read: data['read'] as bool? ?? false,
       commentPreview: data['commentPreview'] as String?,

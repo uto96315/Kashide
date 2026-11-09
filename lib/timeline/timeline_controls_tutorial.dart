@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
-import 'package:str_gram_beta/timeline/swipe_deck_swipe_cue.dart';
+import 'package:str_gram_beta/timeline/swipe_deck_tutorial_cue.dart';
 import 'package:str_gram_beta/timeline/timeline_view_tutorial_cue.dart';
 
 class TimelineControlsTutorial {
   static const _steps = <_TutorialStep>[
     _TutorialStep(
-      'カードをスワイプ',
-      '右はいいね、左は次の歌詞へ。下のボタンでも同じ操作ができます。',
+      '上下にスクロール',
+      '上にスワイプして次の歌詞へ。いいねは右のハートから。',
     ),
     _TutorialStep('曲を自動で再生', 'カードを見ていると、曲が自動で流れます。'),
     _TutorialStep('並び順を変える', '新着順か、いいねが多い順を選べます。'),
@@ -30,7 +30,7 @@ class TimelineControlsTutorial {
     BuildContext context, {
     required String? uid,
     required List<GlobalKey> targets,
-    SwipeDeckSwipeCue? swipeCue,
+    SwipeDeckTutorialCue? swipeCue,
     TimelineViewTutorialCue? viewCue,
   }) async {
     final prefs = await SharedPreferences.getInstance();
@@ -50,7 +50,7 @@ class TimelineControlsTutorial {
     BuildContext context, {
     required String? uid,
     required List<GlobalKey> targets,
-    SwipeDeckSwipeCue? swipeCue,
+    SwipeDeckTutorialCue? swipeCue,
     TimelineViewTutorialCue? viewCue,
     bool markComplete = false,
   }) async {
@@ -125,7 +125,7 @@ class _TutorialOverlay extends StatefulWidget {
   final List<_TutorialStep> steps;
   final List<Rect> targetRects;
   final Size overlaySize;
-  final SwipeDeckSwipeCue? swipeCue;
+  final SwipeDeckTutorialCue? swipeCue;
   final TimelineViewTutorialCue? viewCue;
   final VoidCallback onFinished;
 
@@ -190,7 +190,7 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
 
   void _syncSwipeCue() {
     if (widget.swipeCue == null || _step != 0) return;
-    widget.swipeCue!.dragDx = _tutorialDragOffset(_swipeDemo.value);
+    widget.swipeCue!.dragDy = _tutorialScrollDragOffset(_swipeDemo.value);
   }
 
   void _syncViewCue() {
@@ -221,19 +221,13 @@ class _TutorialOverlayState extends State<_TutorialOverlay>
     return Rect.fromLTRB(12, top, widget.overlaySize.width - 12, bottom);
   }
 
-  /// 右→戻る→左→戻る のデモ（実カードに反映）。
-  static double _tutorialDragOffset(double t) {
-    if (t < 0.2) {
-      return Curves.easeOut.transform(t / 0.2) * 92;
-    }
-    if (t < 0.3) {
-      return 92 * (1 - Curves.easeIn.transform((t - 0.2) / 0.1));
+  /// 上方向へ少しスライドして戻るデモ（実カードに反映）。
+  static double _tutorialScrollDragOffset(double t) {
+    if (t < 0.35) {
+      return -Curves.easeOut.transform(t / 0.35) * 60;
     }
     if (t < 0.55) {
-      return -Curves.easeOut.transform((t - 0.3) / 0.25) * 92;
-    }
-    if (t < 0.65) {
-      return -92 * (1 - Curves.easeIn.transform((t - 0.55) / 0.1));
+      return -60 * (1 - Curves.easeIn.transform((t - 0.35) / 0.2));
     }
     return 0;
   }

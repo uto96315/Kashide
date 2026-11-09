@@ -49,6 +49,11 @@ class RegisterModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Firebase 匿名ユーザーとしてサインインする。
+  Future<void> signInAnonymously() async {
+    await FirebaseAuth.instance.signInAnonymously();
+  }
+
   // ログインに関する関数
   Future signIn() async {
     email = registerEmailController.text;
@@ -64,15 +69,15 @@ class RegisterModel extends ChangeNotifier {
     }
   }
 
-  Future registerBlankData()async{
+  Future registerBlankData({bool anonymous = false}) async {
     var uid = FirebaseAuth.instance.currentUser?.uid;
     final collection = FirebaseFirestore.instance
         .collection("users").doc(uid);
 
     if(uid != null) {
       await collection.set({
-        "userName": "",
-        "email": email ?? "",
+        "userName": anonymous ? '匿名ユーザー' : '',
+        "email": email ?? '',
         "favorite": [""],
         "age": "99以上",
         "gender": "ノンバイナリー", // 未指定の場合にはノンバイナリーにする

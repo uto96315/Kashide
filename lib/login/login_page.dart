@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +12,24 @@ import 'package:str_gram_beta/register/register_model.dart';
 import 'package:str_gram_beta/resetPassword/reset_password_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+String _authErrorMessage(Object error) {
+  if (error is FirebaseAuthException) {
+    switch (error.code) {
+      case 'operation-not-allowed':
+        return '匿名ログインが有効になっていません。しばらくしてからお試しください。';
+      case 'network-request-failed':
+        return 'ネットワークに接続できませんでした。';
+      default:
+        break;
+    }
+  }
+  return error.toString();
+}
+
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({
     super.key,
-    this.startWithRegister = false,
+    this.startWithRegister = true,
     this.addingAccount = false,
     this.reauthForQuickSwitch = false,
     this.initialEmail,
@@ -32,12 +47,17 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  late bool _register = widget.startWithRegister;
+  late bool _register;
 
   @override
   void initState() {
     super.initState();
     final email = widget.initialEmail?.trim();
+    _register = widget.reauthForQuickSwitch
+        ? false
+        : (email != null && email.isNotEmpty)
+            ? false
+            : widget.startWithRegister;
     if (email != null && email.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -57,7 +77,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFF7F8),
+        backgroundColor: const Color(0xFFF9F9F9),
         body: SafeArea(
           child: Column(
             children: [
@@ -89,7 +109,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           switchOutCurve: Curves.easeInCubic,
                           transitionBuilder: (child, animation) {
                             final incoming = child.key == ValueKey(_register);
-                            final begin = Offset(incoming ? (_register ? 0.06 : -0.06) : 0, 0);
+                            final begin = Offset(incoming ? (_register ? -0.06 : 0.06) : 0, 0);
                             return FadeTransition(
                               opacity: animation,
                               child: SlideTransition(
@@ -100,10 +120,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           },
                           child: _register
                               ? _RegisterForm(
-                                  key: const ValueKey(true),
+                                  key: const ValueKey('register_form'),
                                   model: register,
                                   loading: loading,
+                                  showGuestEntry: !widget.reauthForQuickSwitch,
                                   onRegistered: () => _onRegistered(context, register),
+                                  onPrepareGuestSignIn: _prepareGuestSignIn,
+                                  onGuestStart: () => _onGuestStart(context, register),
                                 )
                               : _LoginForm(
                                   key: const ValueKey(false),
@@ -154,6 +177,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       arguments: widget.addingAccount,
     );
   }
+
+  Future<void> _prepareGuestSignIn() async {
+    if (!widget.addingAccount) return;
+    await ref.read(savedAccountsProvider).persistAnonymous();
+    await FirebaseAuth.instance.signOut();
+  }
+
+  Future<void> _onGuestStart(BuildContext context, RegisterModel model) async {
+    await model.registerBlankData(anonymous: true);
+    await ref.read(savedAccountsProvider).persistAnonymous();
+    if (!context.mounted) return;
+    refreshAfterAccountChange(
+      ref,
+      homeTabIndex: widget.addingAccount ? 3 : 0,
+    );
+    if (Navigator.of(context).canPop()) {
+      Navigator.pop(context);
+    } else {
+      await Navigator.pushNamed(context, '/home');
+    }
+  }
+
 }
 
 class _SlidingToggle extends StatelessWidget {
@@ -172,7 +217,7 @@ class _SlidingToggle extends StatelessWidget {
           height: 48,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: const Color(0xFFFFE4EC),
+              color: const Color(0xFFF2F2F7),
               borderRadius: BorderRadius.circular(24),
             ),
             child: Stack(
@@ -180,7 +225,7 @@ class _SlidingToggle extends StatelessWidget {
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 260),
                   curve: Curves.easeOutCubic,
-                  left: inset + (register ? thumbWidth : 0),
+                  left: inset + (register ? 0 : thumbWidth),
                   top: inset,
                   width: thumbWidth,
                   height: 48 - inset * 2,
@@ -196,8 +241,8 @@ class _SlidingToggle extends StatelessWidget {
                 ),
                 Row(
                   children: [
-                    _label('ログイン', !register, () => onChanged(false)),
                     _label('新規登録', register, () => onChanged(true)),
+                    _label('ログイン', !register, () => onChanged(false)),
                   ],
                 ),
               ],
@@ -266,11 +311,16 @@ class _LoginForm extends StatelessWidget {
         const SizedBox(height: 12),
         Align(
           alignment: Alignment.centerRight,
-          child: _ActionChip(
-            label: 'パスワードを忘れた場合',
-            onTap: () {
+          child: TextButton(
+            onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const ResetPasswordPage()));
             },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF8E8E93),
+              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            ),
+            child: const Text('パスワードを忘れた場合'),
           ),
         ),
         const SizedBox(height: 18),
@@ -301,90 +351,195 @@ class _RegisterForm extends StatelessWidget {
     super.key,
     required this.model,
     required this.loading,
+    required this.showGuestEntry,
     required this.onRegistered,
+    required this.onPrepareGuestSignIn,
+    required this.onGuestStart,
   });
 
   final RegisterModel model;
   final bool loading;
+  final bool showGuestEntry;
   final Future<void> Function() onRegistered;
+  final Future<void> Function() onPrepareGuestSignIn;
+  final Future<void> Function() onGuestStart;
+
+  Future<void> _runGuestStart(BuildContext context) async {
+    if (!model.consent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('利用規約への同意が必要です')),
+      );
+      return;
+    }
+    model.startLoading();
+    try {
+      await onPrepareGuestSignIn();
+      await model.signInAnonymously();
+      if (!context.mounted) return;
+      await onGuestStart();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_authErrorMessage(e))),
+      );
+    } finally {
+      model.endLoading();
+    }
+  }
+
+  Future<void> _runEmailRegister(BuildContext context) async {
+    if (!model.consent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('利用規約への同意が必要です')),
+      );
+      return;
+    }
+    model.startLoading();
+    try {
+      await model.signIn();
+      if (!context.mounted) return;
+      await onRegistered();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_authErrorMessage(e))),
+      );
+    } finally {
+      model.endLoading();
+    }
+  }
+
+  Widget _consentChip() {
+    return _ConsentChip(
+      checked: model.consent,
+      onToggle: () => model.setConsent(!model.consent),
+      onOpenTerms: () {
+        model.setConsent(true);
+        launchUrl(Uri.parse('https://uto96315.github.io/Kashide_tos/'));
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final emailFields = _FieldGroup(
+      children: [
+        _LineField(
+          controller: model.registerEmailController,
+          hint: 'メールアドレス',
+          keyboardType: TextInputType.emailAddress,
+          onChanged: model.setEmail,
+        ),
+        _LineField(
+          controller: model.registerPasswordController,
+          hint: 'パスワード',
+          obscure: model.passObscure,
+          onChanged: model.setPassword,
+          trailing: _EyeButton(obscure: model.passObscure, onPressed: model.changeObscure),
+        ),
+      ],
+    );
+
+    if (!showGuestEntry) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          emailFields,
+          const SizedBox(height: 20),
+          _consentChip(),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: '登録する',
+            loading: loading,
+            onPressed: !loading ? () => _runEmailRegister(context) : null,
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _FieldGroup(
-          children: [
-            _LineField(
-              controller: model.registerEmailController,
-              hint: 'メールアドレス',
-              keyboardType: TextInputType.emailAddress,
-              onChanged: model.setEmail,
-            ),
-            _LineField(
-              controller: model.registerPasswordController,
-              hint: 'パスワード',
-              obscure: model.passObscure,
-              onChanged: model.setPassword,
-              trailing: _EyeButton(obscure: model.passObscure, onPressed: model.changeObscure),
-            ),
-          ],
+        const Text(
+          'アカウントなしですぐ試せます',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
         ),
-        const SizedBox(height: 14),
-        _ConsentChip(
-          checked: model.consent,
-          onToggle: () => model.setConsent(!model.consent),
-          onOpenTerms: () {
-            model.setConsent(true);
-            launchUrl(Uri.parse('https://uto96315.github.io/Kashide_tos/'));
-          },
-        ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 24),
+        _consentChip(),
+        const SizedBox(height: 12),
         PrimaryButton(
-          label: '登録する',
+          label: '登録せずに始めてみる',
           loading: loading,
-          onPressed: model.consent
-              ? () async {
-                  model.startLoading();
-                  try {
-                    await model.signIn();
-                    if (!context.mounted) return;
-                    await onRegistered();
-                  } catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                  } finally {
-                    model.endLoading();
-                  }
-                }
-              : null,
+          onPressed: !loading ? () => _runGuestStart(context) : null,
+        ),
+        const SizedBox(height: 22),
+        const _MutedDivider(label: 'または'),
+        const SizedBox(height: 18),
+        emailFields,
+        const SizedBox(height: 14),
+        _EmailRegisterButton(
+          loading: loading,
+          onPressed: !loading ? () => _runEmailRegister(context) : null,
         ),
       ],
     );
   }
 }
 
-class _ActionChip extends StatelessWidget {
-  const _ActionChip({required this.label, required this.onTap});
+class _MutedDivider extends StatelessWidget {
+  const _MutedDivider({required this.label});
 
   final String label;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFFFE4EC),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+    return Row(
+      children: [
+        const Expanded(child: Divider(height: 1, thickness: 1, color: Color(0xFFE5E5EA))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(
             label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: mainColor),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
           ),
         ),
+        const Expanded(child: Divider(height: 1, thickness: 1, color: Color(0xFFE5E5EA))),
+      ],
+    );
+  }
+}
+
+class _EmailRegisterButton extends StatelessWidget {
+  const _EmailRegisterButton({required this.loading, required this.onPressed});
+
+  final bool loading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      width: double.infinity,
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: mainColor,
+          backgroundColor: Colors.white,
+          disabledForegroundColor: const Color(0xFF6C6C70),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE5E5EA)),
+          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.2, color: mainColor),
+              )
+            : const Text('メールアドレスで登録'),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
@@ -31,5 +33,7 @@ void _applySessionRefresh(
   ref.invalidate(playlistProvider);
   ref.invalidate(notificationProvider);
   ref.invalidate(notificationInboxProvider);
+  ref.invalidate(likedPostsProvider);
   ref.read(pushTokenServiceProvider).syncForCurrentUser();
+  unawaited(ref.read(savedAccountsProvider).ensureCurrentListed());
 }

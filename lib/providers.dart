@@ -125,6 +125,11 @@ class SessionRefreshKeyNotifier extends Notifier<int> {
 final sessionRefreshKeyProvider =
     NotifierProvider<SessionRefreshKeyNotifier, int>(SessionRefreshKeyNotifier.new);
 
+/// ログイン・切替・ログアウトを検知してユーザー依存 UI を作り直す。
+final firebaseAuthUserProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.userChanges();
+});
+
 final blockListProvider = ChangeNotifierProvider<BlockListModel>((ref) {
   return BlockListModel()..load();
 });
@@ -152,13 +157,11 @@ final playlistProvider = ChangeNotifierProvider.autoDispose<PlaylistModel>((ref)
 });
 
 final myPageProvider = ChangeNotifierProvider.autoDispose<MyModel>((ref) {
+  ref.watch(sessionRefreshKeyProvider);
+  ref.watch(firebaseAuthUserProvider);
   final model = MyModel();
-  model.bindCurrentAuthUser();
-  return model
-    ..getUserData()
-    ..getUserPosts()
-    ..loadLikedCount()
-    ..getVersions();
+  model.loadSessionData();
+  return model;
 });
 
 final loginProvider = ChangeNotifierProvider.autoDispose<LoginModel>((ref) {

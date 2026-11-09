@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 class FavoriteModel extends ChangeNotifier {
   FavoriteModel(this.postId, this.likedCount);
 
-  var uid = FirebaseAuth.instance.currentUser?.uid;
+  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   // いいねしたユーザー一覧を取得してそこに含まれているかどうかで分岐すれば行けるか？
   bool isLiked = false;
@@ -25,7 +25,7 @@ class FavoriteModel extends ChangeNotifier {
     final snapshot = await doc.get();
     likedUser = snapshot.docs.map((doc) => doc["likedUser"]).toList();
 
-    if (likedUser.contains(uid)) {
+    if (likedUser.contains(_uid)) {
       isLiked = true;
     } else {
       isLiked = false;
@@ -35,6 +35,7 @@ class FavoriteModel extends ChangeNotifier {
 
   // いいね処理
   Future doLike(String id, int likeCount) async {
+    final uid = _uid;
     if (_busy || uid == null) return;
     _busy = true;
     try {
@@ -75,6 +76,8 @@ class FavoriteModel extends ChangeNotifier {
 
   // いいねを外す処理
  Future removeLike(String id) async{
+   final uid = _uid;
+   if (uid == null) return;
    final likePost = FirebaseFirestore.instance
        .collection("users")
        .doc(uid)

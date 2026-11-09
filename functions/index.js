@@ -3,6 +3,15 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
+function publicUserName(raw) {
+  if (!raw || typeof raw !== 'string') return '誰か';
+  const t = raw.trim();
+  if (!t) return '誰か';
+  if (t.startsWith('anonymous+') && t.includes('@')) return '匿名ユーザー';
+  if (/^匿名ユーザー[\s·．.][\w.\-]+$/.test(t)) return '匿名ユーザー';
+  return t;
+}
+
 /**
  * 投稿にいいねが付いたら投稿者へプッシュ＋アプリ内通知を作成する。
  * デプロイ: firebase deploy --only functions:notifyOnPostLike
@@ -26,7 +35,7 @@ exports.notifyOnPostLike = functions.firestore
       db.collection('users').doc(likerId).get(),
     ]);
 
-    const likerName = (likerSnap.data() && likerSnap.data().userName) || '誰か';
+    const likerName = publicUserName(likerSnap.data() && likerSnap.data().userName);
     const fcmToken = posterSnap.data() && posterSnap.data().fcmToken;
 
     await db.collection('users').doc(posterId).collection('notifications').add({
@@ -100,8 +109,9 @@ exports.notifyOnPostComment = functions.firestore
       db.collection('users').doc(commenterId).get(),
     ]);
 
-    const commenterName =
-      (commenterSnap.data() && commenterSnap.data().userName) || '誰か';
+    const commenterName = publicUserName(
+      commenterSnap.data() && commenterSnap.data().userName,
+    );
     const fcmToken = posterSnap.data() && posterSnap.data().fcmToken;
 
     await db.collection('users').doc(posterId).collection('notifications').add({
@@ -150,3 +160,35 @@ exports.notifyOnPostComment = functions.firestore
 
     return null;
   });
+
+/**
+ * 端末に保存した匿名アカウントへ切り替えるためのカスタムトークンを発行する。
+ * デプロイ: firebase deploy --only functions:createAnonymousSwitchToken
+ */
+exports.createAnonymousSwitchToken = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'ログインが必要です。');
+  }
+  const targetUid = data && data.uid;
+  if (!targetUid || typeof targetUid !== 'string') {
+    throw new functions.https.HttpsError('invalid-argument', 'uid が必要です。');
+  }
+
+  let target;
+  try {
+    target = await admin.auth().getUser(targetUid);
+  } catch (e) {
+    throw new functions.https.HttpsError('not-found', 'ユーザーが見つかりません。');
+  }
+
+  const hasPassword = target.providerData.some((p) => p.providerId === 'password');
+  if (hasPassword) {
+    throw new functions.https.HttpsError(
+      'failed-precondition',
+      'メールアドレス登録済みのアカウントは通常のログインを使ってください。',
+    );
+  }
+
+  const token = await admin.auth().createCustomToken(targetUid);
+  return { token };
+});

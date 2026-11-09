@@ -25,7 +25,7 @@ String timelineTutorialTitle(int step) {
     case 0:
       return 'カードとタイムライン';
     case 1:
-      return 'スワイプとボタン';
+      return 'スワイプ操作';
     case 2:
       return '絞り込み・再生・並び替え';
     default:
@@ -38,7 +38,7 @@ String timelineTutorialBody(int step) {
     case 0:
       return '右上の切り替えで、スワイプのカード表示と一覧のタイムライン表示を変えられます。';
     case 1:
-      return '右スワイプ／いいねで保存、左スワイプ／✕はカードに出さない（タイムラインには残ります）。真ん中はプレイリストに追加です。';
+      return '上下にスクロールして次の歌詞へ。右のボタンからコメント・いいね・シェア・プレイリスト追加ができます。';
     case 2:
       return '絞り込みで条件を指定、音符はカードの自動再生（マナーモードでは鳴りません）、並び替えで表示順を変えられます。';
     default:

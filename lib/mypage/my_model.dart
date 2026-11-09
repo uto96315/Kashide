@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:in_app_review/in_app_review.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
+import '../auth/anonymous_user.dart';
 import '../domain/post_domain.dart';
 import '../post/post_lyrics.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -38,15 +41,48 @@ class MyModel extends ChangeNotifier {
     uid = user?.uid;
   }
 
+  bool _sessionStillActive(String? loadUid) =>
+      loadUid != null && loadUid == FirebaseAuth.instance.currentUser?.uid;
+
+  /// アカウント切替後にキャッシュを捨てて再取得する。
+  void clearSessionCaches() {
+    bindCurrentAuthUser();
+    userName = null;
+    userIntroduction = null;
+    userAge = null;
+    userGender = null;
+    userImageURL = null;
+    userFavorite = null;
+    userPostsList = [];
+    postsReady = false;
+    likedPostsCount = 0;
+    likedCountReady = false;
+  }
+
+  void loadSessionData() {
+    clearSessionCaches();
+    notifyListeners();
+    unawaited(getUserData());
+    unawaited(getUserPosts());
+    unawaited(loadLikedCount());
+    unawaited(getVersions());
+  }
+
   // ユーザー情報の取得
   Future getUserData() async{
     bindCurrentAuthUser();
-    var uid = user?.uid;
-    final doc = FirebaseFirestore.instance.collection("users").doc(uid);
+    final loadUid = user?.uid;
+    if (loadUid == null) return;
+    final doc = FirebaseFirestore.instance.collection("users").doc(loadUid);
     final get = await doc.get();
+    if (!_sessionStillActive(loadUid)) return;
     final data = get.data();
 
     userName = data?["userName"];
+    if ((userName?.trim().isEmpty ?? true) && (user?.isAnonymous ?? false)) {
+      userName = anonymousDisplayName;
+      await doc.set({'userName': anonymousDisplayName}, SetOptions(merge: true));
+    }
     userIntroduction = data?["introduction"];
     userAge = data?["age"];
     userGender = data?["gender"];
@@ -79,14 +115,20 @@ class MyModel extends ChangeNotifier {
   }
 
   Future<void> loadLikedCount() async {
-    final uid = user?.uid;
-    if (uid == null) {
+    bindCurrentAuthUser();
+    final loadUid = user?.uid;
+    if (loadUid == null) {
       likedPostsCount = 0;
       likedCountReady = true;
       notifyListeners();
       return;
     }
-    final snap = await FirebaseFirestore.instance.collection('users').doc(uid).collection('likePost').get();
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(loadUid)
+        .collection('likePost')
+        .get();
+    if (!_sessionStillActive(loadUid)) return;
     likedPostsCount = snap.docs.length;
     likedCountReady = true;
     notifyListeners();
@@ -96,17 +138,25 @@ class MyModel extends ChangeNotifier {
   // todo: ここをasMapに変換する
   Future getUserPosts() async{
     bindCurrentAuthUser();
-    var uid = user?.uid;
+    final loadUid = user?.uid;
+    if (loadUid == null) {
+      userPostsList = [];
+      postsReady = true;
+      notifyListeners();
+      return;
+    }
     final doc = FirebaseFirestore
         .instance
         .collection("posts")
-        .where("posterId", isEqualTo: uid)
+        .where("posterId", isEqualTo: loadUid)
         .orderBy("createdAt", descending: true);
 
     final snapshot = await doc.get();
+    if (!_sessionStillActive(loadUid)) return;
     final commentCounts = await Future.wait(
       snapshot.docs.map((doc) => getCommentCount(doc.id)),
     );
+    if (!_sessionStillActive(loadUid)) return;
     userPostsList = snapshot.docs.asMap().entries.map((entry) {
       final doc = entry.value;
       return Post(
@@ -116,7 +166,7 @@ class MyModel extends ChangeNotifier {
             doc["posterId"],
             doc["likedCount"],
             doc["genres"],
-            userName ?? "",
+            displayUserName(userName),
             userImageURL ?? "",
             createTimeMessage(doc["createdAt"].toDate()),
             doc.id,
