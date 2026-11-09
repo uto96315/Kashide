@@ -319,6 +319,22 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                 ),
               ),
             ),
+          if (_showDeck && model.postsReady)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '表示: ${model.sortOrder.label}'
+                  '${model.filter.isActive ? ' · 絞り込み中' : ''}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
           Expanded(
             child: _showDeck
                 ? SwipeDeck(

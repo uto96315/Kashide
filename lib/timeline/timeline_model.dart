@@ -15,6 +15,7 @@ import '../post/post_validation.dart';
 import '../user/block_list_model.dart';
 import 'timeline_filter.dart';
 import 'timeline_sort.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeAgo;
 
 class TimelineModel extends ChangeNotifier {
@@ -45,6 +46,8 @@ class TimelineModel extends ChangeNotifier {
   TimelineFilterState filter = TimelineFilterState.empty;
   TimelineSortOrder sortOrder = TimelineSortOrder.random;
   final List<String> _randomFeedOrderIds = [];
+  var _randomShuffleSeed = 0;
+  var _sortPreferenceLoaded = false;
   List<String> masterGenreOptions = List<String>.from(kFallbackDefaultGenres);
   String? _serverGenreFilter;
   /// Firestore 複合インデックス未作成時はサーバー側ジャンル絞り込みを使わない。
@@ -64,34 +67,89 @@ class TimelineModel extends ChangeNotifier {
         .where((p) => shouldShowPostInFeed(p, uid, blockedPosterIds: blockList.blockedIds))
         .toList();
     var result = applyTimelineFilter(eligible, filter);
-    if (!_usesServerSortOrder) {
-      result = applyTimelineSort(result, sortOrder);
-    }
     if (sortOrder == TimelineSortOrder.random) {
-      _syncRandomFeedOrder(result);
       result = _orderPostsByRandomIds(result);
+    } else if (!_usesServerSortOrder) {
+      result = applyTimelineSort(result, sortOrder);
     }
     return result;
   }
 
-  void _syncRandomFeedOrder(List<Post> posts) {
+  List<Post> _filteredEligiblePosts() {
+    final eligible = postsList
+        .where((p) => shouldShowPostInFeed(p, uid, blockedPosterIds: blockList.blockedIds))
+        .toList();
+    return applyTimelineFilter(eligible, filter);
+  }
+
+  Future<void> _loadSortOrderPreference() async {
+    if (_sortPreferenceLoaded) return;
+    _sortPreferenceLoaded = true;
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('timeline_sort_order_v1');
+    if (raw == null) return;
+    sortOrder = TimelineSortOrder.values.firstWhere(
+      (e) => e.name == raw,
+      orElse: () => TimelineSortOrder.random,
+    );
+  }
+
+  Future<void> _saveSortOrderPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('timeline_sort_order_v1', sortOrder.name);
+  }
+
+  /// 読み込み直し・並び替え切替時：表示対象をまるごとシャッフル。
+  void _refreshRandomOrderFull() {
+    if (sortOrder != TimelineSortOrder.random) {
+      _randomFeedOrderIds.clear();
+      return;
+    }
+    final posts = _filteredEligiblePosts();
+    if (posts.isEmpty) {
+      _randomFeedOrderIds.clear();
+      return;
+    }
+    _randomShuffleSeed = Random().nextInt(0x7fffffff);
+    final ids = posts.map((p) => p.id).toList()
+      ..shuffle(Random(_randomShuffleSeed));
+    _randomFeedOrderIds
+      ..clear()
+      ..addAll(ids);
+  }
+
+  /// 追加読み込み：新規投稿だけランダムな位置に差し込む。
+  void _extendRandomOrderForNewPosts() {
+    if (sortOrder != TimelineSortOrder.random) return;
+    final posts = _filteredEligiblePosts();
     final ids = posts.map((p) => p.id).toSet();
     _randomFeedOrderIds.removeWhere((id) => !ids.contains(id));
-    final known = _randomFeedOrderIds.toSet();
-    final newcomers = ids.difference(known).toList()..shuffle(Random());
-    _randomFeedOrderIds.addAll(newcomers);
-    if (_randomFeedOrderIds.isEmpty && posts.isNotEmpty) {
-      final all = posts.map((p) => p.id).toList()..shuffle(Random());
-      _randomFeedOrderIds.addAll(all);
+    final missing = ids.difference(_randomFeedOrderIds.toSet()).toList();
+    if (missing.isEmpty) return;
+    missing.shuffle(Random(_randomShuffleSeed + posts.length));
+    for (final id in missing) {
+      final insertAt = Random(_randomShuffleSeed + id.hashCode)
+          .nextInt(_randomFeedOrderIds.length + 1);
+      _randomFeedOrderIds.insert(insertAt, id);
     }
   }
 
   List<Post> _orderPostsByRandomIds(List<Post> posts) {
+    if (_randomFeedOrderIds.isEmpty && posts.isNotEmpty) {
+      _refreshRandomOrderFull();
+    }
     final byId = {for (final p in posts) p.id: p};
     final ordered = <Post>[];
+    final used = <String>{};
     for (final id in _randomFeedOrderIds) {
       final post = byId[id];
-      if (post != null) ordered.add(post);
+      if (post != null) {
+        ordered.add(post);
+        used.add(id);
+      }
+    }
+    for (final post in posts) {
+      if (!used.contains(post.id)) ordered.add(post);
     }
     return ordered;
   }
@@ -141,6 +199,7 @@ class TimelineModel extends ChangeNotifier {
     _filterBackgroundCancelled = true;
     filterPrefetching = false;
     notifyListeners();
+    await _saveSortOrderPreference();
     await getFirstPostData();
   }
 
@@ -557,6 +616,7 @@ class TimelineModel extends ChangeNotifier {
 
   Future getFirstPostData() async {
     bindCurrentUser();
+    await _loadSortOrderPreference();
     await loadLikedPostIds();
     _filterBackgroundCancelled = true;
     filterPrefetching = false;
@@ -601,6 +661,11 @@ class TimelineModel extends ChangeNotifier {
       }
     }
     _rebuildDeckFeed();
+    if (sortOrder == TimelineSortOrder.random) {
+      _refreshRandomOrderFull();
+    } else {
+      _randomFeedOrderIds.clear();
+    }
     debugPrint("投稿を読み込みました");
     notifyListeners();
   }
@@ -612,6 +677,7 @@ class TimelineModel extends ChangeNotifier {
     try {
       await _fetchNextPostsPage();
       _appendNewPostsToDeckFeed();
+      _extendRandomOrderForNewPosts();
     } on FirebaseException {
       // _fetchNextPostsPage 内で hasMorePosts を更新済み
     } finally {
