@@ -192,6 +192,7 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
 
     final deck = PageView.builder(
       scrollDirection: Axis.vertical,
+      physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
       controller: _pageController,
       onPageChanged: _onPageChanged,
       itemCount: posts.length,
@@ -199,6 +200,7 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
         final post = posts[index];
         final liked = widget.likedIds.contains(post.id);
         return GestureDetector(
+          behavior: HitTestBehavior.deferToChild,
           onTap: () => widget.onOpen(post),
           child: _LyricCard(
             post: post,
@@ -490,14 +492,16 @@ class _LyricCard extends StatelessWidget {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(pad, pad, pad, 12),
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: PostLyricsText.fromPost(
-                            post,
-                            style: _lyricStyle,
-                            textAlign: TextAlign.left,
-                            tuneLineBreaks: true,
-                            layoutMaxWidth: constraints.maxWidth - pad * 2,
+                        child: ClipRect(
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: PostLyricsText.fromPost(
+                              post,
+                              style: _lyricStyle,
+                              textAlign: TextAlign.left,
+                              tuneLineBreaks: true,
+                              layoutMaxWidth: constraints.maxWidth - pad * 2,
+                            ),
                           ),
                         ),
                       ),
