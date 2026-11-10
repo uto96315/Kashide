@@ -132,3 +132,72 @@ Color kashideGroupedBackground(BuildContext context) {
       ? const Color(0xFF0F0F10)
       : const Color(0xFFF2F2F7);
 }
+
+Color kashideToolbarIcon(BuildContext context, {bool muted = false}) {
+  if (muted) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF8E8E93)
+        : const Color(0xFF8E8E93);
+  }
+  return Theme.of(context).colorScheme.onSurface;
+}
+
+Color kashideFilterBannerFill(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? mainColor.withValues(alpha: 0.14)
+      : const Color(0xFFFFF1F5);
+}
+
+Color kashideFilterBannerText(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFFFE4EC)
+      : const Color(0xFF59434B);
+}
+
+Color kashideViewToggleTrackFill(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF2C2C2E)
+      : const Color(0xFFFFF1F5);
+}
+
+Color kashideViewToggleTrackBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF3A3A3C)
+      : const Color(0xFFFFD6E4);
+}
+
+Color kashideViewToggleIdleIcon(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFAEAEB2)
+      : const Color(0xFF6B6B70);
+}
+
+Color kashideGenreTabBarFill(BuildContext context) {
+  return Theme.of(context).colorScheme.surface;
+}
+
+Color kashidePostCardBackground(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF1C1C1E)
+      : Colors.white;
+}
+
+Color kashidePostLyricsFill(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF2C2C2E)
+      : const Color(0xFFF7F9F9);
+}
+
+Color kashidePostLyricsBorder(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF3A3A3C)
+      : const Color(0xFFEFF3F4);
+}
+
+Color kashidePrimaryText(BuildContext context) {
+  return Theme.of(context).colorScheme.onSurface;
+}
+
+Color kashideSecondaryText(BuildContext context) {
+  return Theme.of(context).colorScheme.onSurfaceVariant;
+}

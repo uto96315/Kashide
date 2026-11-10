@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/auth/anonymous_user.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/element/favorite/favorite_button.dart';
 import 'package:str_gram_beta/common/open_user_profile.dart';
@@ -36,7 +37,6 @@ class LyricPostCard extends StatelessWidget {
   final bool showPostTime;
   final String? highlightQuery;
 
-  static const _actionGray = Color(0xFF536471);
   static const _cardPadding = EdgeInsets.fromLTRB(16, 12, 16, 8);
 
   @override
@@ -61,9 +61,11 @@ class LyricPostCard extends StatelessWidget {
     );
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFEFF3F4), width: 1)),
+      decoration: BoxDecoration(
+        color: kashidePostCardBackground(context),
+        border: Border(
+          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+        ),
       ),
       child: showAuthor
           ? Padding(
@@ -75,9 +77,15 @@ class LyricPostCard extends StatelessWidget {
                     onTap: () => _openUser(context),
                     child: CircleAvatar(
                       radius: 20,
-                      backgroundColor: const Color(0xFFE7E9EA),
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       backgroundImage: hasImage ? NetworkImage(image) : null,
-                      child: hasImage ? null : const Icon(Icons.person, size: 20, color: Color(0xFF536471)),
+                      child: hasImage
+                          ? null
+                          : Icon(
+                              Icons.person,
+                              size: 20,
+                              color: kashideSecondaryText(context),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -138,6 +146,8 @@ class _PostCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = kashidePrimaryText(context);
+    final secondary = kashideSecondaryText(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -158,21 +168,21 @@ class _PostCardContent extends StatelessWidget {
                             publicDisplayName(post.userName),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
                               height: 1.2,
-                              color: Color(0xFF0F0F0F),
+                              color: primary,
                             ),
                           ),
                         ),
                       ),
                       if (showPostTime)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 5),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
                           child: Text(
                             '·',
-                            style: TextStyle(fontSize: 15, height: 1.2, color: Color(0xFF536471)),
+                            style: TextStyle(fontSize: 15, height: 1.2, color: secondary),
                           ),
                         ),
                     ],
@@ -180,7 +190,7 @@ class _PostCardContent extends StatelessWidget {
                       Text(
                         post.createdAt,
                         maxLines: 1,
-                        style: const TextStyle(fontSize: 14, height: 1.2, color: Color(0xFF536471)),
+                        style: TextStyle(fontSize: 14, height: 1.2, color: secondary),
                       ),
                   ],
                 ),
@@ -189,7 +199,7 @@ class _PostCardContent extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 iconSize: 22,
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                icon: const Icon(Icons.more_horiz, color: Color(0xFF536471)),
+                icon: Icon(Icons.more_horiz, color: secondary),
                 onSelected: onMenu,
                 itemBuilder: (_) => menuItems,
               ),
@@ -200,7 +210,7 @@ class _PostCardContent extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             post.explanation,
-            style: const TextStyle(fontSize: 15, height: 1.4, color: Color(0xFF0F0F0F)),
+            style: TextStyle(fontSize: 15, height: 1.4, color: primary),
           ),
         ],
         const SizedBox(height: 8),
@@ -210,30 +220,30 @@ class _PostCardContent extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F9F9),
+              color: kashidePostLyricsFill(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEFF3F4)),
+              border: Border.all(color: kashidePostLyricsBorder(context)),
             ),
             child: highlightQuery == null
                 ? PostLyricsText.fromPost(
                     post,
                     textAlign: TextAlign.start,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       height: 1.45,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F0F0F),
+                      color: primary,
                     ),
                   )
                 : SearchHighlightText(
                     text: post.text,
                     query: highlightQuery!,
                     textAlign: TextAlign.start,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       height: 1.45,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F0F0F),
+                      color: primary,
                     ),
                   ),
           ),
@@ -284,10 +294,10 @@ class _PostCardContent extends StatelessWidget {
                         post.singName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F0F0F),
+                          color: primary,
                         ),
                       )
                     : SearchHighlightText(
@@ -295,15 +305,15 @@ class _PostCardContent extends StatelessWidget {
                         query: highlightQuery!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F0F0F),
+                          color: primary,
                         ),
                       ),
               ),
             ),
-            const Text(' · ', style: TextStyle(fontSize: 14, color: Color(0xFF536471))),
+            Text(' · ', style: TextStyle(fontSize: 14, color: secondary)),
             Flexible(
               child: GestureDetector(
                 onTap: () {
@@ -314,20 +324,14 @@ class _PostCardContent extends StatelessWidget {
                         post.artist,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF536471),
-                        ),
+                        style: TextStyle(fontSize: 14, color: secondary),
                       )
                     : SearchHighlightText(
                         text: post.artist,
                         query: highlightQuery!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF536471),
-                        ),
+                        style: TextStyle(fontSize: 14, color: secondary),
                       ),
               ),
             ),
@@ -431,12 +435,16 @@ class _TimelineAction extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 22, color: iconColor ?? LyricPostCard._actionGray),
+              Icon(icon, size: 22, color: iconColor ?? kashideSecondaryText(context)),
               if (count != null) ...[
                 const SizedBox(width: 6),
                 Text(
                   '$count',
-                  style: TextStyle(fontSize: 14, color: iconColor ?? LyricPostCard._actionGray, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: iconColor ?? kashideSecondaryText(context),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ],

@@ -32,11 +32,11 @@ class EmptyState extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   height: 1.45,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF3A3A3C),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               if (detail != null && detail!.trim().isNotEmpty) ...[
@@ -44,11 +44,11 @@ class EmptyState extends StatelessWidget {
                 Text(
                   detail!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     height: 1.6,
                     letterSpacing: 0.1,
-                    color: Color(0xFF8E8E93),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

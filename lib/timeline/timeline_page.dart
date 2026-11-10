@@ -8,6 +8,7 @@ import 'package:str_gram_beta/notification/notification_page.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import '../common/ThemeColor.dart';
+import '../common/kashide_theme.dart';
 import '../common/app_dialog.dart';
 import '../common/empty_state.dart';
 import '../common/playlist_picker_sheet.dart';
@@ -171,6 +172,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     }
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           ScreenTop(
@@ -265,7 +267,10 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Text(
                 'ジャンル絞り込みを端末側で実行しています（Firestore インデックス待ち）。',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           if (model.filter.songArtist?.trim().isNotEmpty == true ||
@@ -273,7 +278,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
               child: Material(
-                color: const Color(0xFFFFF1F5),
+                color: kashideFilterBannerFill(context),
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
@@ -292,9 +297,9 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                               : 'ジャンル「${model.filter.genres.join('・')}」で絞り込み中',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF59434B),
+                            color: kashideFilterBannerText(context),
                           ),
                         ),
                       ),
@@ -465,9 +470,11 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                                 posts.length,
                                               )
                                             : '${posts.length}件 · ${model.sortOrder.label}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
-                                          color: Color(0xFF536471),
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                         ),
                                       ),
                                     ),
@@ -657,7 +664,7 @@ class _NotificationBellIcon extends StatelessWidget {
     final hasUnread = unread > 0;
     final icon = Icon(
       hasUnread ? Icons.notifications_rounded : Icons.notifications_none,
-      color: hasUnread ? mainColor : const Color(0xFF1C1C1E),
+      color: hasUnread ? mainColor : kashideToolbarIcon(context),
     );
     if (!hasUnread) return icon;
     return Stack(
@@ -761,9 +768,9 @@ class _TimelineGenreTabsState extends State<_TimelineGenreTabs> {
     final tabs = <String?>[null, ...widget.genres];
     return Container(
       height: 46,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFECECF0))),
+      decoration: BoxDecoration(
+        color: kashideGenreTabBarFill(context),
+        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: Listener(
         onPointerDown: (event) => _pointerStarts[event.pointer] = event.position,
@@ -809,8 +816,8 @@ class _TimelineGenreTabsState extends State<_TimelineGenreTabs> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: selected
-                          ? const Color(0xFF25242A)
-                          : const Color(0xFF777781),
+                          ? kashidePrimaryText(context)
+                          : kashideSecondaryText(context),
                       fontSize: 14,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
@@ -842,7 +849,7 @@ class _CardPreviewToggle extends StatelessWidget {
       onPressed: onToggle,
       icon: Icon(
         enabled ? Icons.music_note_rounded : Icons.music_off_rounded,
-        color: enabled ? mainColor : const Color(0xFF8E8E93),
+        color: enabled ? mainColor : kashideToolbarIcon(context, muted: true),
       ),
     );
   }
@@ -866,7 +873,7 @@ class _SortButton extends StatelessWidget {
       onSelected: onSelected,
       icon: Icon(
         Icons.sort_rounded,
-        color: highlighted ? mainColor : const Color(0xFF1C1C1E),
+        color: highlighted ? mainColor : kashideToolbarIcon(context),
       ),
       itemBuilder: (context) => [
         for (final order in TimelineSortOrder.values)
@@ -899,7 +906,7 @@ class _FilterButton extends StatelessWidget {
         children: [
           Icon(
             Icons.tune_rounded,
-            color: active ? mainColor : const Color(0xFF1C1C1E),
+            color: active ? mainColor : kashideToolbarIcon(context),
           ),
           if (active)
             Positioned(
@@ -936,14 +943,15 @@ class _ViewToggle extends StatelessWidget {
         margin: const EdgeInsets.only(right: 6),
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF1F5),
+          color: kashideViewToggleTrackFill(context),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFFFD6E4)),
+          border: Border.all(color: kashideViewToggleTrackBorder(context)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             _item(
+              context: context,
               icon: Icons.format_list_bulleted_rounded,
               tooltip: '一覧表示',
               selected: !deck,
@@ -951,6 +959,7 @@ class _ViewToggle extends StatelessWidget {
             ),
             const SizedBox(width: 2),
             _item(
+              context: context,
               icon: Icons.swipe_rounded,
               tooltip: 'カードでスワイプ',
               selected: deck,
@@ -963,6 +972,7 @@ class _ViewToggle extends StatelessWidget {
   }
 
   Widget _item({
+    required BuildContext context,
     required IconData icon,
     required String tooltip,
     required bool selected,
@@ -995,7 +1005,7 @@ class _ViewToggle extends StatelessWidget {
           child: Icon(
             icon,
             size: 21,
-            color: selected ? Colors.white : const Color(0xFF6B6B70),
+            color: selected ? Colors.white : kashideViewToggleIdleIcon(context),
           ),
         ),
       ),
