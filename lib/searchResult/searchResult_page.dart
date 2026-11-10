@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 import 'package:str_gram_beta/common/block_user_actions.dart';
 import 'package:str_gram_beta/common/empty_state.dart';
 import 'package:str_gram_beta/common/lyric_post_card.dart';
@@ -31,7 +32,7 @@ class SearchResultPage extends ConsumerWidget {
         .toList(growable: false);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: kashideGroupedBackground(context),
       body: Column(
         children: [
           ScreenTop(title: '「$searchWord」'),
@@ -59,9 +60,9 @@ class SearchResultPage extends ConsumerWidget {
                       child: Text(
                         '${visibleHits.length}件'
                         '${model.itunesHintCount > 0 ? ' · Apple Musicの曲名・アーティストも参照' : ''}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF536471),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.35,
                         ),
                       ),

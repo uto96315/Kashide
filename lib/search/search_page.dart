@@ -51,12 +51,12 @@ class SearchPage extends ConsumerWidget {
                         onSubmit: (text) => _submitSearch(context, model, text),
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         'ジャンルから探す',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1C1C1E),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -135,16 +135,30 @@ class _SearchFieldState extends State<_SearchField> {
       controller: widget.controller,
       textInputAction: TextInputAction.search,
       autocorrect: false,
-      style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1E)),
+      style: TextStyle(
+        fontSize: 16,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
         hintText: '歌詞・曲名・アーティスト',
-        hintStyle: const TextStyle(fontSize: 16, color: Color(0xFF8E8E93)),
+        hintStyle: TextStyle(
+          fontSize: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         filled: true,
-        fillColor: const Color(0xFFE5E5EA),
-        prefixIcon: const Icon(CupertinoIcons.search, size: 20, color: Color(0xFF8E8E93)),
+        fillColor: kashideSearchFieldFill(context),
+        prefixIcon: Icon(
+          CupertinoIcons.search,
+          size: 20,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         suffixIcon: hasText
             ? IconButton(
-                icon: const Icon(CupertinoIcons.clear_circled_solid, size: 18, color: Color(0xFF8E8E93)),
+                icon: Icon(
+                  CupertinoIcons.clear_circled_solid,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 onPressed: () {
                   widget.controller.clear();
                   widget.onChanged('');

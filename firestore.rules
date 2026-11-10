@@ -81,5 +81,15 @@ service cloud.firestore {
     match /deletedUsers/{userId} {
       allow create: if isUser(userId);
     }
+
+    match /communityLyrics/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.plainLyrics is string
+        && request.resource.data.plainLyrics.size() >= 40
+        && request.resource.data.artist is string
+        && request.resource.data.singName is string;
+      allow update, delete: if false;
+    }
   }
 }

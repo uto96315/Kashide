@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 import 'package:str_gram_beta/timeline/timeline_filter.dart';
 
 Future<TimelineFilterState?> showTimelineFilterSheet(
@@ -88,15 +89,19 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE5E5EA),
+                        color: kashideSheetHandle(context),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     '絞り込み',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -105,7 +110,9 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 48),
-                            side: const BorderSide(color: Color(0xFFE5E5EA)),
+                            side: BorderSide(color: Theme.of(context).dividerColor),
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                           ),
@@ -117,7 +124,6 @@ class _TimelineFilterSheetState extends State<_TimelineFilterSheet> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF536471),
                             ),
                           ),
                         ),
@@ -275,10 +281,10 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF3A3A3C),
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -302,7 +308,7 @@ class _SegmentRow<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F7),
+        color: kashideSegmentTrackFill(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -316,7 +322,7 @@ class _SegmentRow<T> extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: selected == value
-                        ? Colors.white
+                        ? kashideSegmentSelectedFill(context)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: selected == value
@@ -335,7 +341,7 @@ class _SegmentRow<T> extends StatelessWidget {
                           : FontWeight.w500,
                       color: selected == value
                           ? mainColor
-                          : const Color(0xFF536471),
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),

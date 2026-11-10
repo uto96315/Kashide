@@ -175,6 +175,16 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                bottom: BorderSide(color: Theme.of(context).dividerColor),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
           ScreenTop(
             showBack: false,
             trailing: Row(
@@ -325,7 +335,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
             ),
           if (_showDeck && model.postsReady)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -339,6 +349,9 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                 ),
               ),
             ),
+              ],
+            ),
+          ),
           Expanded(
             child: _showDeck
                 ? SwipeDeck(
@@ -769,7 +782,7 @@ class _TimelineGenreTabsState extends State<_TimelineGenreTabs> {
     return Container(
       height: 46,
       decoration: BoxDecoration(
-        color: kashideGenreTabBarFill(context),
+        color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: Listener(

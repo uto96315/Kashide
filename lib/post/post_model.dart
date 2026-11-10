@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:str_gram_beta/post/post_lyrics.dart';
 import 'package:str_gram_beta/post/post_validation.dart';
+import 'package:str_gram_beta/song/community_lyrics_store.dart';
 import 'package:str_gram_beta/song/song_quote.dart';
 
 
@@ -33,6 +34,7 @@ class PostModel extends ChangeNotifier {
   bool genreMaxLength = true; // ジャンルが三個に達したらtrueにする
   String? youtubeLink;
   String? artworkUrl;
+  String? _contributedPlainLyrics;
   bool posting = false;
   bool genreAddFlag = false;  // その他が選択された場合にテキストフィールドを出すかのフラグ
 
@@ -83,6 +85,7 @@ class PostModel extends ChangeNotifier {
     lyrics = quote.lyrics;
     youtubeLink = quote.listenUrl;
     artworkUrl = quote.artworkUrl;
+    _contributedPlainLyrics = quote.contributedPlainLyrics;
     singerNameController.text = quote.artist;
     singNameController.text = quote.title;
     lyricsController.text = quote.lyrics;
@@ -195,6 +198,17 @@ class PostModel extends ChangeNotifier {
         "createdAt": DateTime.now(),
         "youtubeLink": youtubeLink ?? "",
       });
+      final shared = _contributedPlainLyrics?.trim();
+      if (shared != null &&
+          shared.isNotEmpty &&
+          singerName != null &&
+          singName != null) {
+        await CommunityLyricsStore().saveContributed(
+          artist: singerName!,
+          title: singName!,
+          plainLyrics: shared,
+        );
+      }
     } finally {
       posting = false;
       notifyListeners();

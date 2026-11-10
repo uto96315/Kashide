@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/notifications/app_notification.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
@@ -28,6 +29,7 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
     final inbox = ref.watch(notificationInboxProvider);
 
     return Scaffold(
+      backgroundColor: kashideGroupedBackground(context),
       body: Column(
         children: [
           ScreenTop(
@@ -44,13 +46,22 @@ class _NotificationPageState extends ConsumerState<NotificationPage> {
                 : inbox.error != null
                     ? Center(child: Text(inbox.error!))
                     : inbox.items.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.notifications_none, size: 48, color: mainColor),
-                                SizedBox(height: 12),
-                                Text('新しい通知はありません'),
+                                const Icon(
+                                  Icons.notifications_none,
+                                  size: 48,
+                                  color: mainColor,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '新しい通知はありません',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -98,7 +109,7 @@ class _NotificationTile extends StatelessWidget {
         ? ''
         : timeago.format(item.createdAt!, locale: 'ja');
     return Material(
-      color: item.read ? Colors.white : const Color(0xFFFFF7F8),
+      color: kashideNotificationTileFill(context, unread: !item.read),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -126,17 +137,27 @@ class _NotificationTile extends StatelessWidget {
                       item.title,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F1419),
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.body,
-                      style: const TextStyle(fontSize: 14, height: 1.35, color: Color(0xFF536471)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.35,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     if (timeLabel.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      Text(timeLabel, style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93))),
+                      Text(
+                        timeLabel,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ],
                 ),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:str_gram_beta/song/community_lyrics_store.dart';
 
 import 'song_quote.dart';
 
@@ -23,7 +24,14 @@ class SongHit {
 enum SongSearchField { any, artist, title }
 
 class SongSearchService {
+  SongSearchService({CommunityLyricsStore? communityLyrics})
+      : _communityLyrics = communityLyrics ?? CommunityLyricsStore();
+
+  final CommunityLyricsStore _communityLyrics;
+
   static const lyricsLimit = 300;
+  static const _lyricsTimeout = Duration(seconds: 14);
+  static const _headers = {'User-Agent': 'Kashide/1.1.3 (lyrics quote picker)'};
 
   Future<List<SongHit>> searchSongs(
     String query, {
@@ -80,9 +88,6 @@ class SongSearchService {
       return merged;
     }
 
-    // General search first, then search the catalog fields independently. The
-    // iTunes API can return different matches for the same words depending on
-    // whether they match an artist or a track title.
     final attributes = switch (field) {
       SongSearchField.any => <String?>[null],
       SongSearchField.artist => <String?>['artistTerm', null],
@@ -117,7 +122,6 @@ class SongSearchService {
     );
   }
 
-  /// Firestore に再生 URL が無い投稿向けに Apple Music（iTunes）の曲ページ URL を探す。
   Future<String?> lookupTrackUrl({
     required String artist,
     required String title,
@@ -126,7 +130,6 @@ class SongSearchService {
     return hit == null ? null : _nonEmptyUrl(hit.listenUrl);
   }
 
-  /// アプリ内再生用（iTunes の約30秒プレビュー URL）。
   Future<String?> lookupTrackPreviewUrl({
     required String artist,
     required String title,
@@ -219,12 +222,55 @@ class SongSearchService {
     return trimmed.isEmpty ? null : trimmed;
   }
 
+  /// 歌詞取得: 外部（LRCLIB）→ Apple表記での再試行 → Firestore コミュニティ。
+  /// 外部と Firestore の両方にある場合は常に外部を返す。
   Future<String?> fetchLyrics(String artist, String title) async {
+    final a = artist.trim();
+    final t = title.trim();
+    if (a.isEmpty || t.isEmpty) return null;
+
+    var online = await _fetchOnlineLyricsWithRetry(artist: a, title: t);
+    if (online != null) return online;
+
+    final hit = await _lookupBestHit(artist: a, title: t);
+    if (hit != null &&
+        (!_namesMatch(hit.artist, a) || !_namesMatch(hit.title, t))) {
+      online = await _fetchOnlineLyricsWithRetry(
+        artist: hit.artist,
+        title: hit.title,
+      );
+      if (online != null) return online;
+    }
+
+    return _communityLyrics.fetch(a, t);
+  }
+
+  Future<String?> _fetchOnlineLyricsWithRetry({
+    required String artist,
+    required String title,
+    int attempts = 3,
+  }) async {
+    for (var i = 0; i < attempts; i++) {
+      if (i > 0) {
+        await Future<void>.delayed(Duration(milliseconds: 400 * i));
+      }
+      try {
+        final lyrics = await _fetchLrcLibOnce(artist, title).timeout(
+          _lyricsTimeout,
+        );
+        if (lyrics != null && lyrics.isNotEmpty) return lyrics;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<String?> _fetchLrcLibOnce(String artist, String title) async {
     final direct = Uri.https('lrclib.net', '/api/get', {
       'artist_name': artist,
       'track_name': title,
     });
-    final directResponse = await http.get(direct, headers: _headers);
+    final directResponse =
+        await http.get(direct, headers: _headers).timeout(_lyricsTimeout);
     if (directResponse.statusCode == 200) {
       final lyrics = _plainLyrics(directResponse.body);
       if (lyrics != null && lyrics.isNotEmpty) return lyrics;
@@ -234,29 +280,47 @@ class SongSearchService {
       'artist_name': artist,
       'track_name': title,
     });
-    final searchResponse = await http.get(search, headers: _headers);
+    final searchResponse =
+        await http.get(search, headers: _headers).timeout(_lyricsTimeout);
     if (searchResponse.statusCode != 200) return null;
-    final list = jsonDecode(searchResponse.body);
+
+    final list = _decodeJson(searchResponse.body);
     if (list is! List || list.isEmpty) return null;
+
+    final artistKey = _compactName(artist);
+    final titleKey = _compactName(title);
+
+    String? best;
     for (final raw in list) {
-      if (raw is Map<String, dynamic>) {
-        final lyrics = raw['plainLyrics'] as String?;
-        if (lyrics != null && lyrics.trim().isNotEmpty) return lyrics.trim();
+      if (raw is! Map<String, dynamic>) continue;
+      final lyrics = (raw['plainLyrics'] as String?)?.trim();
+      if (lyrics == null || lyrics.isEmpty) continue;
+      final itemArtist = _compactName((raw['artistName'] as String?) ?? '');
+      final itemTitle = _compactName((raw['trackName'] as String?) ?? '');
+      if (itemArtist == artistKey && itemTitle == titleKey) {
+        return lyrics;
       }
+      best ??= lyrics;
     }
-    return null;
+    return best;
+  }
+
+  static dynamic _decodeJson(String body) {
+    try {
+      return jsonDecode(body);
+    } catch (_) {
+      return null;
+    }
   }
 
   String? _plainLyrics(String body) {
-    final decoded = jsonDecode(body);
+    final decoded = _decodeJson(body);
     if (decoded is Map<String, dynamic>) {
       final lyrics = decoded['plainLyrics'] as String?;
       return lyrics?.trim();
     }
     return null;
   }
-
-  static const _headers = {'User-Agent': 'Kashide/1.1.3 (lyrics quote picker)'};
 }
 
 class _ArtistAndTitle {

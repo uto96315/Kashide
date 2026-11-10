@@ -445,6 +445,8 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
   String? _error;
   bool _showGuide = true;
   bool _enteringLyrics = false;
+  var _lyricsLoadGeneration = 0;
+  var _lyricsFromManualPaste = false;
 
   @override
   void dispose() {
@@ -456,6 +458,19 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant LyricsSelectPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.song.artist != widget.song.artist ||
+        oldWidget.song.title != widget.song.title) {
+      _lyrics = null;
+      _error = null;
+      _lyricsFromManualPaste = false;
+      _loading = true;
+      _load();
+    }
   }
 
   void _maybeShowTutorial({bool force = false}) {
@@ -540,25 +555,43 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
   }
 
   Future<void> _load() async {
+    final generation = ++_lyricsLoadGeneration;
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        if (!_lyricsFromManualPaste) _error = null;
+      });
+    }
     try {
-      final lyrics = await _service.fetchLyrics(
+      var lyrics = await _service.fetchLyrics(
         widget.song.artist,
         widget.song.title,
       );
-      if (!mounted) return;
-      final availableLyrics = lyrics?.trim().isNotEmpty == true ? lyrics : null;
+      if (!mounted || generation != _lyricsLoadGeneration) return;
+      if (lyrics == null || lyrics.trim().isEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 450));
+        if (!mounted || generation != _lyricsLoadGeneration) return;
+        lyrics = await _service.fetchLyrics(
+          widget.song.artist,
+          widget.song.title,
+        );
+      }
+      if (!mounted || generation != _lyricsLoadGeneration) return;
+      final availableLyrics = lyrics?.trim().isNotEmpty == true ? lyrics!.trim() : null;
       setState(() {
         _lyrics = availableLyrics;
         _loading = false;
-        if (availableLyrics == null) {
+        if (availableLyrics == null && !_lyricsFromManualPaste) {
           _error = 'この曲の歌詞が見つかりませんでした';
         }
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || generation != _lyricsLoadGeneration) return;
       setState(() {
         _loading = false;
-        _error = '歌詞を取得できませんでした';
+        if (!_lyricsFromManualPaste) {
+          _error = '歌詞を取得できませんでした';
+        }
       });
     }
   }
@@ -710,6 +743,7 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
     if (lyrics.length < postLyricsMinLength) return;
     setState(() {
       _lyrics = lyrics;
+      _lyricsFromManualPaste = true;
       _selected = '';
       _segments.clear();
       _error = null;
@@ -779,6 +813,10 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
                       label: const Text('歌詞を入力する'),
                     ),
                     const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: _load,
+                      child: const Text('もう一度取得する'),
+                    ),
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: const Text('別の曲を選ぶ'),
@@ -870,6 +908,8 @@ class _LyricsSelectPageState extends State<LyricsSelectPage> {
         listenUrl: widget.song.listenUrl,
         artworkUrl: widget.song.artworkUrl,
         lyricSegments: segments.length > 1 ? segments : const [],
+        contributedPlainLyrics:
+            _lyricsFromManualPaste ? _lyrics?.trim() : null,
       ),
     );
   }

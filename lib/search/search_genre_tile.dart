@@ -11,12 +11,13 @@ class SearchGenreTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final asset = genreBrowseImageFor(genre);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: Colors.white,
+      color: isDark ? const Color(0xFF2A2A32) : Colors.white,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFE5E5EA)),
+        side: BorderSide(color: Theme.of(context).dividerColor),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 
 /// 5スロット（中央は投稿）。選択インジケータの円は4タブのみスライド（中央は白い投稿ボタンが被せる）。
 class HomeTabBar extends StatelessWidget {
@@ -40,9 +41,8 @@ class HomeTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final barBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
-    final border = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEFF3F4);
+    final barBg = kashideTabBarBackground(context);
+    final border = Theme.of(context).dividerColor;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: barBg,
@@ -181,7 +181,9 @@ class _TabHit extends StatelessWidget {
                 Icon(
                   icon,
                   size: 24,
-                  color: selected ? Colors.white : const Color(0xFF8E8E93),
+                  color: selected
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 if (showUnreadDot)
                   const Positioned(

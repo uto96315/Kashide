@@ -6,6 +6,7 @@ class SongQuote {
     required this.listenUrl,
     this.artworkUrl,
     this.lyricSegments = const [],
+    this.contributedPlainLyrics,
   });
 
   final String artist;
@@ -16,4 +17,7 @@ class SongQuote {
 
   /// 2箇所以上のときのみ入る。空なら [lyrics] が1ブロック。
   final List<String> lyricSegments;
+
+  /// 手入力した曲の全文（Firestore 共有用）。投稿テキストとは別。
+  final String? contributedPlainLyrics;
 }
