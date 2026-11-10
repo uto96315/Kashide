@@ -12,7 +12,11 @@ class AppBackButton extends StatelessWidget {
       padding: const EdgeInsets.only(left: 6, right: 8),
       minimumSize: const Size(44, 44),
       onPressed: onPressed ?? () => Navigator.maybePop(context),
-      child: const Icon(CupertinoIcons.back, size: 26, color: Color(0xFF1C1C1E)),
+      child: Icon(
+        CupertinoIcons.back,
+        size: 26,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 }
@@ -47,10 +51,10 @@ class ScreenTop extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF1C1C1E),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),

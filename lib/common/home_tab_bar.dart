@@ -40,10 +40,13 @@ class HomeTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final barBg = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+    final border = isDark ? const Color(0xFF2C2C2E) : const Color(0xFFEFF3F4);
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFEFF3F4))),
+      decoration: BoxDecoration(
+        color: barBg,
+        border: Border(top: BorderSide(color: border)),
       ),
       child: SafeArea(
         top: false,

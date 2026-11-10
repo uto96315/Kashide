@@ -56,6 +56,14 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
   @override
   Widget build(BuildContext context) {
     final autoplay = ref.watch(cardAutoplaySettingsProvider);
+    final themeSettings = ref.watch(appThemeSettingsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final menuBg = Theme.of(context).drawerTheme.backgroundColor ??
+        (isDark ? const Color(0xFF1C1C1E) : ProfileMenuDrawer._bg);
+    final labelColor =
+        isDark ? Colors.white : ProfileMenuDrawer._label;
+    final secondaryColor =
+        isDark ? const Color(0xFFAEAEB2) : ProfileMenuDrawer._secondary;
     final savedAccounts = ref.watch(savedAccountsProvider);
     final authUser = FirebaseAuth.instance.currentUser;
     final currentUid = authUser?.uid;
@@ -69,7 +77,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
     final hasAvatar = isUsableNetworkImageUrl(widget.model.userImageURL);
 
     return Drawer(
-      backgroundColor: ProfileMenuDrawer._bg,
+      backgroundColor: menuBg,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       width: MediaQuery.sizeOf(context).width * 0.86,
@@ -83,7 +91,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(CupertinoIcons.xmark, size: 22, color: ProfileMenuDrawer._label),
+                    icon: Icon(CupertinoIcons.xmark, size: 22, color: labelColor),
                   ),
                   const Spacer(),
                 ],
@@ -114,10 +122,10 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                       profileName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: ProfileMenuDrawer._label,
+                        color: labelColor,
                         height: 1.2,
                       ),
                     ),
@@ -134,7 +142,7 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: ProfileMenuDrawer._secondary.withValues(alpha: 0.95),
+                    color: secondaryColor.withValues(alpha: 0.95),
                   ),
                 ),
               ),
@@ -225,6 +233,13 @@ class _ProfileMenuDrawerState extends ConsumerState<ProfileMenuDrawer> {
             const SizedBox(height: 20),
             _Section(
               children: [
+                _SwitchTile(
+                  icon: CupertinoIcons.moon_fill,
+                  title: 'ダークモード',
+                  subtitle: 'オフにすると従来の明るい表示に戻ります',
+                  value: themeSettings.darkMode,
+                  onChanged: (v) => ref.read(appThemeSettingsProvider).setDarkMode(v),
+                ),
                 _SwitchTile(
                   icon: CupertinoIcons.play_circle,
                   title: 'カード表示で曲を自動再生',
@@ -550,11 +565,12 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: children),
@@ -580,6 +596,9 @@ class _SwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final label = isDark ? Colors.white : ProfileMenuDrawer._label;
+    final secondary = isDark ? const Color(0xFFAEAEB2) : ProfileMenuDrawer._secondary;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
       child: Row(
@@ -587,7 +606,7 @@ class _SwitchTile extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 22, color: ProfileMenuDrawer._secondary),
+            child: Icon(icon, size: 22, color: secondary),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -596,12 +615,12 @@ class _SwitchTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: ProfileMenuDrawer._label),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400, color: label),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 12, height: 1.35, color: ProfileMenuDrawer._secondary),
+                  style: TextStyle(fontSize: 12, height: 1.35, color: secondary),
                 ),
               ],
             ),

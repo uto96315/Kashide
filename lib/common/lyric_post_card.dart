@@ -7,6 +7,7 @@ import 'package:str_gram_beta/common/open_user_profile.dart';
 import 'package:str_gram_beta/genre/genre_page.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
 import 'package:str_gram_beta/common/post_lyrics_text.dart';
+import 'package:str_gram_beta/common/search_highlight_text.dart';
 import 'package:str_gram_beta/postDetail/post_detail_page.dart';
 import 'package:str_gram_beta/share/lyric_share_page.dart';
 
@@ -22,6 +23,7 @@ class LyricPostCard extends StatelessWidget {
     this.isPlaying = false,
     this.showAuthor = true,
     this.showPostTime = true,
+    this.highlightQuery,
   });
 
   final Post post;
@@ -32,6 +34,7 @@ class LyricPostCard extends StatelessWidget {
   final bool isPlaying;
   final bool showAuthor;
   final bool showPostTime;
+  final String? highlightQuery;
 
   static const _actionGray = Color(0xFF536471);
   static const _cardPadding = EdgeInsets.fromLTRB(16, 12, 16, 8);
@@ -52,6 +55,7 @@ class LyricPostCard extends StatelessWidget {
       isPlaying: isPlaying,
       showAuthor: showAuthor,
       showPostTime: showPostTime,
+      highlightQuery: highlightQuery,
       onOpenUser: () => _openUser(context),
       onOpenPost: (comments) => _openPost(context, comments),
     );
@@ -114,6 +118,7 @@ class _PostCardContent extends StatelessWidget {
     required this.isPlaying,
     required this.showAuthor,
     required this.showPostTime,
+    this.highlightQuery,
     required this.onOpenUser,
     required this.onOpenPost,
   });
@@ -127,6 +132,7 @@ class _PostCardContent extends StatelessWidget {
   final bool isPlaying;
   final bool showAuthor;
   final bool showPostTime;
+  final String? highlightQuery;
   final VoidCallback onOpenUser;
   final void Function(bool comments) onOpenPost;
 
@@ -208,11 +214,28 @@ class _PostCardContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFEFF3F4)),
             ),
-            child: PostLyricsText.fromPost(
-              post,
-              textAlign: TextAlign.start,
-              style: const TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w600, color: Color(0xFF0F0F0F)),
-            ),
+            child: highlightQuery == null
+                ? PostLyricsText.fromPost(
+                    post,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.45,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F0F0F),
+                    ),
+                  )
+                : SearchHighlightText(
+                    text: post.text,
+                    query: highlightQuery!,
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.45,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F0F0F),
+                    ),
+                  ),
           ),
         ),
         if (genres.isNotEmpty) ...[
@@ -226,10 +249,24 @@ class _PostCardContent extends StatelessWidget {
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => GenrePage(genre, 'genre')));
                   },
-                  child: Text(
-                    '#$genre',
-                    style: const TextStyle(fontSize: 14, color: mainColor, fontWeight: FontWeight.w500),
-                  ),
+                  child: highlightQuery == null
+                      ? Text(
+                          '#$genre',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: mainColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        )
+                      : SearchHighlightText(
+                          text: '#$genre',
+                          query: highlightQuery!,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: mainColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                 ),
             ],
           ),
@@ -242,12 +279,28 @@ class _PostCardContent extends StatelessWidget {
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => GenrePage(post.singName, 'singName')));
                 },
-                child: Text(
-                  post.singName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F0F0F)),
-                ),
+                child: highlightQuery == null
+                    ? Text(
+                        post.singName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F0F0F),
+                        ),
+                      )
+                    : SearchHighlightText(
+                        text: post.singName,
+                        query: highlightQuery!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F0F0F),
+                        ),
+                      ),
               ),
             ),
             const Text(' · ', style: TextStyle(fontSize: 14, color: Color(0xFF536471))),
@@ -256,12 +309,26 @@ class _PostCardContent extends StatelessWidget {
                 onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => GenrePage(post.artist, 'artist')));
                 },
-                child: Text(
-                  post.artist,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF536471)),
-                ),
+                child: highlightQuery == null
+                    ? Text(
+                        post.artist,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF536471),
+                        ),
+                      )
+                    : SearchHighlightText(
+                        text: post.artist,
+                        query: highlightQuery!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF536471),
+                        ),
+                      ),
               ),
             ),
           ],

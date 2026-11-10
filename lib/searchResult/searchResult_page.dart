@@ -1,297 +1,209 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:str_gram_beta/searchResult/genreSearch/genre_search_page.dart';
-import 'package:str_gram_beta/searchResult/lyricsSearch/lyrics_search_page.dart';
-import 'package:str_gram_beta/searchResult/singSearch/sing_search_page.dart';
-import 'package:str_gram_beta/searchResult/singerSearch/singer_result_page.dart';
-import '../common/ThemeColor.dart';
-import '../common/screen_top.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/block_user_actions.dart';
+import 'package:str_gram_beta/common/empty_state.dart';
+import 'package:str_gram_beta/common/lyric_post_card.dart';
+import 'package:str_gram_beta/common/playlist_picker_sheet.dart';
+import 'package:str_gram_beta/common/screen_top.dart';
+import 'package:str_gram_beta/domain/post_domain.dart';
+import 'package:str_gram_beta/post/post_validation.dart';
+import 'package:str_gram_beta/providers.dart';
+import 'package:str_gram_beta/search/post_search_matcher.dart';
 
-class SearchResultPage extends StatelessWidget {
-  SearchResultPage(this.searchWord, this.themeColor, {super.key});
-  String searchWord;
-  Color themeColor;
+class SearchResultPage extends ConsumerWidget {
+  const SearchResultPage(this.searchWord, this.themeColor, {super.key});
+
+  final String searchWord;
+  final Color themeColor;
 
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        body: Column(
-          children: [
-            ScreenTop(title: searchWord),
-            const TabBar(
-              unselectedLabelColor: Colors.grey,
-              indicatorColor: mainColor,
-              labelColor: mainColor,
-              tabs: [
-                Tab(text: "歌詞"),
-                Tab(text: "歌手名"),
-                Tab(text: "曲名"),
-                Tab(text: "ジャンル"),
-              ],
-            ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final model = ref.watch(unifiedSearchProvider(searchWord));
+    final timeline = ref.watch(timelineProvider);
+    final blocked = ref.watch(blockListProvider).blockedIds;
+    final visibleHits = model.hits
+        .where(
+          (h) =>
+              !blocked.contains(h.post.posterId) &&
+              shouldShowPostInFeed(h.post, timeline.uid),
+        )
+        .toList(growable: false);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          ScreenTop(title: '「$searchWord」'),
+          if (model.isLoading)
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(color: mainColor),
+              ),
+            )
+          else if (model.errorMessage != null)
+            Expanded(child: EmptyState(message: model.errorMessage!))
+          else if (visibleHits.isEmpty)
+            const Expanded(
+              child: EmptyState(
+                message: '見つかりませんでした\n表記ゆれがある場合は別のキーワードも試してください',
+              ),
+            )
+          else
             Expanded(
-              child: TabBarView(
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              LyricsSearchPage(searchWord),
-              SingerSearchPage(searchWord),
-              SingSearchPage(searchWord),
-              GenreSearchPage(searchWord),
-            ],
-          ),
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Text(
+                        '${visibleHits.length}件'
+                        '${model.itunesHintCount > 0 ? ' · Apple Musicの曲名・アーティストも参照' : ''}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF536471),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final hit = visibleHits[index];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (hit.matches.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                                child: Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: [
+                                    for (final m in hit.matches)
+                                      _MatchChip(match: m),
+                                  ],
+                                ),
+                              ),
+                            LyricPostCard(
+                              post: hit.post,
+                              highlightQuery: searchWord,
+                              menuItems: hit.post.posterId == timeline.uid
+                                  ? const [
+                                      PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text('編集する'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'delete',
+                                        child: Text('削除する'),
+                                      ),
+                                    ]
+                                  : const [
+                                      PopupMenuItem(
+                                        value: 'report',
+                                        child: Text('報告する'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'block',
+                                        child: Text('ブロックする'),
+                                      ),
+                                    ],
+                              onMenu: (value) async {
+                                if (value == 'delete') {
+                                  await timeline.deletePosts(hit.post.id);
+                                  ref.invalidate(unifiedSearchProvider(searchWord));
+                                } else if (value == 'report') {
+                                  await timeline.reportPosts(hit.post.id);
+                                } else if (value == 'block') {
+                                  await blockUserFromFeed(
+                                    context,
+                                    ref,
+                                    hit.post.posterId,
+                                  );
+                                  ref.invalidate(unifiedSearchProvider(searchWord));
+                                }
+                              },
+                              onPlaylist: () => _pickPlaylist(
+                                context,
+                                ref,
+                                timeline,
+                                hit.post,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      childCount: visibleHits.length,
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
+              ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-// return以下
+Future<void> _pickPlaylist(
+  BuildContext context,
+  WidgetRef ref,
+  dynamic timeline,
+  Post post,
+) async {
+  await showPlaylistPickerSheet(
+    context,
+    playlists: timeline.playList,
+    onSelect: (playlistId) async {
+      await timeline.addToPlaylist(
+        playlistId,
+        post.artist,
+        post.singName,
+        post.youtubeLink,
+        post.id,
+      );
+    },
+    onCreate: (name) async {
+      timeline.addPlaylistController.text = name;
+      timeline.setNewName(name);
+      await timeline.addNewPlaylist();
+      await timeline.getPlayListData();
+      timeline.addPlaylistController.text = '';
+    },
+  );
+}
 
-// ChangeNotifierProvider<SearchResultModel>(
-// create: (_) => SearchResultModel(searchWord)..searchFromGenre(searchWord)..searchFromSinger(searchWord),
-// child: Scaffold(
-// appBar: AppBar(
-// title: Text("「$searchWord」", style: const TextStyle(fontSize: 15)),
-// centerTitle: true,
-// backgroundColor: themeColor,
-// ),
-// body: SingleChildScrollView(
-// child: Center(
-// child: Consumer<SearchResultModel>(builder: (context, model, child) {
-// return Column(
-// children: [
-// const SizedBox( height: 30 ),
-// Text(model.genreResultCount > 0
-// ? "全部で${model.genreResultCount}件の投稿が見つかりました。"
-//     : "投稿が見つかりませんでした。"
-// ),
-// const SizedBox(height: 10),
-// const Divider( color: Colors.grey ),
-//
-//
-// // 以下ジャンルから検索したもの
-// // const Text("ジャンル", style: TextStyle(fontWeight: FontWeight.bold),),
-// Column(
-// // Listから生成-----------------------------------------------
-// children: model.genreResultList.map((result){
-// return Container(
-// width: MediaQuery.of(context).size.width,
-// decoration: const BoxDecoration(
-// border: Border(
-// bottom: BorderSide(color: Colors.grey))),
-// child: Padding(
-// padding:
-// const EdgeInsets.only(top: 20, bottom: 10),
-// child: Row(
-// crossAxisAlignment: CrossAxisAlignment.start,
-// children: [
-// const SizedBox(width: 10),
-//
-// // ユーザー画像
-// Container(
-// width: MediaQuery.of(context).size.width*0.1,
-// height: MediaQuery.of(context).size.width*0.1,
-// decoration: BoxDecoration(
-// border: Border.all(color: Colors.grey),
-// borderRadius: BorderRadius.circular(50),
-// color: Colors.grey.shade200,
-// image: (result.userImageUrl != "")
-// ? DecorationImage(
-// image: NetworkImage(
-// result.userImageUrl),
-// fit: BoxFit.cover)
-//     : null,
-// ),
-// child: (result.userImageUrl != "")
-// ? null
-//     : const Icon(Icons.person)
-// ),
-//
-// Column(
-// children: [
-// // ユーザーネーム
-// SizedBox(
-// width:
-// MediaQuery.of(context).size.width * 0.8,
-// child: Row(
-// mainAxisAlignment:
-// MainAxisAlignment.spaceBetween,
-// children: [
-// Row(
-// children: [
-// const SizedBox(width: 15),
-// Text(result.userName),
-// ],
-// ),
-// const SizedBox( width: 10 ),
-// Text(result.createdAt, style: const TextStyle( color: Colors.grey )),
-// ],
-// ),
-// ),
-// const SizedBox(height: 50),
-//
-// // 説明
-// SizedBox(
-// width: MediaQuery.of(context).size.width*0.8,
-// child: Text(
-// result.explanation,
-// textAlign: TextAlign.left,
-// style: const TextStyle( fontSize: 15, height: 1.5)
-// ),
-// ),
-//
-// const SizedBox( height: 10 ),
-//
-// // 歌詞
-// SizedBox(
-// width: MediaQuery.of(context).size.width * 0.8,
-// child: Container(
-// decoration: BoxDecoration(
-// color: Colors.grey.shade200
-// ),
-// alignment: Alignment.centerLeft,
-// child: Padding(
-// padding: const EdgeInsets.all(8.0),
-// child: Text("---\n${result.text}\n---",
-// textAlign: TextAlign.left,
-// style: const TextStyle(
-// fontSize: 16, height: 1.5)),
-// ),
-// ),
-// ),
-// const SizedBox(height: 20),
-//
-//
-// // ジャンル一覧
-// SizedBox(
-// width: MediaQuery.of(context).size.width*0.8,
-// child: Wrap(
-// runSpacing: 15,
-// spacing: 10,
-// children: result.genres.map((genre) =>
-// Container(
-// decoration: BoxDecoration(
-// border: Border.all( color: Colors.blue),
-// borderRadius: BorderRadius.circular(100),
-// ),
-// child: Padding(
-// padding: const EdgeInsets.all(10.0),
-// child: Text(genre, style: const TextStyle( color: Colors.blue)),
-// ),
-// )
-// ).toList(),
-// ),
-// ),
-// const SizedBox( height: 15 ),
-//
-// // 曲名などのデータ
-// // todo: 歌手名や曲名をタップでそのセグメントを見に行けるようにする
-// SizedBox(
-// width: MediaQuery.of(context).size.width * 0.8,
-// child: Row(
-// mainAxisAlignment: MainAxisAlignment.end,
-// children: [
-// Column(
-// children: [
-// Row(
-// children: [
-// const Text("歌手：", style: TextStyle( fontSize: 11)),
-// SizedBox(
-// width: 100,
-// child: Text(
-// result.artist,
-// overflow: TextOverflow.ellipsis,
-// style: const TextStyle( fontSize: 11, color: Colors.black )
-// ),
-// ),
-// ],
-// ),
-// const SizedBox(height:5),
-// Row(
-// children: [
-// const Text("曲名：", style: TextStyle( fontSize: 11)),
-// SizedBox(
-// width: 100,
-// child: Text(
-// result.singName,
-// overflow: TextOverflow.ellipsis,
-// style: const TextStyle( fontSize: 11, color: Colors.black)
-// ),
-// ),
-// ],
-// ),
-// ],
-// ),
-// ],
-// ),
-// ),
-// const SizedBox( height: 15 ),
-//
-// // いいね、コメントボタン
-// SizedBox(
-// width: MediaQuery.of(context).size.width*0.5,
-// height: 30,
-// child: Row(
-// mainAxisAlignment: MainAxisAlignment.end,
-// children: [
-// // youtubeリンク
-// Container(
-// child: result.youtubeLink != ""
-// ? CupertinoButton(
-// minSize: double.minPositive,
-// padding: EdgeInsets.zero,
-// onPressed: (){
-// launchUrl(Uri.parse(result.youtubeLink));
-// },
-// child: Container(
-// decoration:  BoxDecoration(
-// color: Colors.red,
-// borderRadius: BorderRadius.circular(100),
-// ),
-// child: const Icon(Icons.play_arrow, color: Colors.white) // todo: 後でYoutubeのロゴに変更
-// )
-// )
-//
-//     : null,
-// ),
-// const SizedBox( width: 35 ),
-// GestureDetector(
-// onTap: (){
-// Navigator.push(context, MaterialPageRoute(builder: (context) => PostDetailPage(result.id, true)));
-// },
-// child: Row(
-// children: [
-// const Icon(Icons.comment, color: Colors.grey ),
-// const SizedBox( width: 5 ),
-// Text(result.commentCount.toString() ?? "", style: const TextStyle( fontSize: 17 )),
-// ],
-// )
-// ),
-// const SizedBox( width: 20 ),
-// SizedBox(
-// width: 50,
-// height: 30,
-// child: FavoriteButton(result.id, result.likedCount)
-// ),
-// ],
-// )
-// ),
-// ],
-// ),
-// ],
-// ),
-// ),
-// );
-// }).toList(),
-// ),
-// ],
-// );
-// }),
-// ),
-// ),
-// ),
-// );
+class _MatchChip extends StatelessWidget {
+  const _MatchChip({required this.match});
+
+  final PostSearchMatch match;
+
+  String get _label => switch (match) {
+        PostSearchMatch.lyrics => '歌詞',
+        PostSearchMatch.artist => 'アーティスト',
+        PostSearchMatch.songTitle => '曲名',
+        PostSearchMatch.genre => 'ジャンル',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: mainColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        _label,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: mainColor,
+        ),
+      ),
+    );
+  }
+}

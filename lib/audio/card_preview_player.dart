@@ -11,17 +11,37 @@ class CardPreviewPlayer extends ChangeNotifier {
     _playerStateSubscription = _player.playerStateStream.listen((_) {
       notifyListeners();
     });
+    _positionSubscription = _player.positionStream.listen((_) {
+      notifyListeners();
+    });
+    _durationSubscription = _player.durationStream.listen((_) {
+      notifyListeners();
+    });
   }
 
   final ListenUrlResolver _resolver;
   final AudioPlayer _player = AudioPlayer();
   late final StreamSubscription<PlayerState> _playerStateSubscription;
+  late final StreamSubscription<Duration> _positionSubscription;
+  late final StreamSubscription<Duration?> _durationSubscription;
   int _requestId = 0;
 
   String? playingPostId;
   bool loading = false;
 
   bool get isPlaying => _player.playing;
+
+  Duration get position => _player.position;
+
+  Duration? get duration => _player.duration;
+
+  /// 0..1（プレビュー再生中のみ意味がある）
+  double progressForPost(String postId) {
+    if (playingPostId != postId || !isPlaying) return 0;
+    final total = duration;
+    if (total == null || total.inMilliseconds <= 0) return 0;
+    return (position.inMilliseconds / total.inMilliseconds).clamp(0.0, 1.0);
+  }
 
   Future<void> playForPost(Post post) async {
     if (playingPostId == post.id && _player.playing) return;
@@ -63,6 +83,8 @@ class CardPreviewPlayer extends ChangeNotifier {
   Future<void> disposePlayer() async {
     await stop();
     await _playerStateSubscription.cancel();
+    await _positionSubscription.cancel();
+    await _durationSubscription.cancel();
     await _player.dispose();
   }
 }

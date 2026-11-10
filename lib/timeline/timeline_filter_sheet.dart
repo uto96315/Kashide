@@ -10,7 +10,7 @@ Future<TimelineFilterState?> showTimelineFilterSheet(
   return showModalBottomSheet<TimelineFilterState>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
+    backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),

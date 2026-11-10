@@ -6,6 +6,7 @@ import 'package:str_gram_beta/auth/anonymous_user.dart';
 import 'package:str_gram_beta/auth/link_email_account_page.dart';
 import 'package:str_gram_beta/auth/saved_account.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 import 'package:str_gram_beta/common/screen_top.dart';
 import 'package:str_gram_beta/common/app_dialog.dart';
 import 'package:str_gram_beta/common/empty_state.dart';
@@ -43,7 +44,6 @@ String _myPageDisplayName({
 }
 
 class _MyPageState extends ConsumerState<MyPage> {
-  static const _bg = Color(0xFFF2F2F7);
   static const _primaryText = Color(0xFF0F1419);
   static const _secondaryText = Color(0xFF536471);
 
@@ -106,7 +106,7 @@ class _MyPageState extends ConsumerState<MyPage> {
 
     return Scaffold(
       key: model.sidebarKey,
-      backgroundColor: _bg,
+      backgroundColor: kashideGroupedBackground(context),
       endDrawer: ProfileMenuDrawer(
         model: model,
         onLogOut: () async {

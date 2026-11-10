@@ -28,7 +28,7 @@ class GenrePage extends ConsumerWidget {
     final navTitle = isPoster ? 'プロフィール' : (isGenre ? '' : pageTitle);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           ScreenTop(title: navTitle.isEmpty ? null : navTitle),

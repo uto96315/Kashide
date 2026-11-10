@@ -20,7 +20,7 @@ class LikedPostsPage extends ConsumerWidget {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           const ScreenTop(title: 'いいねした歌詞'),

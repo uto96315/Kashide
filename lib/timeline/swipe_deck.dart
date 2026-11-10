@@ -5,16 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/auth/anonymous_user.dart';
+import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/common/swipe_card_scene.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
 import 'package:str_gram_beta/common/listen_url_play_slot.dart';
-import 'package:str_gram_beta/common/post_lyrics_text.dart';
+import 'package:str_gram_beta/timeline/card_lyrics_pane.dart';
 import 'package:str_gram_beta/domain/post_domain.dart';
 import 'package:str_gram_beta/timeline/swipe_deck_tutorial_cue.dart';
 
 const _kCardHorizontal = 16.0;
-const _kCardRailWidth = 64.0;
+const _kCardRailWidth = 52.0;
 
 class SwipeDeck extends StatefulWidget {
   const SwipeDeck({
@@ -258,22 +260,19 @@ class _SwipeDeckState extends State<SwipeDeck> with TickerProviderStateMixin {
         }
         final post = posts[index];
         final liked = widget.likedIds.contains(post.id);
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => widget.onOpen(post),
-          child: _LyricCard(
-            post: post,
-            liked: liked,
-            celebrate: _celebrate,
-            onOpenUser: () => widget.onOpenUser(post),
-            onFilterArtist: widget.onFilterArtist,
-            onFilterGenre: widget.onFilterGenre,
-            onPlay: () => widget.onPlay(post),
-            onComment: () => widget.onComment(post),
-            onLike: () => _onLikeTap(post),
-            onShare: () => widget.onShare(post),
-            onPlaylist: () => _onPlaylistTap(post),
-          ),
+        return _LyricCard(
+          post: post,
+          liked: liked,
+          celebrate: _celebrate,
+          onOpen: () => widget.onOpen(post),
+          onOpenUser: () => widget.onOpenUser(post),
+          onFilterArtist: widget.onFilterArtist,
+          onFilterGenre: widget.onFilterGenre,
+          onPlay: () => widget.onPlay(post),
+          onComment: () => widget.onComment(post),
+          onLike: () => _onLikeTap(post),
+          onShare: () => widget.onShare(post),
+          onPlaylist: () => _onPlaylistTap(post),
         );
       },
     );
@@ -445,7 +444,7 @@ class _SideActionRail extends StatelessWidget {
           icon: Icons.ios_share_rounded,
           onTap: onShare,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _SideActionButton(
           icon: Icons.playlist_add_rounded,
           onTap: onPlaylist,
@@ -471,22 +470,13 @@ class _SideActionButton extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Material(
-          color: Colors.black.withValues(alpha: 0.35),
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            customBorder: const CircleBorder(),
-            child: SizedBox(
-              width: 48,
-              height: 48,
-              child: Icon(icon, color: Colors.white, size: 26),
-            ),
-          ),
+        GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Icon(icon, color: Colors.white, size: 30, shadows: _ink),
         ),
         if (label != null) ...[
-          const SizedBox(height: 2),
+          const SizedBox(height: 4),
           Text(
             label!,
             style: const TextStyle(
@@ -529,24 +519,16 @@ class _SideLikeButton extends StatelessWidget {
           children: [
             Transform.scale(
               scale: pop,
-              child: Material(
-                color: Colors.black.withValues(alpha: 0.35),
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: onTap,
-                  customBorder: const CircleBorder(),
-                  child: SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Icon(
-                      heartFilled
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      color: heartFilled ? mainColor : Colors.white,
-                      size: 28,
-                    ),
-                  ),
+              child: GestureDetector(
+                onTap: onTap,
+                behavior: HitTestBehavior.opaque,
+                child: Icon(
+                  heartFilled
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: heartFilled ? mainColor : Colors.white,
+                  size: 30,
+                  shadows: _ink,
                 ),
               ),
             ),
@@ -570,11 +552,87 @@ class _SideLikeButton extends StatelessWidget {
   }
 }
 
-class _LyricCard extends StatelessWidget {
+class _DeckPreviewProgress extends ConsumerWidget {
+  const _DeckPreviewProgress({required this.postId});
+
+  final String postId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final player = ref.watch(cardPreviewPlayerProvider);
+    final active = player.playingPostId == postId;
+    final value = active ? player.progressForPost(postId) : 0.0;
+    return LinearProgressIndicator(
+      value: value,
+      minHeight: 3,
+      backgroundColor: Colors.white.withValues(alpha: 0.22),
+      color: mainColor,
+    );
+  }
+}
+
+class _DeckPlayButton extends ConsumerWidget {
+  const _DeckPlayButton({
+    required this.postId,
+    required this.onTap,
+    required this.hasPreview,
+  });
+
+  final String postId;
+  final VoidCallback onTap;
+  final bool hasPreview;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!hasPreview) return const SizedBox.shrink();
+    final player = ref.watch(cardPreviewPlayerProvider);
+    final isThis = player.playingPostId == postId;
+    final playing = isThis && player.isPlaying;
+    final loading = isThis && player.loading;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: mainColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.35),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: loading
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Icon(
+                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LyricCard extends ConsumerWidget {
   const _LyricCard({
     required this.post,
     required this.liked,
     required this.celebrate,
+    required this.onOpen,
     required this.onOpenUser,
     required this.onFilterArtist,
     required this.onFilterGenre,
@@ -588,6 +646,7 @@ class _LyricCard extends StatelessWidget {
   final Post post;
   final bool liked;
   final AnimationController celebrate;
+  final VoidCallback onOpen;
   final VoidCallback onOpenUser;
   final void Function(String artist) onFilterArtist;
   final void Function(String genre) onFilterGenre;
@@ -598,7 +657,7 @@ class _LyricCard extends StatelessWidget {
   final VoidCallback onPlaylist;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final genres = post.genres
         .whereType<String>()
         .where((genre) => genre.isNotEmpty)
@@ -618,65 +677,42 @@ class _LyricCard extends StatelessWidget {
               alignment: Alignment.center,
             ),
           ),
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0x99000000),
-                  Color(0x55000000),
-                  Color(0x77000000),
-                  Color(0xCC000000),
+                  Colors.black.withValues(alpha: 0.38),
+                  Colors.black.withValues(alpha: 0.12),
+                  Colors.black.withValues(alpha: 0.22),
+                  Colors.black.withValues(alpha: 0.72),
                 ],
-                stops: [0, 0.35, 0.72, 1],
+                stops: const [0, 0.45, 0.7, 1],
               ),
             ),
           ),
           Positioned(
             left: _kCardHorizontal,
             right: _kCardRailWidth + 8,
-            top: 56,
+            top: 48,
             bottom: 168,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                const pad = 14.0;
                 return Align(
-                  alignment: Alignment.center,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: constraints.maxWidth,
-                      maxHeight: constraints.maxHeight,
-                    ),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.62),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(pad, pad, pad, 12),
-                        child: ClipRect(
-                          child: Align(
-                            alignment: Alignment.center,
-                            child: PostLyricsText.fromPost(
-                              post,
-                              style: _lyricStyle,
-                              textAlign: TextAlign.left,
-                              tuneLineBreaks: true,
-                              layoutMaxWidth: constraints.maxWidth - pad * 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  alignment: Alignment.topCenter,
+                  child: CardLyricsPane(
+                    post: post,
+                    maxWidth: constraints.maxWidth,
+                    maxHeight: constraints.maxHeight,
                   ),
                 );
               },
             ),
           ),
           Positioned(
-            left: _kCardHorizontal,
-            right: _kCardRailWidth + 8,
+            left: 0,
+            right: 0,
             bottom: 0,
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -685,171 +721,203 @@ class _LyricCard extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.black.withValues(alpha: 0),
-                    Colors.black.withValues(alpha: 0.75),
+                    Colors.black.withValues(alpha: 0.55),
                   ],
                 ),
               ),
               child: SafeArea(
                 top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        post.singName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: _titleStyle,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        _kCardHorizontal,
+                        14,
+                        _kCardRailWidth + 12,
+                        6,
                       ),
-                      const SizedBox(height: 2),
-                      Tooltip(
-                        message: 'この歌手の投稿に絞り込む',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => onFilterArtist(post.artist),
-                            borderRadius: BorderRadius.circular(6),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      post.artist,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: _subStyle.copyWith(color: Colors.white),
-                                    ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                  color: Colors.white.withValues(alpha: 0.14),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2),
                                   ),
-                                  Icon(
-                                    Icons.chevron_right_rounded,
-                                    size: 16,
-                                    color: Colors.white.withValues(alpha: 0.72),
+                                ),
+                                child: const SizedBox(
+                                  width: 44,
+                                  height: 44,
+                                  child: Icon(
+                                    Icons.music_note_rounded,
+                                    color: Colors.white70,
+                                    size: 22,
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (genres.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            for (final genre in genres)
-                              Material(
-                                color: Colors.white.withValues(alpha: 0.22),
-                                borderRadius: BorderRadius.circular(12),
-                                child: InkWell(
-                                  onTap: () => onFilterGenre(genre),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: onOpen,
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: Text(
+                                          post.singName,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: _titleStyle,
+                                        ),
+                                      ),
                                     ),
+                                    const SizedBox(height: 2),
+                                    Tooltip(
+                                      message: 'この歌手の投稿に絞り込む',
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () =>
+                                              onFilterArtist(post.artist),
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  post.artist,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: _subStyle,
+                                                ),
+                                              ),
+                                              Icon(
+                                                Icons.chevron_right_rounded,
+                                                size: 16,
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.72),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (genres.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                for (final genre in genres)
+                                  GestureDetector(
+                                    onTap: () => onFilterGenre(genre),
                                     child: Text(
                                       genre,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.white,
+                                        color: Colors.white.withValues(alpha: 0.85),
+                                        shadows: _ink,
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: const Color(0xFFFFE4EC),
-                            backgroundImage:
-                                post.userImageUrl.isEmpty ||
-                                        post.userImageUrl == 'null'
-                                    ? null
-                                    : NetworkImage(post.userImageUrl),
-                            child:
-                                post.userImageUrl.isEmpty ||
-                                        post.userImageUrl == 'null'
-                                    ? const Icon(
-                                        Icons.person,
-                                        size: 18,
-                                        color: mainColor,
-                                      )
-                                    : null,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: onOpenUser,
-                              child: Text(
-                                publicDisplayName(post.userName),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white,
-                                  shadows: _ink,
-                                ),
-                              ),
+                              ],
                             ),
-                          ),
-                          ListenUrlPlaySlot(
-                            storedUrl: post.youtubeLink,
-                            artist: post.artist,
-                            singName: post.singName,
-                            builder: (context, listenUrl) {
-                              if (listenUrl == null || listenUrl.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: onPlay,
-                                  customBorder: const CircleBorder(),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(6),
-                                    child: Icon(
-                                      Icons.play_circle_outline_rounded,
-                                      color: mainColor,
-                                      size: 32,
+                          ],
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: onOpenUser,
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: const Color(0xFFFFE4EC),
+                                  backgroundImage:
+                                      post.userImageUrl.isEmpty ||
+                                              post.userImageUrl == 'null'
+                                          ? null
+                                          : NetworkImage(post.userImageUrl),
+                                  child: post.userImageUrl.isEmpty ||
+                                          post.userImageUrl == 'null'
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 14,
+                                          color: mainColor,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    publicDisplayName(post.userName),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(alpha: 0.9),
+                                      shadows: _ink,
                                     ),
                                   ),
                                 ),
-                              );
-                            },
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    _DeckPreviewProgress(postId: post.id),
+                  ],
                 ),
               ),
             ),
           ),
           Positioned(
-            right: 6,
-            bottom: 96,
+            right: 8,
+            bottom: 88,
             child: SafeArea(
               top: false,
-              child: _SideActionRail(
-                commentCount: post.commentCount,
-                likeCount: post.likedCount,
-                liked: liked,
-                celebrate: celebrate,
-                onComment: onComment,
-                onLike: onLike,
-                onShare: onShare,
-                onPlaylist: onPlaylist,
+              child: ListenUrlPlaySlot(
+                storedUrl: post.youtubeLink,
+                artist: post.artist,
+                singName: post.singName,
+                builder: (context, listenUrl) {
+                  final hasPreview =
+                      listenUrl != null && listenUrl.isNotEmpty;
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _SideActionRail(
+                        commentCount: post.commentCount,
+                        likeCount: post.likedCount,
+                        liked: liked,
+                        celebrate: celebrate,
+                        onComment: onComment,
+                        onLike: onLike,
+                        onShare: onShare,
+                        onPlaylist: onPlaylist,
+                      ),
+                      _DeckPlayButton(
+                        postId: post.id,
+                        onTap: onPlay,
+                        hasPreview: hasPreview,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -866,13 +934,6 @@ const _ink = [
   Shadow(offset: Offset(0, 0.8), color: Color(0xE6000000)),
   Shadow(blurRadius: 8, color: Color(0x99000000)),
 ];
-
-const _lyricStyle = TextStyle(
-  fontSize: 22,
-  height: 1.42,
-  fontWeight: FontWeight.w600,
-  color: Colors.white,
-);
 
 const _titleStyle = TextStyle(
   fontSize: 16,

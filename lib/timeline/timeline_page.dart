@@ -171,7 +171,6 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           ScreenTop(
@@ -329,7 +328,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                   '${model.filter.isActive ? ' · 絞り込み中' : ''}',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey.shade700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -380,7 +379,7 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                         clearSongArtist: true,
                       ),
                     ),
-                    onPlay: _playCardPreview,
+                    onPlay: _toggleTimelinePreview,
                     onShare: (post) => unawaited(
                       openLyricShare(
                       context,

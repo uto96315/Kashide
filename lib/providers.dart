@@ -25,6 +25,7 @@ import 'register/register_model.dart';
 import 'registerUserDetails/register_user_details_model.dart';
 import 'resetPassword/reset_password_model.dart';
 import 'search/search_model.dart';
+import 'search/unified_search_model.dart';
 import 'searchResult/genreSearch/genre_search_model.dart';
 import 'searchResult/lyricsSearch/lyrics_search_model.dart';
 import 'searchResult/singSearch/sing_search_model.dart';
@@ -33,6 +34,7 @@ import 'song/listen_url_resolver.dart';
 import 'song/song_search_service.dart';
 import 'analytics/app_analytics.dart';
 import 'audio/card_preview_player.dart';
+import 'settings/app_theme_settings.dart';
 import 'settings/card_autoplay_settings.dart';
 import 'timeline/timeline_model.dart';
 import 'user/block_list_model.dart';
@@ -66,6 +68,10 @@ final songSearchServiceProvider = Provider<SongSearchService>((ref) {
 
 final listenUrlResolverProvider = Provider<ListenUrlResolver>((ref) {
   return ListenUrlResolver(ref.watch(songSearchServiceProvider));
+});
+
+final appThemeSettingsProvider = ChangeNotifierProvider<AppThemeSettings>((ref) {
+  return AppThemeSettings()..initialize();
 });
 
 final cardAutoplaySettingsProvider = ChangeNotifierProvider<CardAutoplaySettings>((ref) {
@@ -216,6 +222,13 @@ final genreProvider =
     ..getGenrePosts(args.genre)
     ..getPlayListData()
     ..loadPosterProfile(args.genre);
+});
+
+final unifiedSearchProvider =
+    ChangeNotifierProvider.autoDispose.family<UnifiedSearchModel, String>((ref, word) {
+  final model = UnifiedSearchModel(word, ref.read(songSearchServiceProvider));
+  model.search();
+  return model;
 });
 
 final lyricsSearchProvider =

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:str_gram_beta/common/ThemeColor.dart';
+import 'package:str_gram_beta/common/kashide_theme.dart';
 import 'package:str_gram_beta/providers.dart';
 import 'package:str_gram_beta/search/search_model.dart';
 import 'package:str_gram_beta/search/search_genre_tile.dart';
@@ -32,7 +33,7 @@ class SearchPage extends ConsumerWidget {
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.translucent,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: kashideGroupedBackground(context),
         body: SafeArea(
           bottom: false,
           child: CustomScrollView(
