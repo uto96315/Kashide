@@ -40,7 +40,7 @@ void main() {
         const SongQuote(
           artist: 'Artist',
           title: 'Title',
-          lyrics: '歌詞',
+          lyrics: 'これは十分な長さの歌詞テキストです',
           listenUrl: 'https://example.com',
         ),
       );

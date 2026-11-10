@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
 
     const titles = [
-      'カードをスワイプ',
+      '上下にスクロール',
       '曲を自動で再生',
       '並び順を変える',
       '見たい投稿を探す',

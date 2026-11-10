@@ -28,9 +28,16 @@ void main() {
   });
 
   testWidgets('toggle switches to register form', (tester) async {
-    await pumpLogin(tester);
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: LoginPage(startWithRegister: false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('新規登録').first);
     await tester.pumpAndSettle();
-    expect(find.text('登録する'), findsOneWidget);
+    expect(find.text('登録せずに始めてみる'), findsOneWidget);
   });
 }

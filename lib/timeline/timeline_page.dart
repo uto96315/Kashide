@@ -13,7 +13,7 @@ import '../common/app_dialog.dart';
 import '../common/empty_state.dart';
 import '../common/playlist_picker_sheet.dart';
 import '../common/screen_top.dart';
-import '../common/lyric_post_card.dart';
+import 'timeline_lyric_feed_card.dart';
 import '../providers.dart';
 import '../share/lyric_share_page.dart';
 import 'swipe_deck.dart';
@@ -492,9 +492,8 @@ class _TimelinePageState extends ConsumerState<TimelinePage> {
                                       ),
                                     ),
                                   for (final post in posts)
-                                    LyricPostCard(
+                                    TimelineLyricFeedCard(
                                       post: post,
-                                      showPostTime: false,
                                       onPlay: _toggleTimelinePreview,
                                       isPlaying:
                                           previewPlayer.playingPostId ==
